@@ -13,7 +13,7 @@ import { MessageBubble } from './MessageBubble'
 import { ModelDropdown } from './ModelDropdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Loader2, Maximize2, MessageSquare, Minimize2, Send, Square } from 'lucide-react'
+import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -112,7 +112,13 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
             )}
             <div className="space-y-3 max-w-3xl mx-auto w-full min-w-0">
               {pane.messages.map((msg, i) => (
-                <MessageBubble key={i} message={msg} />
+                <MessageBubble
+                  key={i}
+                  message={msg}
+                  isStreaming={
+                    pane.status === 'streaming' && msg.role === 'assistant' && i === pane.messages.length - 1
+                  }
+                />
               ))}
               {pane.status === 'error' && pane.error && (
                 <div className="flex items-start gap-2 text-destructive bg-destructive/10 rounded-lg px-3 py-2 text-xs">
@@ -149,8 +155,8 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
               <Square className="h-3 w-3" fill="currentColor" />
             </Button>
           ) : (
-            <Button size="icon" className="h-8 w-8 shrink-0" onClick={send} disabled={!input.trim()}>
-              <Send className="h-3.5 w-3.5" />
+            <Button size="icon" className="h-8 w-8 shrink-0 rounded-full" onClick={send} disabled={!input.trim()}>
+              <ArrowUp className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

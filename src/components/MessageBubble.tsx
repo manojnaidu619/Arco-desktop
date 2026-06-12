@@ -14,9 +14,11 @@ import remarkGfm from 'remark-gfm'
 
 interface Props {
   message: Message
+  /** True while this assistant turn's stream is still in flight. */
+  isStreaming?: boolean
 }
 
-export function MessageBubble({ message }: Props) {
+export function MessageBubble({ message, isStreaming = false }: Props) {
   const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
 
@@ -35,6 +37,22 @@ export function MessageBubble({ message }: Props) {
       <div className="flex justify-end">
         <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-sm">
           {message.content}
+        </div>
+      </div>
+    )
+  }
+
+  // Stream just started — no text has arrived yet. Show a typing indicator
+  // (three bouncing dots) instead of an empty bubble with a premature copy button.
+  if (isStreaming && !message.content) {
+    return (
+      <div className="flex justify-start">
+        <div className="rounded-2xl rounded-tl-sm px-3.5 py-2.5 bg-muted">
+          <div className="flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+          </div>
         </div>
       </div>
     )
@@ -89,17 +107,20 @@ export function MessageBubble({ message }: Props) {
         >
           {message.content}
         </ReactMarkdown>
-        <div className="flex justify-start pt-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={copyResponse}
-            title={copied ? 'Copied' : 'Copy response'}
-          >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          </Button>
-        </div>
+        {/* Copy is offered only once the stream has ended (completed or aborted). */}
+        {!isStreaming && (
+          <div className="flex justify-start pt-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              onClick={copyResponse}
+              title={copied ? 'Copied' : 'Copy response'}
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

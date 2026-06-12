@@ -11,7 +11,7 @@
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { BrainCircuit, Send, Square } from 'lucide-react'
+import { ArrowUp, BrainCircuit, Square } from 'lucide-react'
 
 interface Props {
   value: string
@@ -73,11 +73,11 @@ export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, 
         ) : (
           <Button
             size="icon"
-            className="h-[56px] w-[56px] shrink-0"
+            className="h-[56px] w-[56px] shrink-0 rounded-full"
             onClick={send}
             disabled={!value.trim() || activeCount === 0}
           >
-            <Send className="h-5 w-5" />
+            <ArrowUp className="h-5 w-5" />
           </Button>
         )}
       </div>

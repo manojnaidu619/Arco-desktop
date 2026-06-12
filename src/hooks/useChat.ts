@@ -151,28 +151,37 @@ export function useChat() {
    * still glides in smoothly.
    */
   const revealTick = useCallback(() => {
+    // Advance each buffered slot by a chunk, computing everything in refs
+    // FIRST. This stays out of the setPanes updater on purpose: that updater
+    // must be pure (React may run it later or twice), and we need the finalize
+    // list ready synchronously — not trapped inside a deferred render callback.
+    const chunkBySlot: Record<number, string> = {}
     const toFinalize: { slot: number; content: string }[] = []
+
+    for (const key of Object.keys(pendingBySlot.current)) {
+      const slot = Number(key)
+      const pending = pendingBySlot.current[slot]
+      const take = Math.max(1, Math.ceil(pending.length / 6))
+      chunkBySlot[slot] = pending.slice(0, take)
+      const rest = pending.slice(take)
+      if (rest) {
+        pendingBySlot.current[slot] = rest
+      } else {
+        delete pendingBySlot.current[slot]
+        if (doneInfoBySlot.current[slot]) {
+          toFinalize.push({ slot, content: doneInfoBySlot.current[slot].content })
+          delete doneInfoBySlot.current[slot]
+        }
+      }
+    }
 
     setPanes((prev) =>
       prev.map((p) => {
-        const pending = pendingBySlot.current[p.slot]
-        if (!pending) return p
-
-        const take = Math.max(1, Math.ceil(pending.length / 6))
-        const chunk = pending.slice(0, take)
-        const rest = pending.slice(take)
-        if (rest) pendingBySlot.current[p.slot] = rest
-        else delete pendingBySlot.current[p.slot]
-
+        const chunk = chunkBySlot[p.slot]
+        if (!chunk) return p
         const msgs = [...p.messages]
         const last = msgs[msgs.length - 1]
         if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + chunk }
-
-        if (!rest && doneInfoBySlot.current[p.slot]) {
-          toFinalize.push({ slot: p.slot, content: doneInfoBySlot.current[p.slot].content })
-          delete doneInfoBySlot.current[p.slot]
-        }
-
         return { ...p, messages: msgs }
       })
     )
@@ -189,6 +198,36 @@ export function useChat() {
   const ensureRevealing = useCallback(() => {
     if (revealFrame.current === null) revealFrame.current = requestAnimationFrame(revealTick)
   }, [revealTick])
+
+  /**
+   * Instantly reveal a slot's remaining buffered text and finalize it if its
+   * stream already completed. Used when the response arrived in full but is
+   * still gliding in — e.g. the user hit "stop" for a *different* pane and we
+   * don't want this finished one left mid-glide.
+   */
+  const flushSlot = useCallback(
+    (slot: number) => {
+      const pending = pendingBySlot.current[slot]
+      if (pending) {
+        delete pendingBySlot.current[slot]
+        setPanes((prev) =>
+          prev.map((p) => {
+            if (p.slot !== slot) return p
+            const msgs = [...p.messages]
+            const last = msgs[msgs.length - 1]
+            if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + pending }
+            return { ...p, messages: msgs }
+          })
+        )
+      }
+      const doneInfo = doneInfoBySlot.current[slot]
+      if (doneInfo) {
+        delete doneInfoBySlot.current[slot]
+        finalizeSlot(slot, doneInfo.content)
+      }
+    },
+    [finalizeSlot]
+  )
 
   /* ── Streaming event subscriptions (registered once) ─────────────────── */
   useEffect(() => {
@@ -295,24 +334,37 @@ export function useChat() {
 
   /**
    * Abort all currently-streaming panes (the bottom "ask all" stop button).
+   * Only panes whose request is still actually in flight get rolled back —
+   * panes that already finished and are merely gliding their last bit of text
+   * in are left alone (flushed instantly instead), so a slow model doesn't
+   * wipe out answers that already arrived.
    * Returns the broadcast text so the composer can restore it for editing.
    */
   const abort = useCallback((): string => {
     const streamingSlots = panesRef.current.filter((p) => p.status === 'streaming').map((p) => p.slot)
-    streamingSlots.forEach(rollbackPane)
+    streamingSlots.forEach((slot) => {
+      if (activeReqBySlot.current[slot] !== undefined) rollbackPane(slot)
+      else flushSlot(slot)
+    })
     return lastBroadcastContent.current
-  }, [rollbackPane])
+  }, [rollbackPane, flushSlot])
 
   /**
    * Abort a single pane (its own stop button). Returns that pane's text so its
-   * follow-up input can restore it for editing.
+   * follow-up input can restore it for editing. If this pane's request already
+   * finished (it's just gliding its last bit of text in), there's nothing to
+   * stop — flush it instantly instead of rolling back a completed answer.
    */
   const abortPane = useCallback(
     (slot: number): string => {
+      if (activeReqBySlot.current[slot] === undefined) {
+        flushSlot(slot)
+        return ''
+      }
       rollbackPane(slot)
       return lastUserContentBySlot.current[slot] ?? ''
     },
-    [rollbackPane]
+    [rollbackPane, flushSlot]
   )
 
   /** Begin streaming a response into a slot. `requestMessages` includes the new user turn. */
