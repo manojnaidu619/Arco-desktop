@@ -1,0 +1,12 @@
+{
+  // Root tsconfig. It owns no files itself — it just points at the two
+  // "real" configs below. We split the project in two because the main
+  // process (Node/Electron) and the renderer (browser) have different
+  // global types and module settings, and must never be type-checked
+  // with each other's assumptions.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.node.json" }, // main process + preload + shared
+    { "path": "./tsconfig.web.json" } //  renderer (React UI) + shared
+  ]
+}

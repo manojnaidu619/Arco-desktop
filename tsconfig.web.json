@@ -1,0 +1,30 @@
+{
+  // ── TypeScript config for the RENDERER (the React UI) and SHARED code ──
+  // This is the "frontend" half. It runs in a Chromium window, so it gets
+  // DOM globals and JSX support — but NO Node.js globals (the UI is
+  // sandboxed and can only reach the backend through `window.api`).
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "useDefineForClassFields": true,
+    // Path aliases:
+    //   @/*       → the renderer's own source (src/)
+    //   @shared/* → code shared with the main process (types, model list)
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": ["src", "shared"]
+}

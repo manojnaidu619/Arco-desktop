@@ -1,0 +1,25 @@
+{
+  // ── TypeScript config for the MAIN PROCESS, PRELOAD, and SHARED code ──
+  // This is the "backend" half of the app. It runs in Node.js (inside
+  // Electron), so it gets Node globals and CommonJS-friendly settings.
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023"],
+    "types": ["node", "electron-vite/node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    // Path aliases — keep imports readable. `@shared/*` points at the
+    // code shared between the main process and the renderer.
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": ["electron", "shared", "electron.vite.config.ts"]
+}
