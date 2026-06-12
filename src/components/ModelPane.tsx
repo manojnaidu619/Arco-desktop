@@ -6,15 +6,15 @@
  * Switching the model clears the pane — if it already has messages, we confirm
  * first.
  */
-import { useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { Pane } from '@/hooks/useChat'
+import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'
+import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { MessageBubble } from './MessageBubble'
 import { ModelDropdown } from './ModelDropdown'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface Props {
   pane: Pane
@@ -30,19 +30,13 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
   const [input, setInput] = useState('')
   const [showInput, setShowInput] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const didMountRef = useRef(false)
 
-  // Auto-scroll to the newest content as the model streams — but NOT on the
-  // first render. On initial load and on layout changes (which re-mount the
-  // panes), we leave each pane scrolled where it is instead of yanking it to
-  // the bottom. We only follow content that arrives afterwards (a new message
-  // or streaming tokens).
-  useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true
-      return
-    }
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // Keep each pane pinned to the bottom (newest message). We jump instantly
+  // (behavior 'auto') inside a layout effect so it lands at the bottom BEFORE
+  // paint — opening a session, switching layouts, or streaming never shows a
+  // visible scroll-through. The pane is simply always at the bottom.
+  useLayoutEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'auto' })
   }, [pane.messages])
 
   const send = () => {
@@ -69,9 +63,9 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
   }
 
   return (
-    <div className="flex flex-col border border-border rounded-xl overflow-hidden bg-background h-full min-h-0 min-w-0">
+    <div className="flex flex-col overflow-hidden bg-background h-full min-h-0 min-w-0">
       {/* Header */}
-      <div className="flex items-center gap-1 px-2 py-2 border-b border-border bg-muted/50 shrink-0">
+      <div className="flex items-center gap-1 px-2 py-2 bg-muted/30 shrink-0">
         <div className="flex-1 min-w-0">
           <ModelDropdown value={pane.modelId} onSelect={handleSelectModel} />
         </div>
@@ -102,7 +96,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin">
         {!pane.modelId ? (
           <p className="text-xs text-muted-foreground text-center mt-8">Pick a model to start.</p>
         ) : (
@@ -134,7 +128,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
 
       {/* Per-pane follow-up input (hidden until toggled) */}
       {showInput && pane.modelId && (
-        <div className="flex gap-2 px-3 py-2.5 border-t border-border shrink-0">
+        <div className="flex gap-2 px-3 py-2.5 shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -5,14 +5,14 @@
  * Conversation state lives in `useChat`; this component owns layout/UI state
  * (sidebar open, which pane is expanded) and arranges the grid.
  */
-import { useEffect, useMemo, useState } from 'react'
-import { useChat } from '@/hooks/useChat'
+import { ChatBar } from '@/components/ChatBar'
 import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
-import { ChatBar } from '@/components/ChatBar'
 import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
+import { useChat } from '@/hooks/useChat'
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 /** How many grid columns each layout preset uses (rows then fill the height). */
 const COLS: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 2, 6: 3 }
@@ -141,7 +141,7 @@ export function MainApp({ onOpenSettings }: Props) {
         </header>
 
         {/* Grid of panes (or a single expanded pane) */}
-        <div className="flex-1 min-h-0 overflow-hidden p-3">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {expandedPane ? (
             <ModelPane
               pane={expandedPane}
@@ -156,8 +156,12 @@ export function MainApp({ onOpenSettings }: Props) {
               // `key={layout}` re-mounts the grid on every layout change, which
               // re-triggers the tw-animate-css enter animation below — a subtle
               // fade + zoom as the panes reflow into the new grid.
+              //
+              // Clean cross dividers: the grid's background is the border color
+              // and cells are opaque, so the gap-0.5 reads as crisp 2px lines
+              // forming a continuous cross across every layout.
               key={layout}
-              className="grid gap-3 h-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+              className="grid gap-0.5 bg-border h-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
               style={{ gridTemplateColumns: `repeat(${COLS[layout]}, minmax(0, 1fr))`, gridAutoRows: '1fr' }}
             >
               {visiblePanes.map((pane) => (
