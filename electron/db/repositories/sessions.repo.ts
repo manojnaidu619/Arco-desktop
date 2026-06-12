@@ -182,6 +182,21 @@ export function deleteThread(threadId: number): void {
   getDb().delete(threads).where(eq(threads.id, threadId)).run()
 }
 
+/**
+ * Re-slot threads to match a new grid order. `threadIds` is the desired order;
+ * each thread's `slot` is set to its index. Used when the user reorders/reselects
+ * which panes are visible so the new order survives a reload (slot drives the
+ * ordering in `buildSessionData`).
+ */
+export function reorderThreads(threadIds: number[]): void {
+  const db = getDb()
+  db.transaction((tx) => {
+    threadIds.forEach((id, index) => {
+      tx.update(threads).set({ slot: index }).where(eq(threads.id, id)).run()
+    })
+  })
+}
+
 /** Append a message to a thread, computing its sequence number. */
 export function addMessage(threadId: number, role: Role, content: string): void {
   const db = getDb()

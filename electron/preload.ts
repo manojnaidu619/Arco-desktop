@@ -46,6 +46,7 @@ const api: MultiMindApi = {
     updateThreadModel: (threadId, modelId, label) =>
       ipcRenderer.invoke(CHANNELS.sessions.updateThreadModel, threadId, modelId, label),
     deleteThread: (threadId) => ipcRenderer.invoke(CHANNELS.sessions.deleteThread, threadId),
+    reorderThreads: (threadIds) => ipcRenderer.invoke(CHANNELS.sessions.reorderThreads, threadIds),
     addMessage: (threadId, role, content) =>
       ipcRenderer.invoke(CHANNELS.sessions.addMessage, threadId, role, content),
     deleteLastMessage: (threadId) => ipcRenderer.invoke(CHANNELS.sessions.deleteLastMessage, threadId)

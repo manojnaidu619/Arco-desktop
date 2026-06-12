@@ -30,6 +30,7 @@ export function MainApp({ onOpenSettings }: Props) {
     sessions,
     loading,
     setLayout,
+    applyVisibleSelection,
     setPaneModel,
     askAll,
     askOne,
@@ -49,6 +50,15 @@ export function MainApp({ onOpenSettings }: Props) {
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
   const activeCount = useMemo(() => visiblePanes.filter((p) => p.modelId).length, [visiblePanes])
+  // Populated panes (with a model) for the layout selector's keep-which picker.
+  const populatedPanes = useMemo(
+    () => panes.filter((p) => p.modelId).map((p) => ({ slot: p.slot, modelId: p.modelId!, label: p.label })),
+    [panes]
+  )
+  const visibleSlots = useMemo(
+    () => visiblePanes.filter((p) => p.modelId).map((p) => p.slot),
+    [visiblePanes]
+  )
   const isAnyStreaming = panes.some((p) => p.status === 'streaming')
 
   // Reset an out-of-range expansion when the layout shrinks.
@@ -121,7 +131,13 @@ export function MainApp({ onOpenSettings }: Props) {
             </p>
           </div>
 
-          <LayoutSelector value={layout} onChange={setLayout} />
+          <LayoutSelector
+            value={layout}
+            onChange={setLayout}
+            panes={populatedPanes}
+            visibleSlots={visibleSlots}
+            onApplySelection={applyVisibleSelection}
+          />
 
           <SettingsMenu onOpenUsage={onOpenSettings} />
         </header>

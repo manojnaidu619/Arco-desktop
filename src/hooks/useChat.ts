@@ -413,6 +413,65 @@ export function useChat() {
     [buildDefaultPanes, refreshSessions]
   )
 
+  /**
+   * Reorder the pane pool so the user-chosen models occupy the front slots,
+   * then set the layout to show exactly those. `selectedSlots` are the slots to
+   * keep visible; their current relative order is preserved. Everything else
+   * (deselected panes, empties) keeps its data and moves to the hidden tail.
+   *
+   * Reassigning slots means the slot-keyed runtime maps must be remapped too, so
+   * an in-flight stream keeps routing to its pane after the move. The new order
+   * is persisted (slot drives ordering on reload).
+   */
+  const applyVisibleSelection = useCallback(
+    (selectedSlots: number[], targetLayout: number) => {
+      const sid = sessionIdRef.current
+      if (sid === null) return
+
+      const selected = new Set(selectedSlots)
+      const current = panesRef.current
+      const kept = current.filter((p) => selected.has(p.slot))
+      const rest = current.filter((p) => !selected.has(p.slot))
+      const ordered = [...kept, ...rest]
+
+      // oldSlot → newSlot (index in the reordered pool).
+      const remap: Record<number, number> = {}
+      ordered.forEach((p, index) => {
+        remap[p.slot] = index
+      })
+
+      // Remap the slot-keyed runtime refs so streaming keeps working post-move.
+      const remapKeys = <T>(rec: Record<number, T>): Record<number, T> => {
+        const next: Record<number, T> = {}
+        for (const key of Object.keys(rec)) next[remap[Number(key)]] = rec[Number(key)]
+        return next
+      }
+      // Pause the reveal loop while we swap slots, then resume.
+      if (revealFrame.current !== null) {
+        cancelAnimationFrame(revealFrame.current)
+        revealFrame.current = null
+      }
+      activeReqBySlot.current = remapKeys(activeReqBySlot.current)
+      pendingBySlot.current = remapKeys(pendingBySlot.current)
+      doneInfoBySlot.current = remapKeys(doneInfoBySlot.current)
+      lastUserContentBySlot.current = remapKeys(lastUserContentBySlot.current)
+      for (const reqId of Object.keys(reqToSlot.current)) {
+        reqToSlot.current[reqId] = remap[reqToSlot.current[reqId]]
+      }
+
+      const newPanes = ordered.map((p, index) => ({ ...p, slot: index }))
+      setPanes(newPanes)
+      setLayoutState(targetLayout)
+      if (Object.keys(pendingBySlot.current).length > 0) ensureRevealing()
+
+      // Persist the new order + layout.
+      const threadIds = newPanes.filter((p) => p.dbThreadId).map((p) => p.dbThreadId!)
+      if (threadIds.length > 0) api.sessions.reorderThreads(threadIds)
+      api.sessions.setLayout(sid, targetLayout)
+    },
+    [ensureRevealing]
+  )
+
   /* ── Per-pane model selection ────────────────────────────────────────── */
   /**
    * Set (or change) a pane's model. CLEARS the pane's conversation — the caller
@@ -539,6 +598,7 @@ export function useChat() {
     sessions,
     loading,
     setLayout,
+    applyVisibleSelection,
     setPaneModel,
     askAll,
     askOne,

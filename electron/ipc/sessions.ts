@@ -30,6 +30,7 @@ export function registerSessionHandlers(): void {
     repo.updateThreadModel(threadId, modelId, label)
   )
   ipcMain.handle(CHANNELS.sessions.deleteThread, (_e, threadId: number) => repo.deleteThread(threadId))
+  ipcMain.handle(CHANNELS.sessions.reorderThreads, (_e, threadIds: number[]) => repo.reorderThreads(threadIds))
   ipcMain.handle(CHANNELS.sessions.addMessage, (_e, threadId: number, role: Role, content: string) =>
     repo.addMessage(threadId, role, content)
   )

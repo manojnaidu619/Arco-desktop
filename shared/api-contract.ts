@@ -113,6 +113,8 @@ export interface MultiMindApi {
     updateThreadModel(threadId: number, modelId: string, label: string): Promise<void>
     /** Remove a model thread (messages cascade). */
     deleteThread(threadId: number): Promise<void>
+    /** Re-slot threads to a new grid order (threadIds in the desired order). */
+    reorderThreads(threadIds: number[]): Promise<void>
     /** Append a message to a thread. */
     addMessage(threadId: number, role: Role, content: string): Promise<void>
     /** Delete the most recent message in a thread (undoes an aborted turn). */
@@ -171,6 +173,7 @@ export const CHANNELS = {
     addThread: 'sessions:addThread',
     updateThreadModel: 'sessions:updateThreadModel',
     deleteThread: 'sessions:deleteThread',
+    reorderThreads: 'sessions:reorderThreads',
     addMessage: 'sessions:addMessage',
     deleteLastMessage: 'sessions:deleteLastMessage'
   },
