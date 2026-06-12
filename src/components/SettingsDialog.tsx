@@ -49,7 +49,7 @@ export function SettingsDialog({ onKeyCleared, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold">Settings</h2>
+          <h2 className="text-sm font-semibold">Usage</h2>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>

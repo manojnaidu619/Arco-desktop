@@ -11,9 +11,9 @@ import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
 import { ChatBar } from '@/components/ChatBar'
 import { Sidebar } from '@/components/Sidebar'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { SettingsMenu } from '@/components/SettingsMenu'
 import { Button } from '@/components/ui/button'
-import { Loader2, PanelLeftClose, PanelLeftOpen, Plus, Settings } from 'lucide-react'
+import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 /** How many grid columns each layout preset uses (rows then fill the height). */
 const COLS: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 2, 6: 3 }
@@ -121,22 +121,9 @@ export function MainApp({ onOpenSettings }: Props) {
             </p>
           </div>
 
-          <ThemeToggle />
+          <LayoutSelector value={layout} onChange={setLayout} />
 
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 shrink-0 text-muted-foreground"
-            onClick={onOpenSettings}
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={handleNewSession}>
-            <Plus className="h-3.5 w-3.5" />
-            New
-          </Button>
+          <SettingsMenu onOpenUsage={onOpenSettings} />
         </header>
 
         {/* Grid of panes (or a single expanded pane) */}
@@ -174,22 +161,19 @@ export function MainApp({ onOpenSettings }: Props) {
           )}
         </div>
 
-        {/* Bottom bar: layout selector + full-width composer */}
-        <div className="shrink-0 border-t border-border px-4 py-3 flex items-start gap-3">
-          <LayoutSelector value={layout} onChange={setLayout} />
-          <div className="flex-1 min-w-0">
-            <ChatBar
-              value={composerValue}
-              onValueChange={setComposerValue}
-              activeCount={activeCount}
-              streaming={isAnyStreaming}
-              onSend={(text) => {
-                askAll(text)
-                setComposerValue('')
-              }}
-              onAbort={() => setComposerValue(abort())}
-            />
-          </div>
+        {/* Bottom bar: full-width composer */}
+        <div className="shrink-0 border-t border-border px-4 py-3">
+          <ChatBar
+            value={composerValue}
+            onValueChange={setComposerValue}
+            activeCount={activeCount}
+            streaming={isAnyStreaming}
+            onSend={(text) => {
+              askAll(text)
+              setComposerValue('')
+            }}
+            onAbort={() => setComposerValue(abort())}
+          />
         </div>
       </div>
     </div>
