@@ -11,7 +11,6 @@ import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
 import { ChatBar } from '@/components/ChatBar'
 import { Sidebar } from '@/components/Sidebar'
-import { SettingsMenu } from '@/components/SettingsMenu'
 import { Button } from '@/components/ui/button'
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
@@ -107,6 +106,7 @@ export function MainApp({ onOpenSettings }: Props) {
               await deleteSession(id)
               setExpandedSlot(null)
             }}
+            onOpenSettings={onOpenSettings}
           />
         </div>
       )}
@@ -138,8 +138,6 @@ export function MainApp({ onOpenSettings }: Props) {
             visibleSlots={visibleSlots}
             onApplySelection={applyVisibleSelection}
           />
-
-          <SettingsMenu onOpenUsage={onOpenSettings} />
         </header>
 
         {/* Grid of panes (or a single expanded pane) */}

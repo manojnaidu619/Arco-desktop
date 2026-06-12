@@ -58,7 +58,7 @@ export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, 
           }
           disabled={streaming || activeCount === 0}
           rows={2}
-          className="resize-none text-sm leading-relaxed flex-1 min-h-[56px]"
+          className="resize-none text-sm leading-relaxed flex-1 min-h-[56px] max-h-[200px] overflow-y-auto"
         />
         {streaming ? (
           <Button

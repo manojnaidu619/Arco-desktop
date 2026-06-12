@@ -35,7 +35,7 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-sm">
+        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap break-words">
           {message.content}
         </div>
       </div>

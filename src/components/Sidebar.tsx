@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { SessionSummary } from '@shared/types'
 import { getModelDef } from '@shared/models'
 import { Button } from '@/components/ui/button'
+import { SettingsMenu } from '@/components/SettingsMenu'
 import { cn } from '@/lib/utils'
 import { BrainCircuit, Check, MessageSquare, Pencil, Plus, Trash2, X } from 'lucide-react'
 
@@ -16,6 +17,8 @@ interface Props {
   onNewSession: () => void
   onRenameSession: (id: number, title: string) => Promise<void>
   onDeleteSession: (id: number) => Promise<void>
+  /** Opens the global settings/usage modal (footer gear menu). */
+  onOpenSettings: () => void
 }
 
 /** Human-friendly relative date used to group sessions. */
@@ -45,7 +48,8 @@ export function Sidebar({
   onSelectSession,
   onNewSession,
   onRenameSession,
-  onDeleteSession
+  onDeleteSession,
+  onOpenSettings
 }: Props) {
   // Only show sessions that have actual content (a title or some models).
   const meaningful = sessions.filter((s) => s.title || s.models.length > 0)
@@ -82,6 +86,11 @@ export function Sidebar({
             </div>
           ))
         )}
+      </div>
+
+      {/* Footer: global settings (theme + usage), opens upward. */}
+      <div className="px-2 py-2 border-t border-border shrink-0">
+        <SettingsMenu onOpenUsage={onOpenSettings} openUp labeled />
       </div>
     </div>
   )
