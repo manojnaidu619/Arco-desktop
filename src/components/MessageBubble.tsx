@@ -62,27 +62,37 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
     <div className="flex justify-start">
       <div
         className={cn(
-          'rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[95%] text-sm',
+          // min-w-0 + max-w-[95%] keep the bubble within its pane; break-words
+          // wraps long URLs/tokens so nothing overflows horizontally.
+          'rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[95%] min-w-0 text-sm break-words',
           'bg-muted text-foreground',
-          'prose prose-sm dark:prose-invert max-w-none',
+          'prose prose-sm dark:prose-invert',
           '[&_.prose]:m-0'
         )}
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
           components={{
+            // Inline code = a pill. Block code is detected by the language class
+            // or a newline, and is styled by the `pre` renderer below (so we
+            // don't nest a styled <pre> inside react-markdown's default <pre>).
             code({ className, children, ...props }) {
-              const isBlock = className?.includes('language-')
-              return isBlock ? (
-                <pre className="bg-zinc-900 dark:bg-zinc-800 rounded-lg p-3 overflow-x-auto my-2">
-                  <code className={cn('text-xs text-zinc-100', className)} {...props}>
-                    {children}
-                  </code>
-                </pre>
-              ) : (
-                <code className="bg-zinc-200 dark:bg-zinc-700 rounded px-1 py-0.5 text-xs" {...props}>
+              const isInline = !className?.includes('language-') && !String(children).includes('\n')
+              return isInline ? (
+                <code className="bg-zinc-200 dark:bg-zinc-700 rounded px-1 py-0.5 text-xs break-words" {...props}>
                   {children}
                 </code>
+              ) : (
+                <code className={cn('text-xs text-zinc-100', className)} {...props}>
+                  {children}
+                </code>
+              )
+            },
+            pre({ children }) {
+              return (
+                <pre className="bg-zinc-900 dark:bg-zinc-800 rounded-lg p-3 overflow-x-auto my-2 max-w-full">
+                  {children}
+                </pre>
               )
             },
             p({ children }) {
@@ -102,6 +112,38 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
             },
             h3({ children }) {
               return <h3 className="text-sm font-semibold mb-1">{children}</h3>
+            },
+            // Tables can be wide — wrap in a horizontal scroller so they never
+            // stretch the pane.
+            table({ children }) {
+              return (
+                <div className="overflow-x-auto my-2 max-w-full">
+                  <table className="w-full text-xs border-collapse">{children}</table>
+                </div>
+              )
+            },
+            th({ children }) {
+              return <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
+            },
+            td({ children }) {
+              return <td className="border border-border px-2 py-1 align-top">{children}</td>
+            },
+            blockquote({ children }) {
+              return (
+                <blockquote className="border-l-2 border-border pl-3 italic text-muted-foreground my-2">
+                  {children}
+                </blockquote>
+              )
+            },
+            a({ href, children }) {
+              return (
+                <a href={href} target="_blank" rel="noreferrer" className="text-primary underline break-words">
+                  {children}
+                </a>
+              )
+            },
+            hr() {
+              return <hr className="my-3 border-border" />
             }
           }}
         >
