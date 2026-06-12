@@ -114,7 +114,7 @@ export function MainApp({ onOpenSettings }: Props) {
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0 h-full">
         {/* Header */}
-        <header className="shrink-0 border-b border-border px-3 py-2.5 flex items-center gap-2">
+        <header className="shrink-0 border-b border-border h-14 px-3 flex items-center gap-2">
           <Button
             size="icon"
             variant="ghost"
