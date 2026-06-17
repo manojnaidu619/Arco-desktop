@@ -148,3 +148,55 @@ export async function streamChat(
 
   return fullContent
 }
+
+/** Result of checking whether an OpenRouter model id exists in the catalog. */
+export interface ModelValidationResult {
+  ok: boolean
+  /** Human-readable error when `ok` is false. */
+  error?: string
+  /** Display name from OpenRouter when `ok` is true. */
+  modelName?: string
+}
+
+/**
+ * Verify that a model id exists on OpenRouter before saving it to the user's library.
+ *
+ * Uses OpenRouter's single-model lookup endpoint (`GET /model/{author}/{slug}`).
+ *
+ * @param apiKey  The user's stored OpenRouter key.
+ * @param modelId OpenRouter model id, e.g. "openai/gpt-4o".
+ */
+export async function validateModel(apiKey: string, modelId: string): Promise<ModelValidationResult> {
+  const trimmed = modelId.trim()
+  if (!trimmed) return { ok: false, error: 'Please enter a model id.' }
+
+  const slash = trimmed.indexOf('/')
+  if (slash === -1) {
+    return { ok: false, error: 'Model id should look like "provider/model-name".' }
+  }
+
+  const author = trimmed.slice(0, slash)
+  const slug = trimmed.slice(slash + 1)
+  const url = `${OPENROUTER_BASE}/model/${author}/${slug}`
+
+  const res = await fetch(url, { headers: headers(apiKey) }).catch(() => null)
+  if (!res) {
+    return { ok: false, error: 'Could not reach OpenRouter. Check your internet connection.' }
+  }
+
+  if (res.status === 404) {
+    return { ok: false, error: 'That model was not found on OpenRouter. Check the id and try again.' }
+  }
+
+  if (!res.ok) {
+    return { ok: false, error: `OpenRouter returned an error (${res.status}). Try again in a moment.` }
+  }
+
+  try {
+    const json = (await res.json()) as { data?: { name?: string }; name?: string }
+    const modelName = json.data?.name ?? json.name
+    return { ok: true, modelName }
+  } catch {
+    return { ok: true }
+  }
+}

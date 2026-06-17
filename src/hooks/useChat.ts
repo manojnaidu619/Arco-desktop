@@ -67,7 +67,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
-import { CURATED_MODELS, getModelDef } from '@shared/models'
+import { getModelDef } from '@shared/models'
 import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
 
 /** Re-exported so consumers can import session types from this hook alone. */
@@ -168,12 +168,14 @@ export function useChat() {
    * @returns  array of Pane objects for the requested range
    */
   const buildDefaultPanes = useCallback(async (targetSessionId: number, from: number, to: number) => {
+    const savedModelIds = await api.settings.getSavedModels()
     const result: Pane[] = []
     for (let slot = from; slot < to; slot++) {
-      const model = CURATED_MODELS[slot]
-      if (model) {
-        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, model.id, model.label)
-        result.push({ slot, modelId: model.id, label: model.label, messages: [], status: 'idle', dbThreadId })
+      const modelId = savedModelIds[slot]
+      if (modelId) {
+        const def = getModelDef(modelId)
+        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, def.id, def.label)
+        result.push({ slot, modelId: def.id, label: def.label, messages: [], status: 'idle', dbThreadId })
       } else {
         result.push(emptyPane(slot))
       }

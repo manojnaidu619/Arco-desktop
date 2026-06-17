@@ -83,6 +83,20 @@ export interface KeyStatus {
   hasKey: boolean
 }
 
+/** Result of validating an OpenRouter model id against the catalog. */
+export interface ModelValidationResult {
+  ok: boolean
+  error?: string
+  modelName?: string
+}
+
+/** Result of adding a model to the user's saved library. */
+export interface AddSavedModelResult {
+  ok: boolean
+  models: string[]
+  error?: string
+}
+
 /**
  * The complete `window.api` surface available to the UI.
  *
@@ -133,7 +147,7 @@ export interface MultiMindApi {
     onError(cb: (event: ChatErrorEvent) => void): () => void
   }
 
-  /** API key management + the user's custom model list. */
+  /** API key management + the user's saved model library. */
   settings: {
     /** Whether an API key is stored (drives the first-run gate). */
     getKeyStatus(): Promise<KeyStatus>
@@ -145,12 +159,20 @@ export interface MultiMindApi {
     clearKey(): Promise<void>
     /** Re-fetch the current key's balance (for the settings screen). */
     getBalance(): Promise<KeyValidationResult>
-    /** Get the user's saved custom (non-curated) model ids. */
-    getCustomModels(): Promise<string[]>
-    /** Add a custom model id; returns the updated list. */
-    addCustomModel(modelId: string): Promise<string[]>
-    /** Remove a custom model id; returns the updated list. */
-    removeCustomModel(modelId: string): Promise<string[]>
+    /** Get the user's saved model library (used in dropdowns and default panes). */
+    getSavedModels(): Promise<string[]>
+    /** Replace the entire saved model library. Returns the persisted list. */
+    setSavedModels(modelIds: string[]): Promise<string[]>
+    /** Validate and add a model id; returns updated list on success. */
+    addSavedModel(modelId: string): Promise<AddSavedModelResult>
+    /** Remove a model from the saved library. Returns the updated list. */
+    removeSavedModel(modelId: string): Promise<string[]>
+    /** Validate a model id without saving it (used during onboarding). */
+    validateModel(modelId: string): Promise<ModelValidationResult>
+    /** Whether the user finished the model-selection onboarding step. */
+    isOnboardingCompleted(): Promise<boolean>
+    /** Mark onboarding complete after the user selects starter models. */
+    completeOnboarding(): Promise<void>
   }
 }
 
@@ -187,8 +209,12 @@ export const CHANNELS = {
     saveKey: 'settings:saveKey',
     clearKey: 'settings:clearKey',
     getBalance: 'settings:getBalance',
-    getCustomModels: 'settings:getCustomModels',
-    addCustomModel: 'settings:addCustomModel',
-    removeCustomModel: 'settings:removeCustomModel'
+    getSavedModels: 'settings:getSavedModels',
+    setSavedModels: 'settings:setSavedModels',
+    addSavedModel: 'settings:addSavedModel',
+    removeSavedModel: 'settings:removeSavedModel',
+    validateModel: 'settings:validateModel',
+    isOnboardingCompleted: 'settings:isOnboardingCompleted',
+    completeOnboarding: 'settings:completeOnboarding'
   }
 } as const

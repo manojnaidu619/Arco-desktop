@@ -65,9 +65,13 @@ const api: MultiMindApi = {
     saveKey: (key) => ipcRenderer.invoke(CHANNELS.settings.saveKey, key),
     clearKey: () => ipcRenderer.invoke(CHANNELS.settings.clearKey),
     getBalance: () => ipcRenderer.invoke(CHANNELS.settings.getBalance),
-    getCustomModels: () => ipcRenderer.invoke(CHANNELS.settings.getCustomModels),
-    addCustomModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.addCustomModel, modelId),
-    removeCustomModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.removeCustomModel, modelId)
+    getSavedModels: () => ipcRenderer.invoke(CHANNELS.settings.getSavedModels),
+    setSavedModels: (modelIds) => ipcRenderer.invoke(CHANNELS.settings.setSavedModels, modelIds),
+    addSavedModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.addSavedModel, modelId),
+    removeSavedModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.removeSavedModel, modelId),
+    validateModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.validateModel, modelId),
+    isOnboardingCompleted: () => ipcRenderer.invoke(CHANNELS.settings.isOnboardingCompleted),
+    completeOnboarding: () => ipcRenderer.invoke(CHANNELS.settings.completeOnboarding)
   }
 }
 

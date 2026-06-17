@@ -33,8 +33,15 @@ export const CURATED_MODELS: ModelDef[] = [
   { id: 'moonshotai/kimi-k2-thinking', label: 'Kimi K2 Thinking', vendor: 'Moonshot AI', color: 'bg-violet-500' },
   { id: 'z-ai/glm-4.7-flash', label: 'GLM-4.7 Flash', vendor: 'Zhipu AI', color: 'bg-blue-500' },
   { id: 'minimax/minimax-m2.7', label: 'MiniMax M2.7', vendor: 'MiniMax', color: 'bg-rose-500' },
-  { id: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', vendor: 'Alibaba', color: 'bg-orange-500' }
+  { id: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', vendor: 'Alibaba', color: 'bg-orange-500' },
+  { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', vendor: 'Anthropic', color: 'bg-amber-500' }
 ]
+
+/** Minimum models required during onboarding before the user can continue. */
+export const ONBOARDING_MIN_MODELS = 4
+
+/** Suggested models shown as checkboxes during onboarding (first six curated). */
+export const ONBOARDING_SUGGESTED_MODELS = CURATED_MODELS.slice(0, 6)
 
 /**
  * Resolve a model id to its display metadata.

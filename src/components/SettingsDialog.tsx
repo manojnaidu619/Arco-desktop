@@ -1,9 +1,6 @@
 /**
- * Settings modal. Lets the user review their OpenRouter credit balance and
+ * Usage modal. Lets the user review their OpenRouter credit balance and
  * remove the stored key (which returns the app to the onboarding gate).
- *
- * Kept deliberately small — a lightweight overlay rather than a full dialog
- * library, since v1 only needs these two things.
  */
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'

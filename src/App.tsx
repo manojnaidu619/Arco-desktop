@@ -4,8 +4,9 @@
  * Flow:
  *   1. Ask the backend whether an API key is stored (`hasKey`).
  *   2. While unknown → a brief loading spinner.
- *   3. No key → the Onboarding screen.
- *   4. Has key → the main app, with the Settings modal layered on top.
+ *   3. No key → the Onboarding screen (API key step).
+ *   4. Key but onboarding incomplete → Onboarding (model selection step).
+ *   5. Ready → the main app, with the Settings modal layered on top.
  *
  * Removing the key from Settings flips `hasKey` back to false, returning the
  * user to onboarding — all without a reload.
@@ -20,16 +21,22 @@ import { Loader2 } from 'lucide-react'
 export function App() {
   // null = still checking, true/false = known.
   const [hasKey, setHasKey] = useState<boolean | null>(null)
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
-    api.settings
-      .getKeyStatus()
-      .then((status) => setHasKey(status.hasKey))
-      .catch(() => setHasKey(false))
+    Promise.all([api.settings.getKeyStatus(), api.settings.isOnboardingCompleted()])
+      .then(([keyStatus, completed]) => {
+        setHasKey(keyStatus.hasKey)
+        setOnboardingComplete(completed)
+      })
+      .catch(() => {
+        setHasKey(false)
+        setOnboardingComplete(false)
+      })
   }, [])
 
-  if (hasKey === null) {
+  if (hasKey === null || onboardingComplete === null) {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -38,7 +45,23 @@ export function App() {
   }
 
   if (!hasKey) {
-    return <Onboarding onComplete={() => setHasKey(true)} />
+    return (
+      <Onboarding
+        onComplete={() => {
+          setHasKey(true)
+          setOnboardingComplete(true)
+        }}
+      />
+    )
+  }
+
+  if (!onboardingComplete) {
+    return (
+      <Onboarding
+        initialStep="model-selection"
+        onComplete={() => setOnboardingComplete(true)}
+      />
+    )
   }
 
   return (
@@ -50,6 +73,7 @@ export function App() {
           onKeyCleared={() => {
             setSettingsOpen(false)
             setHasKey(false)
+            setOnboardingComplete(false)
           }}
         />
       )}
