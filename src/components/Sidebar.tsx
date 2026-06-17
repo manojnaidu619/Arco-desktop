@@ -161,8 +161,6 @@ function SessionItem({
       onMouseLeave={() => setHovered(false)}
       onClick={() => !editing && onClick()}
     >
-      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-
       <div className="flex-1 min-w-0">
         {editing ? (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
