@@ -73,14 +73,29 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
   return (
     <div className="flex flex-col overflow-hidden bg-background h-full min-h-0 min-w-0">
       {/* Header */}
-      <div className="flex items-center gap-1 px-2 py-2 bg-muted/30 shrink-0">
+      <div className="flex items-center gap-2 px-2 py-2 bg-muted/30 shrink-0">
         <div className="flex-1 min-w-0">
           <ModelDropdown value={pane.modelId} onSelect={handleSelectModel} />
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          {pane.status === 'streaming' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-          {pane.status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
-          {isRemoved && <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {pane.status === 'streaming' && (
+            <span className="flex h-6 w-6 items-center justify-center shrink-0" title="Generating">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            </span>
+          )}
+          {pane.status === 'error' && (
+            <span className="flex h-6 w-6 items-center justify-center shrink-0" title="Error">
+              <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+            </span>
+          )}
+          {isRemoved && (
+            <span
+              className="flex h-6 w-6 items-center justify-center shrink-0"
+              title="Model removed from library"
+            >
+              <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            </span>
+          )}
           <Button
             size="icon"
             variant="ghost"
