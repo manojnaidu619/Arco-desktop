@@ -539,6 +539,15 @@ export function useChat() {
 
   /* ── Session management ──────────────────────────────────────────────── */
   const newSession = useCallback(async () => {
+    // If the current session has no messages yet, it's already a fresh/empty
+    // session — staying in it avoids spawning redundant empty conversations on
+    // repeated "+" clicks (ChatGPT behavior). Only spin up a new one once the
+    // current session has actually exchanged a message.
+    const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
+    if (!currentHasMessages && sessionIdRef.current !== null) {
+      return sessionIdRef.current
+    }
+
     cancelStreams()
     titleSet.current = false
     const newId = await api.sessions.create()
