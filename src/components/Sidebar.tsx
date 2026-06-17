@@ -154,7 +154,7 @@ function SessionItem({
       className={cn(
         'relative group flex items-start gap-2 px-3 py-2 rounded-lg mx-1 transition-colors cursor-pointer',
         'hover:bg-muted',
-        isActive && 'bg-muted'
+        isActive && 'bg-primary/15'
       )}
       style={{ width: 'calc(100% - 8px)' }}
       onMouseEnter={() => setHovered(true)}
