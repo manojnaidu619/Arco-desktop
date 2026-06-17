@@ -14,6 +14,14 @@ This document tracks upcoming features, improvements, and technical enhancements
 3. Keep descriptions concise and focused on user value
 4. Add new features at the bottom of each section
 
+### For AI Agents Adding Features
+**Assume feature requests are well-thought-out.** Only ask minimal clarifying questions if genuinely needed:
+- Ask only when the request is unclear or ambiguous
+- Leverage your knowledge of the codebase to assess technical fit
+- Confirm the feature entry with the user before adding
+- Ask about priority only if it significantly impacts implementation order
+- Avoid theoretical questions about problem-solving rationale
+
 ### Template for New Features
 ```markdown
 ### 🔴 [ ] Feature Name
