@@ -54,10 +54,6 @@ export function MainApp({ onOpenSettings }: Props) {
     () => panes.filter((p) => p.modelId).map((p) => ({ slot: p.slot, modelId: p.modelId!, label: p.label })),
     [panes]
   )
-  const visibleSlots = useMemo(
-    () => visiblePanes.filter((p) => p.modelId).map((p) => p.slot),
-    [visiblePanes]
-  )
   const isAnyStreaming = panes.some((p) => p.status === 'streaming')
 
   // Reset an out-of-range expansion when the layout shrinks.
@@ -135,7 +131,6 @@ export function MainApp({ onOpenSettings }: Props) {
             value={layout}
             onChange={setLayout}
             panes={populatedPanes}
-            visibleSlots={visibleSlots}
             onApplySelection={applyVisibleSelection}
           />
         </header>

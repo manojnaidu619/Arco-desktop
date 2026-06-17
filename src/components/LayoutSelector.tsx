@@ -50,13 +50,11 @@ interface Props {
   onChange: (layout: number) => void
   /** Populated panes (with a model), in current grid order. */
   panes: SelectablePane[]
-  /** Slots currently visible (drives the default checked state). */
-  visibleSlots: number[]
   /** Commit a chosen set of models for a reduced layout. */
   onApplySelection: (selectedSlots: number[], layout: number) => void
 }
 
-export function LayoutSelector({ value, onChange, panes, visibleSlots, onApplySelection }: Props) {
+export function LayoutSelector({ value, onChange, panes, onApplySelection }: Props) {
   // Which preset's selection dropdown is open (the target pane count), or null.
   const [pickerFor, setPickerFor] = useState<number | null>(null)
   const [selected, setSelected] = useState<number[]>([])
@@ -90,14 +88,13 @@ export function LayoutSelector({ value, onChange, panes, visibleSlots, onApplySe
       onChange(target)
       return
     }
-    // Reopen toggles closed; otherwise open with the first `target` visible
-    // panes pre-checked (today's first-N winners).
+    // Reopen toggles closed; otherwise open with nothing pre-checked so the
+    // user explicitly picks which models to keep.
     if (pickerFor === target) {
       setPickerFor(null)
       return
     }
-    const defaults = panes.filter((p) => visibleSlots.includes(p.slot)).slice(0, target).map((p) => p.slot)
-    setSelected(defaults)
+    setSelected([])
     setPickerFor(target)
   }
 

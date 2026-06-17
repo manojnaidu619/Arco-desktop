@@ -1,12 +1,12 @@
 /**
- * Renders one chat message. User turns are simple right-aligned bubbles;
- * assistant turns render Markdown (code blocks, lists, headings) and offer a
- * copy button.
+ * Renders one chat message. User turns are simple bubbles; assistant turns
+ * render Markdown (code blocks, lists, headings). Both expose a copy button
+ * BELOW the bubble that reveals on hover (assistant left-aligned, user
+ * right-aligned). The copy row reserves its height so content never shifts.
  */
 import { useState } from 'react'
 import type { Message } from '@shared/types'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Check, Copy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
@@ -32,12 +32,27 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
     }
   }
 
+  // Small copy button that fades in on hover of the message group. The row that
+  // holds it always reserves height, so revealing it never nudges content.
+  const copyButton = (
+    <button
+      type="button"
+      onClick={copyResponse}
+      title={copied ? 'Copied' : 'Copy message'}
+      aria-label={copied ? 'Copied' : 'Copy message'}
+      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+    </button>
+  )
+
   if (isUser) {
     return (
-      <div className="flex justify-end">
+      <div className="group flex flex-col items-end">
         <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap break-words">
           {message.content}
         </div>
+        <div className="h-5 mt-1 flex items-center pr-0.5">{copyButton}</div>
       </div>
     )
   }
@@ -59,7 +74,7 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
   }
 
   return (
-    <div className="flex justify-start">
+    <div className="group flex flex-col items-start">
       <div
         className={cn(
           // min-w-0 + max-w-[95%] keep the bubble within its pane; break-words
@@ -149,21 +164,10 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
         >
           {message.content}
         </ReactMarkdown>
-        {/* Copy is offered only once the stream has ended (completed or aborted). */}
-        {!isStreaming && (
-          <div className="flex justify-start pt-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              onClick={copyResponse}
-              title={copied ? 'Copied' : 'Copy response'}
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            </Button>
-          </div>
-        )}
       </div>
+      {/* Copy sits below the bubble; reserved height (h-5) avoids any shift.
+          Offered only once the stream has ended (completed or aborted). */}
+      <div className="h-5 mt-1 flex items-center pl-0.5">{!isStreaming && copyButton}</div>
     </div>
   )
 }
