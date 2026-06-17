@@ -1,5 +1,45 @@
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DOCUMENTATION CONTRACT — read before editing this file
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// This file is intentionally written for both human developers and AI agents.
+// Every function must carry a JSDoc block in the following format:
+//
+//   /**
+//    * <One-line summary.>
+//    *
+//    * @used-by  <UI component or hook that calls this>
+//    * @param    <name> — <description>
+//    * @returns  <what it returns, if anything>
+//    *
+//    * Internal steps:  (Tier 2 only — complex multi-stage functions)
+//    *  1. …
+//    *  2. …
+//    */
+//
+// Rules:
+//  • When you ADD a new function  → write its full JSDoc before committing.
+//  • When you CHANGE a function   → update its JSDoc to reflect the new behaviour.
+//  • When you REMOVE a function   → remove its JSDoc with it.
+//  • Inline comments              → only on non-obvious lines; never narrate the obvious.
+//  • @used-by                     → always keep current; stale call-site info is worse
+//                                   than none.
+//
+// Common mistakes to avoid:
+//  ✗ Reading `panes` state inside a callback    → use `panesRef.current` instead
+//  ✗ Reading `sessionId` state in async code   → use `sessionIdRef.current` instead
+//  ✗ Calling setPanes with a full replacement  → use `patchPane(slot, patch)` instead
+//  ✗ Adding a new slot-keyed useRef map without updating the `remapKeys` calls
+//    inside `applyVisibleSelection` → slot reassignment will silently break it
+//
+// This contract applies to all contributors — human or AI — without exception.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 /**
  * useChat — the renderer's conversation state machine (grid/pane model).
+ *
+ * Multi-Mind is a multi-model broadcast chat: one composer sends the same prompt
+ * to every visible pane, and each pane streams its model's reply independently.
  *
  * A "pane" is a GRID SLOT, not a model. The session holds a pool of panes
  * (`panes`, indexed so `panes[i].slot === i`) plus the active `layout` (how
@@ -13,84 +53,120 @@
  * State talks to the backend only through `window.api` (src/lib/api.ts).
  * Streaming is event-based and routed by a per-request id mapped to a slot, so
  * duplicate models stream independently.
+ *
+ * Ref vs state: `useState` drives re-renders; `useRef` mirrors hold the latest
+ * values for IPC handlers and async callbacks where closures would go stale.
+ *
+ * Smooth streaming reveal is handled by flowtoken's AnimatedMarkdown in
+ * MessageBubble.tsx (animation only). All markdown styling is our own Tailwind
+ * overrides via customComponents; the same renderer runs while streaming and
+ * after completion.
+ *
+ * For a full step-by-step diagram of the streaming pipeline, see
+ * docs/internals/streaming-pipeline.md
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { CURATED_MODELS, getModelDef } from '@shared/models'
 import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
 
+/** Re-exported so consumers can import session types from this hook alone. */
 export type { SessionSummary }
 
-/** The grid layout presets, in order: pane counts. */
+/** Valid pane-count presets; each maps to a grid layout option in the toolbar. */
 export const LAYOUTS = [1, 2, 3, 4, 6] as const
 
 /** One grid slot. `modelId === null` means an empty pane awaiting selection. */
 export interface Pane {
-  slot: number
-  modelId: string | null
-  label: string
-  messages: Message[]
-  status: ThreadStatus
-  error?: string
-  dbThreadId?: number
+  slot: number // Zero-based index; also the pane's grid position (0 = top-left)
+  modelId: string | null // AI model assigned to this pane; null = empty, awaiting selection
+  label: string // Human-readable model name shown in the pane header (e.g. "DeepSeek V4 Flash")
+  messages: Message[] // Full conversation history for this pane, in chronological order
+  status: ThreadStatus // Current state: 'idle' | 'streaming' | 'done' | 'error'
+  error?: string // Error message displayed in the pane when status === 'error'
+  dbThreadId?: number // Primary key of this pane's thread row in the local SQLite DB; undefined for unsaved panes
 }
 
-const newRequestId = () => crypto.randomUUID()
+/** Each streaming request gets a unique UUID so delta events route to the correct pane. */
+const generateRequestId = () => crypto.randomUUID()
 
-/** Snap any number to the nearest valid layout preset (default 4). */
+/**
+ * Snap any number to the nearest valid layout preset (default 4).
+ *
+ * @param n — raw pane count (e.g. from persisted session data)
+ * @returns nearest value from LAYOUTS
+ */
 function clampLayout(n: number): number {
   if ((LAYOUTS as readonly number[]).includes(n)) return n
+  // Pick the preset whose distance from n is smallest; ties prefer the closer preset.
   return LAYOUTS.reduce((best, l) => (Math.abs(l - n) < Math.abs(best - n) ? l : best), 4)
 }
 
-/** An empty pane at a slot. */
+/**
+ * Create an empty pane at a slot (no model selected yet).
+ *
+ * @param slot — grid index for the new pane
+ */
 function emptyPane(slot: number): Pane {
   return { slot, modelId: null, label: '', messages: [], status: 'idle' }
 }
 
 export function useChat() {
-  const [sessionId, setSessionId] = useState<number | null>(null)
-  const [panes, setPanes] = useState<Pane[]>([])
-  const [layout, setLayoutState] = useState<number>(4)
-  const [sessions, setSessions] = useState<SessionSummary[]>([])
-  const [loading, setLoading] = useState(true)
+  // ── Persisted state (drives re-renders) ─────────────────────────────────
+  const [sessionId, setSessionId] = useState<number | null>(null) // DB id of the active session; null during initial load
+  const [panes, setPanes] = useState<Pane[]>([]) // Full pane pool (visible + hidden); length is always >= layout
+  const [layout, setLayoutState] = useState<number>(4) // How many panes are visible right now (must be one of LAYOUTS)
+  const [sessions, setSessions] = useState<SessionSummary[]>([]) // Sidebar session list
+  const [loading, setLoading] = useState(true) // True until the first session load completes; hides the UI
 
-  // Always-fresh mirrors for use inside event callbacks / async actions.
-  const panesRef = useRef<Pane[]>([])
+  // ── Always-fresh ref mirrors (for callbacks & async closures) ────────────
+  // State captured in a closure becomes stale after re-renders.
+  // Reassigning these refs on every render keeps event handlers up to date
+  // without requiring them to be recreated on every render cycle.
+  const panesRef = useRef<Pane[]>([]) // Live mirror of `panes`; read inside IPC delta/done/error handlers
   panesRef.current = panes
-  const sessionIdRef = useRef<number | null>(null)
+  const sessionIdRef = useRef<number | null>(null) // Live mirror of `sessionId`; read inside async session actions
   sessionIdRef.current = sessionId
 
-  const reqToSlot = useRef<Record<string, number>>({})
-  const activeReqBySlot = useRef<Record<number, string>>({})
-  const titleSet = useRef(false)
+  // ── Streaming routing maps ────────────────────────────────────────────────
+  const reqToSlot = useRef<Record<string, number>>({}) // requestId → slot: routes incoming delta events to the correct pane
+  const activeReqBySlot = useRef<Record<number, string>>({}) // slot → requestId: lets abort/rollback find and cancel a pane's active request
 
-  // Smooth-streaming: deltas land here first, then a per-frame loop reveals
-  // them gradually into the pane's content so text glides in instead of
-  // jumping in network-sized chunks. `doneInfoBySlot` holds the final content
-  // for a slot whose stream finished while text was still draining.
-  const pendingBySlot = useRef<Record<number, string>>({})
-  const doneInfoBySlot = useRef<Record<number, { content: string }>>({})
-  const revealFrame = useRef<number | null>(null)
+  // ── Session title flag ───────────────────────────────────────────────────
+  const titleSet = useRef(false) // Flips to true after the first message auto-sets the session title; prevents overwriting it on follow-ups
 
-  // Remember the text of the most recent send so an abort can restore it to the
-  // input for editing/resending. `lastBroadcastContent` is the bottom "ask all"
-  // text; `lastUserContentBySlot` is each pane's own follow-up text.
-  const lastBroadcastContent = useRef<string>('')
-  const lastUserContentBySlot = useRef<Record<number, string>>({})
+  // ── Abort-restore memory ─────────────────────────────────────────────────
+  const lastBroadcastContent = useRef<string>('') // Last text sent via askAll; returned by abort() to restore the composer input
+  const lastUserContentBySlot = useRef<Record<number, string>>({}) // slot → last text sent via askOne; returned by abortPane() to restore the per-pane input
 
+  /**
+   * Reload the sidebar session list from the backend.
+   *
+   * @used-by  internal — called after send, rename, delete, new session, and finalize
+   */
   const refreshSessions = useCallback(async () => {
     setSessions(await api.sessions.list())
   }, [])
 
-  /** Update a single pane by slot (slot === array index). */
+  /**
+   * Immutably update one pane in the pool by slot index.
+   *
+   * @used-by  internal — preferred over setPanes for single-pane updates
+   * @param    slot  — grid slot to patch (slot === array index)
+   * @param    patch — partial Pane fields to merge
+   */
   const patchPane = useCallback((slot: number, patch: Partial<Pane>) => {
     setPanes((prev) => prev.map((p) => (p.slot === slot ? { ...p, ...patch } : p)))
   }, [])
 
   /**
-   * Create + persist default panes for slots [from, to). Each slot pre-fills
-   * with the matching curated model; slots beyond the curated list stay empty.
+   * Bootstrap and persist default panes for slots [from, to).
+   *
+   * @used-by  applySessionData, setLayout, newSession, deleteSession
+   * @param    targetSessionId — session to attach new thread rows to
+   * @param    from — first slot index (inclusive)
+   * @param    to — last slot index (exclusive)
+   * @returns  array of Pane objects for the requested range
    */
   const buildDefaultPanes = useCallback(async (targetSessionId: number, from: number, to: number) => {
     const result: Pane[] = []
@@ -106,16 +182,28 @@ export function useChat() {
     return result
   }, [])
 
-  /** Turn a loaded SessionData into the pane pool (restore or fresh-prefill). */
+  /**
+   * Convert loaded SessionData from the backend into the live pane pool.
+   *
+   * @used-by  initial load useEffect, loadSession
+   * @param    data — session payload from api.sessions.getCurrent / load
+   *
+   * Internal steps:
+   *  1. Clamp layout to a valid LAYOUTS preset.
+   *  2. If no threads exist, pre-fill default panes for slots [0, layout).
+   *  3. Otherwise rebuild the pool from saved threads; poolSize is max(layout,
+   *     highest saved slot + 1) so no slot with data is dropped.
+   *  4. Set layout state to the clamped value.
+   */
   const applySessionData = useCallback(
     async (data: SessionData) => {
       const lyt = clampLayout(data.layout)
 
       if (data.threads.length === 0) {
-        // Brand-new session → pre-fill + persist the default panes.
         const fresh = await buildDefaultPanes(data.sessionId, 0, lyt)
         setPanes(fresh)
       } else {
+        // Ensure we restore every slot that has a saved thread, even if layout shrank.
         const poolSize = Math.max(lyt, ...data.threads.map((t) => t.slot + 1))
         const restored: Pane[] = []
         for (let slot = 0; slot < poolSize; slot++) {
@@ -133,7 +221,18 @@ export function useChat() {
     [buildDefaultPanes]
   )
 
-  /** Persist + finalize a slot once its stream is done and fully revealed. */
+  /**
+   * Persist a completed assistant response and mark the pane as done.
+   *
+   * @used-by  onDone IPC handler
+   * @param    slot — grid slot whose stream just completed
+   * @param    content — full final text of the assistant response
+   *
+   * Internal steps:
+   *  1. Look up the pane via `panesRef` (safe inside async/event callbacks).
+   *  2. Persist the assistant message if the pane has a DB thread and content is non-empty.
+   *  3. Patch status to 'done' and refresh the sidebar list.
+   */
   const finalizeSlot = useCallback(
     async (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
@@ -145,97 +244,32 @@ export function useChat() {
   )
 
   /**
-   * One frame of the smooth-streaming reveal loop: pulls a portion of each
-   * slot's buffered text into its message content. The portion scales with
-   * the backlog so a burst of deltas catches up quickly while a steady trickle
-   * still glides in smoothly.
+   * Register IPC handlers for streaming deltas, completion, and errors (once on mount).
+   *
+   * @used-by  useChat mount lifecycle
+   *
+   * Internal steps:
+   *  1. onDelta — append token directly to the last assistant message in the pane;
+   *     AnimatedMarkdown in MessageBubble renders markdown with shared custom
+   *     styles; new words fade in while streaming.
+   *  2. onDone — clear routing maps and call finalizeSlot to persist the response.
+   *  3. onError — show error state on the pane.
+   *  4. Cleanup — unsubscribe all handlers on unmount.
    */
-  const revealTick = useCallback(() => {
-    // Advance each buffered slot by a chunk, computing everything in refs
-    // FIRST. This stays out of the setPanes updater on purpose: that updater
-    // must be pure (React may run it later or twice), and we need the finalize
-    // list ready synchronously — not trapped inside a deferred render callback.
-    const chunkBySlot: Record<number, string> = {}
-    const toFinalize: { slot: number; content: string }[] = []
-
-    for (const key of Object.keys(pendingBySlot.current)) {
-      const slot = Number(key)
-      const pending = pendingBySlot.current[slot]
-      const take = Math.max(1, Math.ceil(pending.length / 6))
-      chunkBySlot[slot] = pending.slice(0, take)
-      const rest = pending.slice(take)
-      if (rest) {
-        pendingBySlot.current[slot] = rest
-      } else {
-        delete pendingBySlot.current[slot]
-        if (doneInfoBySlot.current[slot]) {
-          toFinalize.push({ slot, content: doneInfoBySlot.current[slot].content })
-          delete doneInfoBySlot.current[slot]
-        }
-      }
-    }
-
-    setPanes((prev) =>
-      prev.map((p) => {
-        const chunk = chunkBySlot[p.slot]
-        if (!chunk) return p
-        const msgs = [...p.messages]
-        const last = msgs[msgs.length - 1]
-        if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + chunk }
-        return { ...p, messages: msgs }
-      })
-    )
-
-    for (const { slot, content } of toFinalize) finalizeSlot(slot, content)
-
-    if (Object.keys(pendingBySlot.current).length > 0) {
-      revealFrame.current = requestAnimationFrame(revealTick)
-    } else {
-      revealFrame.current = null
-    }
-  }, [finalizeSlot])
-
-  const ensureRevealing = useCallback(() => {
-    if (revealFrame.current === null) revealFrame.current = requestAnimationFrame(revealTick)
-  }, [revealTick])
-
-  /**
-   * Instantly reveal a slot's remaining buffered text and finalize it if its
-   * stream already completed. Used when the response arrived in full but is
-   * still gliding in — e.g. the user hit "stop" for a *different* pane and we
-   * don't want this finished one left mid-glide.
-   */
-  const flushSlot = useCallback(
-    (slot: number) => {
-      const pending = pendingBySlot.current[slot]
-      if (pending) {
-        delete pendingBySlot.current[slot]
-        setPanes((prev) =>
-          prev.map((p) => {
-            if (p.slot !== slot) return p
-            const msgs = [...p.messages]
-            const last = msgs[msgs.length - 1]
-            if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + pending }
-            return { ...p, messages: msgs }
-          })
-        )
-      }
-      const doneInfo = doneInfoBySlot.current[slot]
-      if (doneInfo) {
-        delete doneInfoBySlot.current[slot]
-        finalizeSlot(slot, doneInfo.content)
-      }
-    },
-    [finalizeSlot]
-  )
-
-  /* ── Streaming event subscriptions (registered once) ─────────────────── */
   useEffect(() => {
     const offDelta = api.chat.onDelta(({ requestId, delta }) => {
       const slot = reqToSlot.current[requestId]
       if (slot === undefined) return
-      pendingBySlot.current[slot] = (pendingBySlot.current[slot] ?? '') + delta
-      ensureRevealing()
+      // Append delta directly; React 19 automatic batching keeps re-renders at 60fps.
+      setPanes((prev) =>
+        prev.map((p) => {
+          if (p.slot !== slot) return p
+          const msgs = [...p.messages]
+          const last = msgs[msgs.length - 1]
+          if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + delta }
+          return { ...p, messages: msgs }
+        })
+      )
     })
 
     const offDone = api.chat.onDone(async ({ requestId, content }) => {
@@ -243,13 +277,7 @@ export function useChat() {
       if (slot === undefined) return
       delete reqToSlot.current[requestId]
       if (activeReqBySlot.current[slot] === requestId) delete activeReqBySlot.current[slot]
-
-      if (pendingBySlot.current[slot]) {
-        // Still gliding in — finalize once the reveal loop drains the buffer.
-        doneInfoBySlot.current[slot] = { content }
-      } else {
-        await finalizeSlot(slot, content)
-      }
+      await finalizeSlot(slot, content)
     })
 
     const offError = api.chat.onError(({ requestId, message }) => {
@@ -257,8 +285,6 @@ export function useChat() {
       if (slot === undefined) return
       delete reqToSlot.current[requestId]
       if (activeReqBySlot.current[slot] === requestId) delete activeReqBySlot.current[slot]
-      delete pendingBySlot.current[slot]
-      delete doneInfoBySlot.current[slot]
 
       setPanes((prev) =>
         prev.map((p) => {
@@ -276,11 +302,19 @@ export function useChat() {
       offDelta()
       offDone()
       offError()
-      if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current)
     }
-  }, [ensureRevealing, finalizeSlot])
+  }, [finalizeSlot])
 
-  /* ── Initial load ────────────────────────────────────────────────────── */
+  /**
+   * Load the current session and sidebar list once on mount.
+   *
+   * @used-by  useChat mount lifecycle
+   *
+   * Internal steps:
+   *  1. Fetch current session and session list in parallel.
+   *  2. Apply session data to rebuild panes; set titleSet if session already has a title.
+   *  3. Clear loading flag so MainApp renders the grid.
+   */
   useEffect(() => {
     Promise.all([api.sessions.getCurrent(), api.sessions.list()])
       .then(async ([current, sessionList]) => {
@@ -294,20 +328,27 @@ export function useChat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /** Silently cancel every in-flight stream (used when switching sessions). */
+  /**
+   * Abort every in-flight stream and clear all runtime routing maps.
+   *
+   * @used-by  newSession, loadSession, deleteSession
+   */
   const cancelStreams = useCallback(() => {
     for (const requestId of Object.keys(reqToSlot.current)) api.chat.abort(requestId)
     reqToSlot.current = {}
     activeReqBySlot.current = {}
-    pendingBySlot.current = {}
-    doneInfoBySlot.current = {}
   }, [])
 
   /**
-   * Roll back a pane's in-flight turn: abort its stream, drop the (partial)
-   * assistant placeholder AND the user message from the UI, and delete that
-   * user message from the DB. Leaves the pane idle, as if the turn never
-   * happened — the caller restores the text to the input.
+   * Undo a pane's in-flight turn as if it never happened.
+   *
+   * @used-by  abort, abortPane
+   * @param    slot — grid slot to roll back
+   *
+   * Internal steps:
+   *  1. Abort the active request and clear routing state for the slot.
+   *  2. Delete the last user message from the DB (if persisted).
+   *  3. Remove the assistant placeholder and user message from the UI; reset to idle.
    */
   const rollbackPane = useCallback((slot: number) => {
     const req = activeReqBySlot.current[slot]
@@ -316,8 +357,6 @@ export function useChat() {
       delete reqToSlot.current[req]
       delete activeReqBySlot.current[slot]
     }
-    delete pendingBySlot.current[slot]
-    delete doneInfoBySlot.current[slot]
     const pane = panesRef.current.find((p) => p.slot === slot)
     if (pane?.dbThreadId) api.sessions.deleteLastMessage(pane.dbThreadId)
 
@@ -325,49 +364,56 @@ export function useChat() {
       prev.map((p) => {
         if (p.slot !== slot) return p
         let msgs = [...p.messages]
-        if (msgs.at(-1)?.role === 'assistant') msgs = msgs.slice(0, -1) // drop assistant (partial/placeholder)
-        if (msgs.at(-1)?.role === 'user') msgs = msgs.slice(0, -1) // drop the user turn
+        if (msgs.at(-1)?.role === 'assistant') msgs = msgs.slice(0, -1)
+        if (msgs.at(-1)?.role === 'user') msgs = msgs.slice(0, -1)
         return { ...p, messages: msgs, status: 'idle', error: undefined }
       })
     )
   }, [])
 
   /**
-   * Abort all currently-streaming panes (the bottom "ask all" stop button).
-   * Only panes whose request is still actually in flight get rolled back —
-   * panes that already finished and are merely gliding their last bit of text
-   * in are left alone (flushed instantly instead), so a slow model doesn't
-   * wipe out answers that already arrived.
-   * Returns the broadcast text so the composer can restore it for editing.
+   * Stop all streaming panes (bottom bar stop button).
+   *
+   * @used-by  MainApp → ChatBar onAbort
+   * @returns  last broadcast text so the composer can restore it for editing
+   * @see      abortPane — per-pane counterpart
    */
   const abort = useCallback((): string => {
     const streamingSlots = panesRef.current.filter((p) => p.status === 'streaming').map((p) => p.slot)
-    streamingSlots.forEach((slot) => {
-      if (activeReqBySlot.current[slot] !== undefined) rollbackPane(slot)
-      else flushSlot(slot)
-    })
+    streamingSlots.forEach((slot) => rollbackPane(slot))
     return lastBroadcastContent.current
-  }, [rollbackPane, flushSlot])
+  }, [rollbackPane])
 
   /**
-   * Abort a single pane (its own stop button). Returns that pane's text so its
-   * follow-up input can restore it for editing. If this pane's request already
-   * finished (it's just gliding its last bit of text in), there's nothing to
-   * stop — flush it instantly instead of rolling back a completed answer.
+   * Stop streaming for a single pane (pane stop button).
+   *
+   * @used-by  MainApp → ModelPane onAbortPane
+   * @param    slot — grid slot to stop
+   * @returns  last user text for that pane
+   * @see      abort — global counterpart for all streaming panes
    */
   const abortPane = useCallback(
     (slot: number): string => {
-      if (activeReqBySlot.current[slot] === undefined) {
-        flushSlot(slot)
-        return ''
-      }
       rollbackPane(slot)
       return lastUserContentBySlot.current[slot] ?? ''
     },
-    [rollbackPane, flushSlot]
+    [rollbackPane]
   )
 
-  /** Begin streaming a response into a slot. `requestMessages` includes the new user turn. */
+  /**
+   * Begin streaming a model response into a slot.
+   *
+   * @used-by  askAll, askOne
+   * @param    slot — target grid slot
+   * @param    model — model id to call
+   * @param    requestMessages — full message history including the new user turn
+   *
+   * Internal steps:
+   *  1. Abort any prior request on this slot.
+   *  2. Allocate requestId and map it to the slot (both directions).
+   *  3. Append an empty assistant placeholder and set status to 'streaming'.
+   *  4. Fire api.chat.start with the request id and messages.
+   */
   const startStream = useCallback((slot: number, model: string, requestMessages: Message[]) => {
     const prev = activeReqBySlot.current[slot]
     if (prev) {
@@ -375,14 +421,10 @@ export function useChat() {
       delete reqToSlot.current[prev]
     }
 
-    delete pendingBySlot.current[slot]
-    delete doneInfoBySlot.current[slot]
-
-    const requestId = newRequestId()
+    const requestId = generateRequestId()
     activeReqBySlot.current[slot] = requestId
     reqToSlot.current[requestId] = slot
 
-    // Add the empty assistant placeholder that deltas fill in.
     setPanes((prev2) =>
       prev2.map((p) =>
         p.slot === slot
@@ -394,14 +436,18 @@ export function useChat() {
     api.chat.start({ requestId, model, messages: requestMessages })
   }, [])
 
-  /* ── Layout ──────────────────────────────────────────────────────────── */
+  /**
+   * Change how many panes are visible (toolbar layout selector).
+   *
+   * @used-by  MainApp → LayoutSelector onChange
+   * @param    next — desired pane count (clamped to LAYOUTS)
+   */
   const setLayout = useCallback(
     async (next: number) => {
       const lyt = clampLayout(next)
       const sid = sessionIdRef.current
       if (sid === null) return
 
-      // Grow the pool with pre-filled panes if the new layout needs more.
       if (lyt > panesRef.current.length) {
         const added = await buildDefaultPanes(sid, panesRef.current.length, lyt)
         setPanes((prev) => [...prev, ...added])
@@ -414,14 +460,16 @@ export function useChat() {
   )
 
   /**
-   * Reorder the pane pool so the user-chosen models occupy the front slots,
-   * then set the layout to show exactly those. `selectedSlots` are the slots to
-   * keep visible; their current relative order is preserved. Everything else
-   * (deselected panes, empties) keeps its data and moves to the hidden tail.
+   * Reorder the pane pool so selected models occupy the front slots.
    *
-   * Reassigning slots means the slot-keyed runtime maps must be remapped too, so
-   * an in-flight stream keeps routing to its pane after the move. The new order
-   * is persisted (slot drives ordering on reload).
+   * @used-by  MainApp → LayoutSelector onApplySelection
+   * @param    selectedSlots — slots to keep visible (relative order preserved)
+   * @param    targetLayout — new visible pane count
+   *
+   * Internal steps:
+   *  1. Partition panes into selected (kept) and rest; concatenate for new order.
+   *  2. Build oldSlot → newSlot remap and apply it to all slot-keyed runtime refs.
+   *  3. Reassign pane.slot indices, update layout, persist thread order + layout.
    */
   const applyVisibleSelection = useCallback(
     (selectedSlots: number[], targetLayout: number) => {
@@ -434,26 +482,18 @@ export function useChat() {
       const rest = current.filter((p) => !selected.has(p.slot))
       const ordered = [...kept, ...rest]
 
-      // oldSlot → newSlot (index in the reordered pool).
+      // oldSlot → newSlot — must stay in sync with every slot-keyed ref below.
       const remap: Record<number, number> = {}
       ordered.forEach((p, index) => {
         remap[p.slot] = index
       })
 
-      // Remap the slot-keyed runtime refs so streaming keeps working post-move.
       const remapKeys = <T>(rec: Record<number, T>): Record<number, T> => {
         const next: Record<number, T> = {}
         for (const key of Object.keys(rec)) next[remap[Number(key)]] = rec[Number(key)]
         return next
       }
-      // Pause the reveal loop while we swap slots, then resume.
-      if (revealFrame.current !== null) {
-        cancelAnimationFrame(revealFrame.current)
-        revealFrame.current = null
-      }
       activeReqBySlot.current = remapKeys(activeReqBySlot.current)
-      pendingBySlot.current = remapKeys(pendingBySlot.current)
-      doneInfoBySlot.current = remapKeys(doneInfoBySlot.current)
       lastUserContentBySlot.current = remapKeys(lastUserContentBySlot.current)
       for (const reqId of Object.keys(reqToSlot.current)) {
         reqToSlot.current[reqId] = remap[reqToSlot.current[reqId]]
@@ -462,20 +502,20 @@ export function useChat() {
       const newPanes = ordered.map((p, index) => ({ ...p, slot: index }))
       setPanes(newPanes)
       setLayoutState(targetLayout)
-      if (Object.keys(pendingBySlot.current).length > 0) ensureRevealing()
 
-      // Persist the new order + layout.
       const threadIds = newPanes.filter((p) => p.dbThreadId).map((p) => p.dbThreadId!)
       if (threadIds.length > 0) api.sessions.reorderThreads(threadIds)
       api.sessions.setLayout(sid, targetLayout)
     },
-    [ensureRevealing]
+    []
   )
 
-  /* ── Per-pane model selection ────────────────────────────────────────── */
   /**
-   * Set (or change) a pane's model. CLEARS the pane's conversation — the caller
-   * (UI) is responsible for confirming first if the pane already has messages.
+   * Assign or change the model on a pane (clears its conversation).
+   *
+   * @used-by  MainApp → ModelPane onSelectModel
+   * @param    slot — grid slot to update
+   * @param    modelId — new model id (UI should confirm before calling if messages exist)
    */
   const setPaneModel = useCallback((slot: number, modelId: string) => {
     const sid = sessionIdRef.current
@@ -484,7 +524,6 @@ export function useChat() {
     if (!pane) return
     const label = getModelDef(modelId).label
 
-    // Stop any stream running in this pane.
     const active = activeReqBySlot.current[slot]
     if (active) api.chat.abort(active)
 
@@ -492,7 +531,6 @@ export function useChat() {
       api.sessions.updateThreadModel(pane.dbThreadId, modelId, label)
       patchPane(slot, { modelId, label, messages: [], status: 'idle', error: undefined })
     } else {
-      // Empty pane → create a thread row at this slot.
       api.sessions.addThread(sid, slot, modelId, label).then((dbThreadId) => {
         patchPane(slot, { modelId, label, messages: [], status: 'idle', error: undefined, dbThreadId })
       })
@@ -500,8 +538,17 @@ export function useChat() {
     refreshSessions()
   }, [patchPane, refreshSessions])
 
-  /* ── Sending messages ────────────────────────────────────────────────── */
-  /** Broadcast to all VISIBLE panes that have a model. */
+  /**
+   * Broadcast the same user message to every visible pane that has a model.
+   *
+   * @used-by  MainApp → ChatBar onSend
+   * @param    content — user message text
+   * @see      askOne — single-pane counterpart for per-pane follow-up inputs
+   *
+   * Internal steps:
+   *  1. Auto-set session title on the first message of a new session.
+   *  2. For each visible pane with a model: persist user message, patch UI, startStream.
+   */
   const askAll = useCallback(
     (content: string) => {
       const sid = sessionIdRef.current
@@ -523,7 +570,14 @@ export function useChat() {
     [layout, patchPane, startStream, refreshSessions]
   )
 
-  /** Send to a single pane (its own follow-up input). */
+  /**
+   * Send a follow-up message to a single pane.
+   *
+   * @used-by  MainApp → ModelPane onAskOne
+   * @param    slot — target grid slot
+   * @param    content — user message text
+   * @see      askAll — broadcast counterpart for the bottom composer
+   */
   const askOne = useCallback(
     (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
@@ -537,12 +591,13 @@ export function useChat() {
     [patchPane, startStream]
   )
 
-  /* ── Session management ──────────────────────────────────────────────── */
+  /**
+   * Create a new session (sidebar "+" button).
+   *
+   * @used-by  MainApp → Sidebar onNewSession
+   * @returns  id of the active session (existing empty one or newly created)
+   */
   const newSession = useCallback(async () => {
-    // If the current session has no messages yet, it's already a fresh/empty
-    // session — staying in it avoids spawning redundant empty conversations on
-    // repeated "+" clicks (ChatGPT behavior). Only spin up a new one once the
-    // current session has actually exchanged a message.
     const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
     if (!currentHasMessages && sessionIdRef.current !== null) {
       return sessionIdRef.current
@@ -560,6 +615,12 @@ export function useChat() {
     return newId
   }, [cancelStreams, buildDefaultPanes, refreshSessions])
 
+  /**
+   * Switch to an existing session from the sidebar.
+   *
+   * @used-by  MainApp → Sidebar onSelectSession
+   * @param    targetSessionId — session id to load
+   */
   const loadSession = useCallback(
     async (targetSessionId: number) => {
       if (targetSessionId === sessionIdRef.current) return
@@ -574,6 +635,13 @@ export function useChat() {
     [cancelStreams, applySessionData, refreshSessions]
   )
 
+  /**
+   * Rename a session in the sidebar.
+   *
+   * @used-by  MainApp → Sidebar onRenameSession
+   * @param    targetId — session id to rename
+   * @param    title — new title
+   */
   const renameSession = useCallback(
     async (targetId: number, title: string) => {
       await api.sessions.setTitle(targetId, title)
@@ -582,6 +650,17 @@ export function useChat() {
     [refreshSessions]
   )
 
+  /**
+   * Delete a session; if it is the active one, create and load a fresh replacement.
+   *
+   * @used-by  MainApp → Sidebar onDeleteSession
+   * @param    targetId — session id to delete
+   *
+   * Internal steps:
+   *  1. Delete the session in the backend.
+   *  2. If it was active: cancel streams, create a new session, pre-fill default panes.
+   *  3. Refresh the sidebar list.
+   */
   const deleteSession = useCallback(
     async (targetId: number) => {
       await api.sessions.delete(targetId)

@@ -1,21 +1,220 @@
 /**
  * Renders one chat message. User turns are simple bubbles; assistant turns
- * render Markdown (code blocks, lists, headings). Both expose a copy button
- * BELOW the bubble that reveals on hover (assistant left-aligned, user
- * right-aligned). The copy row reserves its height so content never shifts.
+ * render Markdown via flowtoken's AnimatedMarkdown.
+ *
+ * Styling contract:
+ *  - flowtoken → streaming text reveal only (fadeIn per word via animateText)
+ *  - markdownStyleOverrides → all Tailwind classes and layout (our theme)
+ *
+ * The same renderer runs while streaming and after completion; animation is
+ * toggled via the animation prop. Both expose a copy button BELOW the bubble
+ * that reveals on hover (assistant left-aligned, user right-aligned). The copy
+ * row reserves its height so content never shifts.
  */
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Message } from '@shared/types'
 import { cn } from '@/lib/utils'
 import { Check, Copy } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkBreaks from 'remark-breaks'
-import remarkGfm from 'remark-gfm'
+import { AnimatedMarkdown } from 'flowtoken'
+import 'flowtoken/dist/styles.css'
 
 interface Props {
   message: Message
   /** True while this assistant turn's stream is still in flight. */
   isStreaming?: boolean
+}
+
+/** Per-word reveal callback that flowtoken injects into customComponents while streaming. */
+type FlowtokenAnimateText = (text: ReactNode) => ReactNode
+
+type MarkdownOverrideProps<T extends keyof React.JSX.IntrinsicElements> =
+  React.ComponentProps<T> & { animateText?: FlowtokenAnimateText }
+
+/**
+ * Renders text children with flowtoken's streaming reveal when animateText is
+ * present; otherwise returns children unchanged (stream finished or static).
+ */
+function renderTextWithStreamingAnimation(
+  animateText: FlowtokenAnimateText | undefined,
+  children: ReactNode,
+) {
+  return animateText ? animateText(children) : children
+}
+
+/** Bubble chrome for assistant markdown content. Element-level styles live below. */
+const assistantMarkdownClass = cn(
+  'rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[95%] min-w-0 text-sm break-words',
+  'bg-muted text-foreground'
+)
+
+/**
+ * Our markdown element styles — passed to AnimatedMarkdown customComponents to
+ * override flowtoken defaults. All classNames live here; flowtoken only supplies
+ * animateText for streaming reveal via renderTextWithStreamingAnimation.
+ */
+const markdownStyleOverrides = {
+  code({
+    animateText,
+    className,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'code'>) {
+    const isInline = !className?.includes('language-') && !String(children).includes('\n')
+    return isInline ? (
+      <code
+        className="bg-zinc-200 dark:bg-zinc-700 rounded px-1 py-0.5 text-xs break-words"
+        {...props}
+      >
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </code>
+    ) : (
+      <code className={cn('text-xs text-zinc-100', className)} {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </code>
+    )
+  },
+  pre({ children }: React.ComponentProps<'pre'>) {
+    return (
+      <pre className="bg-zinc-900 dark:bg-zinc-800 rounded-lg p-3 overflow-x-auto my-2 max-w-full">
+        {children}
+      </pre>
+    )
+  },
+  p({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'p'>) {
+    return (
+      <p className="mb-2 last:mb-0" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </p>
+    )
+  },
+  ul({ children }: React.ComponentProps<'ul'>) {
+    return <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>
+  },
+  ol({ children }: React.ComponentProps<'ol'>) {
+    return <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>
+  },
+  li({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'li'>) {
+    return <li {...props}>{renderTextWithStreamingAnimation(animateText, children)}</li>
+  },
+  h1({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'h1'>) {
+    return (
+      <h1 className="text-lg font-bold mb-1 mt-2 first:mt-0" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </h1>
+    )
+  },
+  h2({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'h2'>) {
+    return (
+      <h2 className="text-base font-bold mb-1 mt-2 first:mt-0" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </h2>
+    )
+  },
+  h3({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'h3'>) {
+    return (
+      <h3 className="text-sm font-semibold mb-1 mt-1 first:mt-0" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </h3>
+    )
+  },
+  table({ children }: React.ComponentProps<'table'>) {
+    return (
+      <div className="overflow-x-auto my-2 max-w-full">
+        <table className="w-full text-xs border-collapse">{children}</table>
+      </div>
+    )
+  },
+  th({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'th'>) {
+    return (
+      <th className="border border-border px-2 py-1 text-left font-semibold" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </th>
+    )
+  },
+  td({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'td'>) {
+    return (
+      <td className="border border-border px-2 py-1 align-top" {...props}>
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </td>
+    )
+  },
+  blockquote({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'blockquote'>) {
+    return (
+      <blockquote
+        className="border-l-2 border-border pl-3 italic text-muted-foreground my-2"
+        {...props}
+      >
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </blockquote>
+    )
+  },
+  a({
+    animateText,
+    href,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'a'>) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline break-words"
+        {...props}
+      >
+        {renderTextWithStreamingAnimation(animateText, children)}
+      </a>
+    )
+  },
+  hr() {
+    return <hr className="my-3 border-border" />
+  },
+  strong({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'strong'>) {
+    return <strong {...props}>{renderTextWithStreamingAnimation(animateText, children)}</strong>
+  },
+  em({
+    animateText,
+    children,
+    ...props
+  }: MarkdownOverrideProps<'em'>) {
+    return <em {...props}>{renderTextWithStreamingAnimation(animateText, children)}</em>
+  },
 }
 
 export function MessageBubble({ message, isStreaming = false }: Props) {
@@ -32,8 +231,6 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
     }
   }
 
-  // Small copy button that fades in on hover of the message group. The row that
-  // holds it always reserves height, so revealing it never nudges content.
   const copyButton = (
     <button
       type="button"
@@ -57,8 +254,6 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
     )
   }
 
-  // Stream just started — no text has arrived yet. Show a typing indicator
-  // (three bouncing dots) instead of an empty bubble with a premature copy button.
   if (isStreaming && !message.content) {
     return (
       <div className="flex justify-start">
@@ -75,98 +270,16 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
 
   return (
     <div className="group flex flex-col items-start">
-      <div
-        className={cn(
-          // min-w-0 + max-w-[95%] keep the bubble within its pane; break-words
-          // wraps long URLs/tokens so nothing overflows horizontally.
-          'rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[95%] min-w-0 text-sm break-words',
-          'bg-muted text-foreground',
-          'prose prose-sm dark:prose-invert',
-          '[&_.prose]:m-0'
-        )}
-      >
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks]}
-          components={{
-            // Inline code = a pill. Block code is detected by the language class
-            // or a newline, and is styled by the `pre` renderer below (so we
-            // don't nest a styled <pre> inside react-markdown's default <pre>).
-            code({ className, children, ...props }) {
-              const isInline = !className?.includes('language-') && !String(children).includes('\n')
-              return isInline ? (
-                <code className="bg-zinc-200 dark:bg-zinc-700 rounded px-1 py-0.5 text-xs break-words" {...props}>
-                  {children}
-                </code>
-              ) : (
-                <code className={cn('text-xs text-zinc-100', className)} {...props}>
-                  {children}
-                </code>
-              )
-            },
-            pre({ children }) {
-              return (
-                <pre className="bg-zinc-900 dark:bg-zinc-800 rounded-lg p-3 overflow-x-auto my-2 max-w-full">
-                  {children}
-                </pre>
-              )
-            },
-            p({ children }) {
-              return <p className="mb-2 last:mb-0">{children}</p>
-            },
-            ul({ children }) {
-              return <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>
-            },
-            ol({ children }) {
-              return <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>
-            },
-            h1({ children }) {
-              return <h1 className="text-base font-bold mb-1">{children}</h1>
-            },
-            h2({ children }) {
-              return <h2 className="text-sm font-bold mb-1">{children}</h2>
-            },
-            h3({ children }) {
-              return <h3 className="text-sm font-semibold mb-1">{children}</h3>
-            },
-            // Tables can be wide — wrap in a horizontal scroller so they never
-            // stretch the pane.
-            table({ children }) {
-              return (
-                <div className="overflow-x-auto my-2 max-w-full">
-                  <table className="w-full text-xs border-collapse">{children}</table>
-                </div>
-              )
-            },
-            th({ children }) {
-              return <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
-            },
-            td({ children }) {
-              return <td className="border border-border px-2 py-1 align-top">{children}</td>
-            },
-            blockquote({ children }) {
-              return (
-                <blockquote className="border-l-2 border-border pl-3 italic text-muted-foreground my-2">
-                  {children}
-                </blockquote>
-              )
-            },
-            a({ href, children }) {
-              return (
-                <a href={href} target="_blank" rel="noreferrer" className="text-primary underline break-words">
-                  {children}
-                </a>
-              )
-            },
-            hr() {
-              return <hr className="my-3 border-border" />
-            }
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
+      <div className={assistantMarkdownClass}>
+        <AnimatedMarkdown
+          content={message.content}
+          sep="word"
+          animation={isStreaming ? 'fadeIn' : null}
+          animationDuration="0.3s"
+          animationTimingFunction="ease-out"
+          customComponents={markdownStyleOverrides}
+        />
       </div>
-      {/* Copy sits below the bubble; reserved height (h-5) avoids any shift.
-          Offered only once the stream has ended (completed or aborted). */}
       <div className="h-5 mt-1 flex items-center pl-0.5">{!isStreaming && copyButton}</div>
     </div>
   )
