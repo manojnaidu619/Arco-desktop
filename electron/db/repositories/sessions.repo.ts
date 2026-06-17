@@ -207,20 +207,3 @@ export function addMessage(threadId: number, role: Role, content: string): void 
 
   db.insert(messages).values({ threadId, role, content, seq, createdAt: now() }).run()
 }
-
-/**
- * Delete the most recent message in a thread. Used to undo an aborted turn —
- * when the user stops generation, the just-sent user message is removed so it
- * can return to the input for editing.
- */
-export function deleteLastMessage(threadId: number): void {
-  const db = getDb()
-  const last = db
-    .select({ id: messages.id })
-    .from(messages)
-    .where(eq(messages.threadId, threadId))
-    .orderBy(desc(messages.seq))
-    .limit(1)
-    .get()
-  if (last) db.delete(messages).where(eq(messages.id, last.id)).run()
-}

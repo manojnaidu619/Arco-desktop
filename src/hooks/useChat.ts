@@ -130,14 +130,13 @@ export function useChat() {
 
   // ── Streaming routing maps ────────────────────────────────────────────────
   const reqToSlot = useRef<Record<string, number>>({}) // requestId → slot: routes incoming delta events to the correct pane
-  const activeReqBySlot = useRef<Record<number, string>>({}) // slot → requestId: lets abort/rollback find and cancel a pane's active request
+  const activeReqBySlot = useRef<Record<number, string>>({}) // slot → requestId: lets stop/abort find and cancel a pane's active request
 
   // ── Session title flag ───────────────────────────────────────────────────
   const titleSet = useRef(false) // Flips to true after the first message auto-sets the session title; prevents overwriting it on follow-ups
 
-  // ── Abort-restore memory ─────────────────────────────────────────────────
-  const lastBroadcastContent = useRef<string>('') // Last text sent via askAll; returned by abort() to restore the composer input
-  const lastUserContentBySlot = useRef<Record<number, string>>({}) // slot → last text sent via askOne; returned by abortPane() to restore the per-pane input
+  /** True when any pane is actively streaming. */
+  const isAnyStreaming = useCallback(() => panesRef.current.some((p) => p.status === 'streaming'), [])
 
   /**
    * Reload the sidebar session list from the backend.
@@ -340,64 +339,75 @@ export function useChat() {
   }, [])
 
   /**
-   * Undo a pane's in-flight turn as if it never happened.
+   * Stop a pane's in-flight stream and keep partial assistant content.
    *
    * @used-by  abort, abortPane
-   * @param    slot — grid slot to roll back
+   * @param    slot — grid slot to stop
    *
    * Internal steps:
    *  1. Abort the active request and clear routing state for the slot.
-   *  2. Delete the last user message from the DB (if persisted).
-   *  3. Remove the assistant placeholder and user message from the UI; reset to idle.
+   *  2. Keep the user message; keep or drop the assistant placeholder based on content.
+   *  3. Persist non-empty partial assistant text; mark stopped in UI.
    */
-  const rollbackPane = useCallback((slot: number) => {
-    const req = activeReqBySlot.current[slot]
-    if (req) {
-      api.chat.abort(req)
-      delete reqToSlot.current[req]
-      delete activeReqBySlot.current[slot]
-    }
-    const pane = panesRef.current.find((p) => p.slot === slot)
-    if (pane?.dbThreadId) api.sessions.deleteLastMessage(pane.dbThreadId)
+  const stopPane = useCallback(
+    (slot: number) => {
+      const req = activeReqBySlot.current[slot]
+      if (req) {
+        api.chat.abort(req)
+        delete reqToSlot.current[req]
+        delete activeReqBySlot.current[slot]
+      }
 
-    setPanes((prev) =>
-      prev.map((p) => {
-        if (p.slot !== slot) return p
-        let msgs = [...p.messages]
-        if (msgs.at(-1)?.role === 'assistant') msgs = msgs.slice(0, -1)
-        if (msgs.at(-1)?.role === 'user') msgs = msgs.slice(0, -1)
-        return { ...p, messages: msgs, status: 'idle', error: undefined }
-      })
-    )
-  }, [])
+      const pane = panesRef.current.find((p) => p.slot === slot)
+      const lastMsg = pane?.messages.at(-1)
+      const partial = lastMsg?.role === 'assistant' ? lastMsg.content : ''
+
+      setPanes((prev) =>
+        prev.map((p) => {
+          if (p.slot !== slot) return p
+          let msgs = [...p.messages]
+          const assistant = msgs.at(-1)
+          if (assistant?.role === 'assistant') {
+            if (partial) {
+              msgs[msgs.length - 1] = { role: 'assistant', content: partial, stopped: true }
+            } else {
+              msgs = msgs.slice(0, -1)
+            }
+          }
+          return { ...p, messages: msgs, status: 'idle', error: undefined }
+        })
+      )
+
+      if (partial && pane?.dbThreadId) {
+        api.sessions.addMessage(pane.dbThreadId, 'assistant', partial).then(() => refreshSessions())
+      }
+    },
+    [refreshSessions]
+  )
 
   /**
    * Stop all streaming panes (bottom bar stop button).
    *
    * @used-by  MainApp → ChatBar onAbort
-   * @returns  last broadcast text so the composer can restore it for editing
    * @see      abortPane — per-pane counterpart
    */
-  const abort = useCallback((): string => {
+  const abort = useCallback(() => {
     const streamingSlots = panesRef.current.filter((p) => p.status === 'streaming').map((p) => p.slot)
-    streamingSlots.forEach((slot) => rollbackPane(slot))
-    return lastBroadcastContent.current
-  }, [rollbackPane])
+    streamingSlots.forEach((slot) => stopPane(slot))
+  }, [stopPane])
 
   /**
    * Stop streaming for a single pane (pane stop button).
    *
    * @used-by  MainApp → ModelPane onAbortPane
    * @param    slot — grid slot to stop
-   * @returns  last user text for that pane
    * @see      abort — global counterpart for all streaming panes
    */
   const abortPane = useCallback(
-    (slot: number): string => {
-      rollbackPane(slot)
-      return lastUserContentBySlot.current[slot] ?? ''
+    (slot: number) => {
+      stopPane(slot)
     },
-    [rollbackPane]
+    [stopPane]
   )
 
   /**
@@ -494,7 +504,6 @@ export function useChat() {
         return next
       }
       activeReqBySlot.current = remapKeys(activeReqBySlot.current)
-      lastUserContentBySlot.current = remapKeys(lastUserContentBySlot.current)
       for (const reqId of Object.keys(reqToSlot.current)) {
         reqToSlot.current[reqId] = remap[reqToSlot.current[reqId]]
       }
@@ -557,10 +566,8 @@ export function useChat() {
         api.sessions.setTitle(sid, content).then(refreshSessions)
       }
 
-      lastBroadcastContent.current = content
       const visible = panesRef.current.slice(0, layout).filter((p) => p.modelId)
       for (const pane of visible) {
-        lastUserContentBySlot.current[pane.slot] = content
         const updated: Message[] = [...pane.messages, { role: 'user', content }]
         if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
         patchPane(pane.slot, { messages: updated })
@@ -582,7 +589,6 @@ export function useChat() {
     (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
       if (!pane?.modelId) return
-      lastUserContentBySlot.current[slot] = content
       const updated: Message[] = [...pane.messages, { role: 'user', content }]
       if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
       patchPane(slot, { messages: updated })
@@ -598,6 +604,8 @@ export function useChat() {
    * @returns  id of the active session (existing empty one or newly created)
    */
   const newSession = useCallback(async () => {
+    if (isAnyStreaming()) return sessionIdRef.current ?? 0
+
     const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
     if (!currentHasMessages && sessionIdRef.current !== null) {
       return sessionIdRef.current
@@ -613,7 +621,7 @@ export function useChat() {
     setLayoutState(4)
     refreshSessions()
     return newId
-  }, [cancelStreams, buildDefaultPanes, refreshSessions])
+  }, [cancelStreams, buildDefaultPanes, refreshSessions, isAnyStreaming])
 
   /**
    * Switch to an existing session from the sidebar.
@@ -624,6 +632,7 @@ export function useChat() {
   const loadSession = useCallback(
     async (targetSessionId: number) => {
       if (targetSessionId === sessionIdRef.current) return
+      if (isAnyStreaming()) return
       cancelStreams()
       const data = await api.sessions.load(targetSessionId)
       titleSet.current = true
@@ -632,7 +641,7 @@ export function useChat() {
       await applySessionData(data)
       refreshSessions()
     },
-    [cancelStreams, applySessionData, refreshSessions]
+    [cancelStreams, applySessionData, refreshSessions, isAnyStreaming]
   )
 
   /**
@@ -663,6 +672,7 @@ export function useChat() {
    */
   const deleteSession = useCallback(
     async (targetId: number) => {
+      if (isAnyStreaming()) return
       await api.sessions.delete(targetId)
       if (targetId === sessionIdRef.current) {
         cancelStreams()
@@ -676,7 +686,7 @@ export function useChat() {
       }
       refreshSessions()
     },
-    [cancelStreams, buildDefaultPanes, refreshSessions]
+    [cancelStreams, buildDefaultPanes, refreshSessions, isAnyStreaming]
   )
 
   return {

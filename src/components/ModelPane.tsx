@@ -22,8 +22,8 @@ interface Props {
   onToggleExpand?: () => void
   onSelectModel: (slot: number, modelId: string) => void
   onAskOne: (slot: number, content: string) => void
-  /** Abort this pane's stream; returns the just-sent text to restore for editing. */
-  onAbortPane: (slot: number) => string
+  /** Stop this pane's stream. */
+  onAbortPane: (slot: number) => void
 }
 
 export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectModel, onAskOne, onAbortPane }: Props) {
@@ -46,9 +46,8 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
     onAskOne(pane.slot, text)
   }
 
-  // Stop this pane's stream and put the aborted question back in the input.
   const handleAbort = () => {
-    setInput(onAbortPane(pane.slot) || '')
+    onAbortPane(pane.slot)
   }
 
   const handleSelectModel = (modelId: string) => {
@@ -134,7 +133,6 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
             placeholder={`Follow up with ${pane.label}…`}
-            disabled={pane.status === 'streaming'}
             className="text-sm h-8"
             autoFocus
           />

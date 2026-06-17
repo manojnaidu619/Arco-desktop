@@ -115,10 +115,11 @@ The most important flow. This is where the streaming pattern earns its keep.
     `useChat`'s `onError` removes the empty placeholder and shows the error in
     that column.
 
-### Cancelling
+### Cancelling / stopping
 
-- 🖥️ Switching/clearing sessions calls `abortAll()` → `api.chat.abort(requestId)`
-  for each in-flight stream.
+- 🖥️ **Stop button:** `stopPane` aborts the request via `api.chat.abort(requestId)`, keeps the user message and any partial assistant reply, persists non-empty partials, and sets `status: 'idle'`. A "Generation stopped" label appears on truncated assistant bubbles.
+- 🖥️ **Session navigation while streaming:** blocked with an `InfoDialog`; user must stop or wait for completion before switching sessions.
+- 🖥️ Switching/clearing sessions (when not streaming) calls `cancelStreams()` → `api.chat.abort(requestId)` for each in-flight stream.
 - ⚙️ `chat.ts` aborts the matching `AbortController`, which cancels the fetch.
   (A user-initiated abort is treated as expected — no error event is sent.)
 

@@ -117,8 +117,6 @@ export interface MultiMindApi {
     reorderThreads(threadIds: number[]): Promise<void>
     /** Append a message to a thread. */
     addMessage(threadId: number, role: Role, content: string): Promise<void>
-    /** Delete the most recent message in a thread (undoes an aborted turn). */
-    deleteLastMessage(threadId: number): Promise<void>
   }
 
   /** Streaming chat with OpenRouter. */
@@ -174,8 +172,7 @@ export const CHANNELS = {
     updateThreadModel: 'sessions:updateThreadModel',
     deleteThread: 'sessions:deleteThread',
     reorderThreads: 'sessions:reorderThreads',
-    addMessage: 'sessions:addMessage',
-    deleteLastMessage: 'sessions:deleteLastMessage'
+    addMessage: 'sessions:addMessage'
   },
   chat: {
     start: 'chat:start',

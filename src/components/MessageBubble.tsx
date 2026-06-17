@@ -280,7 +280,12 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
           customComponents={markdownStyleOverrides}
         />
       </div>
-      <div className="h-5 mt-1 flex items-center pl-0.5">{!isStreaming && copyButton}</div>
+      <div className="h-5 mt-1 flex items-center gap-2 pl-0.5">
+        {message.stopped && (
+          <span className="text-xs text-muted-foreground">Generation stopped</span>
+        )}
+        {!isStreaming && copyButton}
+      </div>
     </div>
   )
 }

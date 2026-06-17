@@ -34,5 +34,4 @@ export function registerSessionHandlers(): void {
   ipcMain.handle(CHANNELS.sessions.addMessage, (_e, threadId: number, role: Role, content: string) =>
     repo.addMessage(threadId, role, content)
   )
-  ipcMain.handle(CHANNELS.sessions.deleteLastMessage, (_e, threadId: number) => repo.deleteLastMessage(threadId))
 }

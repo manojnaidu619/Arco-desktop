@@ -6,6 +6,7 @@
  * (sidebar open, which pane is expanded) and arranges the grid.
  */
 import { ChatBar } from '@/components/ChatBar'
+import { GenerationInProgressDialog } from '@/components/GenerationInProgressDialog'
 import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
 import { Sidebar } from '@/components/Sidebar'
@@ -16,6 +17,12 @@ import { useEffect, useMemo, useState } from 'react'
 
 /** How many grid columns each layout preset uses (rows then fill the height). */
 const COLS: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 2, 6: 3 }
+
+const STREAMING_NAV_DIALOG = {
+  title: 'Generation in progress',
+  message:
+    'Stop generating before switching sessions or starting a new conversation. Use the ■ stop button in the composer or a pane.'
+} as const
 
 interface Props {
   onOpenSettings: () => void
@@ -46,6 +53,7 @@ export function MainApp({ onOpenSettings }: Props) {
   // The bottom composer's text is controlled here so an abort can restore the
   // just-sent message for editing.
   const [composerValue, setComposerValue] = useState('')
+  const [streamingNavBlocked, setStreamingNavBlocked] = useState(false)
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
   const activeCount = useMemo(() => visiblePanes.filter((p) => p.modelId).length, [visiblePanes])
@@ -72,7 +80,28 @@ export function MainApp({ onOpenSettings }: Props) {
   }, [expandedSlot])
 
   const handleNewSession = async () => {
+    if (isAnyStreaming) {
+      setStreamingNavBlocked(true)
+      return
+    }
     await newSession()
+    setExpandedSlot(null)
+  }
+
+  const handleSelectSession = async (id: number) => {
+    if (isAnyStreaming) {
+      setStreamingNavBlocked(true)
+      return
+    }
+    await loadSession(id)
+  }
+
+  const handleDeleteSession = async (id: number) => {
+    if (isAnyStreaming) {
+      setStreamingNavBlocked(true)
+      return
+    }
+    await deleteSession(id)
     setExpandedSlot(null)
   }
 
@@ -95,13 +124,10 @@ export function MainApp({ onOpenSettings }: Props) {
           <Sidebar
             sessions={sessions}
             currentSessionId={sessionId}
-            onSelectSession={loadSession}
+            onSelectSession={handleSelectSession}
             onNewSession={handleNewSession}
             onRenameSession={renameSession}
-            onDeleteSession={async (id) => {
-              await deleteSession(id)
-              setExpandedSlot(null)
-            }}
+            onDeleteSession={handleDeleteSession}
             onOpenSettings={onOpenSettings}
           />
         </div>
@@ -185,10 +211,18 @@ export function MainApp({ onOpenSettings }: Props) {
               askAll(text)
               setComposerValue('')
             }}
-            onAbort={() => setComposerValue(abort())}
+            onAbort={abort}
           />
         </div>
       </div>
+
+      {streamingNavBlocked && (
+        <GenerationInProgressDialog
+          title={STREAMING_NAV_DIALOG.title}
+          message={STREAMING_NAV_DIALOG.message}
+          onClose={() => setStreamingNavBlocked(false)}
+        />
+      )}
     </div>
   )
 }

@@ -38,9 +38,13 @@ flowchart TD
 
 ## Edge cases
 
-### Abort mid-stream
+### Stop mid-stream
 
-All streaming panes have an active request in `activeReqBySlot`. `rollbackPane` aborts the request, removes the user + assistant messages from the UI and DB, and resets the pane to `idle`. `abort` / `abortPane` return the last sent text so the composer can restore it for editing.
+When the user clicks Stop, `stopPane` aborts the network request and **keeps** the user message plus any partial assistant text already rendered. Non-empty partials are persisted to the DB and marked with `stopped: true` in the UI (shows a "Generation stopped" label in `MessageBubble`). If stopped before the first token, the empty assistant placeholder is removed and only the user message remains. `abort` / `abortPane` call `stopPane` for all or one streaming pane.
+
+### Session navigation while streaming
+
+Switching sessions, creating a new session, or deleting while any pane is streaming is blocked. The UI shows an `InfoDialog` explaining that generation must be stopped first. Hook-level guards in `newSession`, `loadSession`, and `deleteSession` provide defense in depth. Renaming is allowed during streaming (title-only update).
 
 ### Error during stream
 
@@ -49,3 +53,5 @@ All streaming panes have an active request in `activeReqBySlot`. `rollbackPane` 
 ## What changed from the previous pipeline
 
 The custom smooth-reveal buffer layer (`pendingBySlot`, `doneInfoBySlot`, `revealFrame`, `revealTick`, `ensureRevealing`, `flushSlot`) has been removed from `useChat.ts`. Deltas now go directly into `pane.messages`. `AnimatedMarkdown` in `MessageBubble.tsx` handles rendering and streaming animation with a single shared component style map.
+
+Stop behavior now matches major LLM providers: truncate and keep partial content instead of rolling back the entire turn.

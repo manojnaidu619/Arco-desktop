@@ -13,6 +13,8 @@ export type Role = 'user' | 'assistant'
 export interface Message {
   role: Role
   content: string
+  /** True when the user stopped generation mid-stream (in-memory only for v1). */
+  stopped?: boolean
 }
 
 /** Lifecycle status of one model's thread in the UI. */

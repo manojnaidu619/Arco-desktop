@@ -4,9 +4,7 @@
  * Enter sends; Shift+Enter inserts a newline.
  *
  * While any pane is streaming, the send button becomes a STOP button. Stopping
- * aborts generation and (via the parent) drops the just-sent text back into
- * this input for editing/resending. The value is controlled by the parent so
- * it can be restored on abort.
+ * keeps the user message and any partial assistant reply in the thread.
  */
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -51,12 +49,12 @@ export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, 
           onKeyDown={handleKey}
           placeholder={
             streaming
-              ? 'Generating… press ■ to stop and edit'
+              ? 'Generating… press ■ to stop'
               : activeCount === 0
                 ? 'Pick a model in a pane to begin…'
                 : `Ask all ${activeCount} model${activeCount > 1 ? 's' : ''} at once…`
           }
-          disabled={streaming || activeCount === 0}
+          disabled={activeCount === 0}
           rows={2}
           className="resize-none text-sm leading-relaxed flex-1 min-h-[56px] max-h-[200px] overflow-y-auto"
         />
@@ -85,7 +83,7 @@ export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, 
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <BrainCircuit className="h-3.5 w-3.5" />
           {streaming
-            ? 'Generating across panes · click stop to abort and edit your message'
+            ? 'Generating across panes · click stop to end generation'
             : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
         </p>
       )}
