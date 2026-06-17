@@ -67,7 +67,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
-import { getModelDef } from '@shared/models'
+import { useSavedModels } from '@/hooks/useSavedModels'
+import { getModelDef, isModelInLibrary } from '@shared/models'
 import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
 
 /** Re-exported so consumers can import session types from this hook alone. */
@@ -112,6 +113,8 @@ function emptyPane(slot: number): Pane {
 }
 
 export function useChat() {
+  const { savedModels } = useSavedModels()
+
   // ── Persisted state (drives re-renders) ─────────────────────────────────
   const [sessionId, setSessionId] = useState<number | null>(null) // DB id of the active session; null during initial load
   const [panes, setPanes] = useState<Pane[]>([]) // Full pane pool (visible + hidden); length is always >= layout
@@ -563,12 +566,16 @@ export function useChat() {
   const askAll = useCallback(
     (content: string) => {
       const sid = sessionIdRef.current
+      const visible = panesRef.current
+        .slice(0, layout)
+        .filter((p) => isModelInLibrary(p.modelId, savedModels))
+      if (visible.length === 0) return
+
       if (!titleSet.current && sid !== null) {
         titleSet.current = true
         api.sessions.setTitle(sid, content).then(refreshSessions)
       }
 
-      const visible = panesRef.current.slice(0, layout).filter((p) => p.modelId)
       for (const pane of visible) {
         const updated: Message[] = [...pane.messages, { role: 'user', content }]
         if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
@@ -576,7 +583,7 @@ export function useChat() {
         startStream(pane.slot, pane.modelId!, updated)
       }
     },
-    [layout, patchPane, startStream, refreshSessions]
+    [layout, patchPane, startStream, refreshSessions, savedModels]
   )
 
   /**
@@ -590,13 +597,13 @@ export function useChat() {
   const askOne = useCallback(
     (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
-      if (!pane?.modelId) return
+      if (!pane?.modelId || !isModelInLibrary(pane.modelId, savedModels)) return
       const updated: Message[] = [...pane.messages, { role: 'user', content }]
       if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
       patchPane(slot, { messages: updated })
       startStream(slot, pane.modelId, updated)
     },
-    [patchPane, startStream]
+    [patchPane, startStream, savedModels]
   )
 
   /**

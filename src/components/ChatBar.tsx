@@ -14,15 +14,17 @@ import { ArrowUp, BrainCircuit, Square } from 'lucide-react'
 interface Props {
   value: string
   onValueChange: (value: string) => void
-  /** How many visible panes currently have a model (drives the placeholder). */
+  /** How many visible panes will receive a broadcast (models still in library). */
   activeCount: number
+  /** Visible panes with a model removed from the library (excluded from broadcast). */
+  skippedCount?: number
   /** True while any pane is streaming — shows the stop button. */
   streaming?: boolean
   onSend: (content: string) => void
   onAbort: () => void
 }
 
-export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, onAbort }: Props) {
+export function ChatBar({ value, onValueChange, activeCount, skippedCount = 0, streaming, onSend, onAbort }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const send = () => {
@@ -84,7 +86,9 @@ export function ChatBar({ value, onValueChange, activeCount, streaming, onSend, 
           <BrainCircuit className="h-3.5 w-3.5" />
           {streaming
             ? 'Generating across panes · click stop to end generation'
-            : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
+            : skippedCount > 0
+              ? `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} · ${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
+              : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
         </p>
       )}
     </div>

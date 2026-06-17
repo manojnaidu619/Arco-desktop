@@ -64,3 +64,8 @@ export function getModelDef(id: string): ModelDef {
     }
   )
 }
+
+/** True when the model id is in the user's saved library. */
+export function isModelInLibrary(modelId: string | null, savedModels: string[]): boolean {
+  return Boolean(modelId && savedModels.includes(modelId))
+}

@@ -16,6 +16,7 @@ import { api } from '@/lib/api'
 import { Onboarding } from '@/components/Onboarding'
 import { MainApp } from '@/components/MainApp'
 import { SettingsDialog } from '@/components/SettingsDialog'
+import { SavedModelsProvider } from '@/hooks/useSavedModels'
 import { Loader2 } from 'lucide-react'
 
 export function App() {
@@ -66,7 +67,9 @@ export function App() {
 
   return (
     <>
-      <MainApp onOpenSettings={() => setSettingsOpen(true)} />
+      <SavedModelsProvider>
+        <MainApp onOpenSettings={() => setSettingsOpen(true)} />
+      </SavedModelsProvider>
       {settingsOpen && (
         <SettingsDialog
           onClose={() => setSettingsOpen(false)}

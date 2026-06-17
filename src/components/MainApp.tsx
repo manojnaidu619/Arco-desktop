@@ -12,6 +12,8 @@ import { ModelPane } from '@/components/ModelPane'
 import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { useChat } from '@/hooks/useChat'
+import { useSavedModels } from '@/hooks/useSavedModels'
+import { isModelInLibrary } from '@shared/models'
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -48,6 +50,8 @@ export function MainApp({ onOpenSettings }: Props) {
     deleteSession
   } = useChat()
 
+  const { savedModels } = useSavedModels()
+
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null)
   // The bottom composer's text is controlled here so an abort can restore the
@@ -57,6 +61,11 @@ export function MainApp({ onOpenSettings }: Props) {
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
   const activeCount = useMemo(() => visiblePanes.filter((p) => p.modelId).length, [visiblePanes])
+  const sendableCount = useMemo(
+    () => visiblePanes.filter((p) => isModelInLibrary(p.modelId, savedModels)).length,
+    [visiblePanes, savedModels]
+  )
+  const skippedCount = activeCount - sendableCount
   // Populated panes (with a model) for the layout selector's keep-which picker.
   const populatedPanes = useMemo(
     () => panes.filter((p) => p.modelId).map((p) => ({ slot: p.slot, modelId: p.modelId!, label: p.label })),
@@ -205,7 +214,8 @@ export function MainApp({ onOpenSettings }: Props) {
           <ChatBar
             value={composerValue}
             onValueChange={setComposerValue}
-            activeCount={activeCount}
+            activeCount={sendableCount}
+            skippedCount={skippedCount}
             streaming={isAnyStreaming}
             onSend={(text) => {
               askAll(text)

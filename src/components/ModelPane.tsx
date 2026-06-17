@@ -9,10 +9,11 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Pane } from '@/hooks/useChat'
+import { useSavedModels } from '@/hooks/useSavedModels'
 import { cn } from '@/lib/utils'
-import { getModelDef } from '@shared/models'
+import { getModelDef, isModelInLibrary } from '@shared/models'
 import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { MessageBubble } from './MessageBubble'
 import { ModelDropdown } from './ModelDropdown'
 
@@ -27,9 +28,17 @@ interface Props {
 }
 
 export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectModel, onAskOne, onAbortPane }: Props) {
+  const { savedModels } = useSavedModels()
   const [input, setInput] = useState('')
   const [showInput, setShowInput] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const isRemoved = Boolean(pane.modelId && !isModelInLibrary(pane.modelId, savedModels))
+
+  // Hide the follow-up input when the model is removed from the library.
+  useEffect(() => {
+    if (isRemoved) setShowInput(false)
+  }, [isRemoved])
 
   // Keep each pane pinned to the bottom (newest message). We jump instantly
   // (behavior 'auto') inside a layout effect so it lands at the bottom BEFORE
@@ -41,7 +50,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
 
   const send = () => {
     const text = input.trim()
-    if (!text || pane.status === 'streaming' || !pane.modelId) return
+    if (!text || pane.status === 'streaming' || !pane.modelId || isRemoved) return
     setInput('')
     onAskOne(pane.slot, text)
   }
@@ -71,12 +80,20 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
         <div className="flex items-center gap-0.5 shrink-0">
           {pane.status === 'streaming' && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
           {pane.status === 'error' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+          {isRemoved && <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />}
           <Button
             size="icon"
             variant="ghost"
             className={cn('h-6 w-6 shrink-0 text-muted-foreground', showInput && 'bg-muted text-foreground')}
             onClick={() => setShowInput((s) => !s)}
-            title={showInput ? 'Hide follow-up input' : 'Show follow-up input'}
+            disabled={isRemoved}
+            title={
+              isRemoved
+                ? 'Follow-up unavailable — model removed from library'
+                : showInput
+                  ? 'Hide follow-up input'
+                  : 'Show follow-up input'
+            }
           >
             <MessageSquare className="h-3.5 w-3.5" />
           </Button>
@@ -93,6 +110,16 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
           )}
         </div>
       </div>
+
+      {isRemoved && (
+        <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 text-xs shrink-0">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            This model was removed from your library. Re-add it in the settings to continue
+            the conversation.
+          </span>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin">
@@ -126,7 +153,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
       </div>
 
       {/* Per-pane follow-up input (hidden until toggled) */}
-      {showInput && pane.modelId && (
+      {showInput && pane.modelId && !isRemoved && (
         <div className="flex gap-2 px-3 py-2.5 shrink-0">
           <Input
             value={input}

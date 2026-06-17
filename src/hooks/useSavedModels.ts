@@ -1,13 +1,33 @@
 /**
- * React hook for the user's saved model library.
+ * React context + hook for the user's saved model library.
  *
- * Wraps the backend `savedModels` list so dropdowns, onboarding, and the
+ * Wraps the backend `savedModels` list so dropdowns, panes, onboarding, and the
  * model manager modal all share the same source of truth.
  */
-import { useCallback, useEffect, useState } from 'react'
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode
+} from 'react'
 import { api } from '@/lib/api'
+import type { AddSavedModelResult } from '@shared/api-contract'
 
-export function useSavedModels() {
+interface SavedModelsContextValue {
+  savedModels: string[]
+  loading: boolean
+  refresh: () => Promise<string[]>
+  set: (modelIds: string[]) => Promise<string[]>
+  add: (modelId: string) => Promise<AddSavedModelResult>
+  remove: (modelId: string) => Promise<string[]>
+}
+
+const SavedModelsContext = createContext<SavedModelsContextValue | null>(null)
+
+export function SavedModelsProvider({ children }: { children: ReactNode }) {
   const [savedModels, setSavedModels] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -44,5 +64,17 @@ export function useSavedModels() {
     return next
   }, [])
 
-  return { savedModels, loading, refresh, set, add, remove }
+  return createElement(
+    SavedModelsContext.Provider,
+    { value: { savedModels, loading, refresh, set, add, remove } },
+    children
+  )
+}
+
+export function useSavedModels(): SavedModelsContextValue {
+  const ctx = useContext(SavedModelsContext)
+  if (!ctx) {
+    throw new Error('useSavedModels must be used within a SavedModelsProvider')
+  }
+  return ctx
 }
