@@ -602,15 +602,18 @@ export function useChat() {
   /**
    * Create a new session (sidebar "+" button).
    *
-   * @used-by  MainApp → Sidebar onNewSession
+   * @used-by  MainApp → Sidebar onNewSession, deleteSession (when none remain)
+   * @param    options.force — skip the "reuse current empty session" shortcut
    * @returns  id of the active session (existing empty one or newly created)
    */
-  const newSession = useCallback(async () => {
+  const newSession = useCallback(async (options?: { force?: boolean }) => {
     if (isAnyStreaming()) return sessionIdRef.current ?? 0
 
-    const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
-    if (!currentHasMessages && sessionIdRef.current !== null) {
-      return sessionIdRef.current
+    if (!options?.force) {
+      const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
+      if (!currentHasMessages && sessionIdRef.current !== null) {
+        return sessionIdRef.current
+      }
     }
 
     cancelStreams()
@@ -662,33 +665,39 @@ export function useChat() {
   )
 
   /**
-   * Delete a session; if it is the active one, create and load a fresh replacement.
+   * Delete a session; if it is the active one, switch to the next sidebar entry.
    *
    * @used-by  MainApp → Sidebar onDeleteSession
    * @param    targetId — session id to delete
    *
    * Internal steps:
    *  1. Delete the session in the backend.
-   *  2. If it was active: cancel streams, create a new session, pre-fill default panes.
+   *  2. If it was active: cancel streams, then load the newest remaining session
+   *     (sidebar top — the item below if the deleted one was on top). If none
+   *     remain, create a fresh empty session.
    *  3. Refresh the sidebar list.
    */
   const deleteSession = useCallback(
     async (targetId: number) => {
       if (isAnyStreaming()) return
+      const wasActive = targetId === sessionIdRef.current
       await api.sessions.delete(targetId)
-      if (targetId === sessionIdRef.current) {
+      if (wasActive) {
         cancelStreams()
         titleSet.current = false
-        const newId = await api.sessions.create()
-        setSessionId(newId)
-        sessionIdRef.current = newId
-        const fresh = await buildDefaultPanes(newId, 0, 4)
-        setPanes(fresh)
-        setLayoutState(4)
+        const remaining = await api.sessions.list()
+        if (remaining.length > 0) {
+          await loadSession(remaining[0].id)
+        } else {
+          // Last session gone — force a new one; plain newSession() would reuse the
+          // deleted session id still held in sessionIdRef.
+          await newSession({ force: true })
+        }
+        return
       }
       refreshSessions()
     },
-    [cancelStreams, buildDefaultPanes, refreshSessions, isAnyStreaming]
+    [cancelStreams, loadSession, newSession, refreshSessions, isAnyStreaming]
   )
 
   return {
