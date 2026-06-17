@@ -2,13 +2,13 @@
  * The conversation-history sidebar (left rail). Lists past sessions grouped by
  * recency, with inline rename and delete. Mirrors the ChatGPT-style sidebar.
  */
-import { useEffect, useRef, useState } from 'react'
-import type { SessionSummary } from '@shared/types'
-import { getModelDef } from '@shared/models'
-import { Button } from '@/components/ui/button'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { BrainCircuit, Check, MessageSquare, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { getModelDef } from '@shared/models'
+import type { SessionSummary } from '@shared/types'
+import { BrainCircuit, Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   sessions: SessionSummary[]
@@ -51,9 +51,19 @@ export function Sidebar({
   onDeleteSession,
   onOpenSettings
 }: Props) {
+  const [searchQuery, setSearchQuery] = useState('')
+
   // Only show sessions that have actual content (a title or some models).
   const meaningful = sessions.filter((s) => s.title || s.models.length > 0)
-  const groups = groupSessions(meaningful)
+
+  // Filter by search query if provided
+  const filtered = searchQuery
+    ? meaningful.filter((s) =>
+      (s.title ?? 'New conversation').toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : meaningful
+
+  const groups = groupSessions(filtered)
   const groupKeys = Object.keys(groups)
 
   return (
@@ -66,25 +76,56 @@ export function Sidebar({
         </Button>
       </div>
 
+      {/* Search bar - only show if there are conversations */}
+      {meaningful.length > 0 && (
+        <div className="px-3 py-2 border-b border-border shrink-0">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-8 py-1.5 text-sm bg-background border border-border rounded-md outline-none focus:ring-1 focus:ring-ring"
+              aria-label="Search conversations"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto py-2">
         {meaningful.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center mt-8 px-3">Your conversations will appear here.</p>
+          <p className="text-xs text-muted-foreground text-center mt-8 px-3">Your conversations will appear here</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center mt-8 px-3">No conversations found</p>
         ) : (
-          groupKeys.map((group) => (
-            <div key={group} className="mb-3">
-              <p className="text-xs font-medium text-muted-foreground px-3 py-1">{group}</p>
-              {groups[group].map((session) => (
-                <SessionItem
-                  key={session.id}
-                  session={session}
-                  isActive={session.id === currentSessionId}
-                  onClick={() => onSelectSession(session.id)}
-                  onRename={(title) => onRenameSession(session.id, title)}
-                  onDelete={() => onDeleteSession(session.id)}
-                />
-              ))}
-            </div>
-          ))
+          groupKeys
+            .filter((group) => groups[group].length > 0)
+            .map((group) => (
+              <div key={group} className="mb-3">
+                <p className="text-xs font-medium text-muted-foreground px-3 py-1">{group}</p>
+                {groups[group].map((session) => (
+                  <SessionItem
+                    key={session.id}
+                    session={session}
+                    isActive={session.id === currentSessionId}
+                    onClick={() => onSelectSession(session.id)}
+                    onRename={(title) => onRenameSession(session.id, title)}
+                    onDelete={() => onDeleteSession(session.id)}
+                  />
+                ))}
+              </div>
+            ))
         )}
       </div>
 
