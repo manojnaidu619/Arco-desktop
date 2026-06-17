@@ -186,15 +186,28 @@ function SessionItem({
         )}
 
         {uniqueModels.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className={cn('flex flex-wrap gap-1 mt-1', hovered && 'pr-16')}>
             {uniqueModels.slice(0, 5).map((m) => {
               const def = getModelDef(m.modelId)
               return (
                 <span
                   key={m.modelId}
-                  className={cn('inline-block w-2 h-2 rounded-full shrink-0', def.color)}
+                  className={cn(
+                    'inline-flex items-center justify-center rounded-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden',
+                    def.color,
+                    hovered ? 'px-2 py-0.5 max-w-full' : 'w-2 h-2 max-w-[8px]'
+                  )}
                   title={m.label}
-                />
+                >
+                  <span
+                    className={cn(
+                      'text-xs font-medium text-white whitespace-nowrap transition-opacity duration-300',
+                      hovered ? 'opacity-100' : 'opacity-0 w-0'
+                    )}
+                  >
+                    {hovered ? m.label : ''}
+                  </span>
+                </span>
               )
             })}
             {uniqueModels.length > 5 && (
