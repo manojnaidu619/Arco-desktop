@@ -155,7 +155,7 @@ export function SummaryOverlay({
       aria-hidden={!open}
       className={cn(
         'absolute inset-0 z-10 flex flex-col border-t border-border/50 shadow-2xl',
-        'bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70',
+        'bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85',
         'transition-transform duration-300 ease-out will-change-transform',
         open ? 'translate-y-0' : 'translate-y-full',
         !open && 'pointer-events-none'
