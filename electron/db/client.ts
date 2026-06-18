@@ -18,12 +18,12 @@
  * if a migration fails we restore it — so a bad update can never leave a user
  * with a corrupted, unrecoverable database.
  */
-import { app } from 'electron'
-import { copyFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { app } from 'electron'
+import { copyFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import * as schema from './schema'
 
 /** Lazily-created singleton so every caller shares one connection. */

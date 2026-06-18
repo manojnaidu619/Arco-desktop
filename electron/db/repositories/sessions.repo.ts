@@ -7,12 +7,12 @@
  * route handlers — same behavior, but as plain functions instead of HTTP
  * endpoints.
  */
-import { asc, count, desc, eq, inArray } from 'drizzle-orm'
 import { formatModelSlug } from '@shared/models'
-import { getDb } from '../client'
-import * as modelsRepo from './models.repo'
-import { messages, models, sessions, threads } from '../schema'
 import type { Role, SessionData, SessionSummary, ThreadData } from '@shared/types'
+import { asc, count, desc, eq, inArray } from 'drizzle-orm'
+import { getDb } from '../client'
+import { messages, models, sessions, threads } from '../schema'
+import * as modelsRepo from './models.repo'
 
 /** Current timestamp as an ISO string (how all dates are stored). */
 const now = () => new Date().toISOString()
@@ -48,20 +48,16 @@ function buildSessionData(sessionId: number): SessionData {
   const allMessages =
     threadIds.length > 0
       ? db
-          .select()
-          .from(messages)
-          .where(inArray(messages.threadId, threadIds))
-          .orderBy(asc(messages.seq))
-          .all()
+        .select()
+        .from(messages)
+        .where(inArray(messages.threadId, threadIds))
+        .orderBy(asc(messages.seq))
+        .all()
       : []
 
-  // Slot = position in the ordered list. Threads are always contiguous from
-  // slot 0 (empty panes only ever sit at the tail with no thread row), so the
-  // array index equals the intended slot. Using the index also repairs legacy
-  // rows that predate the `slot` column (all defaulted to 0).
-  const threadData: ThreadData[] = sessionThreads.map((t, index) => ({
+  const threadData: ThreadData[] = sessionThreads.map((t) => ({
     threadId: t.id,
-    slot: index,
+    slot: t.slot,
     modelId: formatModelSlug(t.author, t.slug),
     label: t.label,
     messages: allMessages
@@ -93,7 +89,7 @@ export function getCurrentSession(): SessionData {
   return buildSessionData(session.id)
 }
 
-/** List every session for the sidebar (newest first), with its model dots. */
+/** List every session for the sidebar (most recently active first), with its model dots. */
 export function listSessions(): SessionSummary[] {
   const db = getDb()
 
@@ -131,7 +127,7 @@ export function createSession(): number {
   const db = getDb()
   const ts = now()
 
-  db.update(sessions).set({ isActive: false, updatedAt: ts }).where(eq(sessions.isActive, true)).run()
+  db.update(sessions).set({ isActive: false }).where(eq(sessions.isActive, true)).run()
 
   const created = db
     .insert(sessions)
@@ -145,10 +141,9 @@ export function createSession(): number {
 /** Switch the active session to `sessionId` and return its full data. */
 export function loadSession(sessionId: number): SessionData {
   const db = getDb()
-  const ts = now()
 
-  db.update(sessions).set({ isActive: false, updatedAt: ts }).where(eq(sessions.isActive, true)).run()
-  db.update(sessions).set({ isActive: true, updatedAt: ts }).where(eq(sessions.id, sessionId)).run()
+  db.update(sessions).set({ isActive: false }).where(eq(sessions.isActive, true)).run()
+  db.update(sessions).set({ isActive: true }).where(eq(sessions.id, sessionId)).run()
 
   return buildSessionData(sessionId)
 }
@@ -162,14 +157,14 @@ export function deleteSession(sessionId: number): void {
 export function setSessionTitle(sessionId: number, title: string): void {
   getDb()
     .update(sessions)
-    .set({ title: String(title).slice(0, 120), updatedAt: now() })
+    .set({ title: String(title).slice(0, 120) })
     .where(eq(sessions.id, sessionId))
     .run()
 }
 
 /** Set a session's grid layout (number of visible panes). */
 export function setSessionLayout(sessionId: number, layout: number): void {
-  getDb().update(sessions).set({ layout, updatedAt: now() }).where(eq(sessions.id, sessionId)).run()
+  getDb().update(sessions).set({ layout }).where(eq(sessions.id, sessionId)).run()
 }
 
 /** Add a pane (thread) at a grid slot; returns the new thread id. */
@@ -219,10 +214,17 @@ export function reorderThreads(threadIds: number[]): void {
 /** Append a message to a thread, computing its sequence number. */
 export function addMessage(threadId: number, role: Role, content: string): void {
   const db = getDb()
+  const ts = now()
+
+  const thread = db.select({ sessionId: threads.sessionId }).from(threads).where(eq(threads.id, threadId)).get()
 
   // The new message's seq is the current count (0-based append).
   const result = db.select({ value: count() }).from(messages).where(eq(messages.threadId, threadId)).get()
   const seq = result?.value ?? 0
 
-  db.insert(messages).values({ threadId, role, content, seq, createdAt: now() }).run()
+  db.insert(messages).values({ threadId, role, content, seq, createdAt: ts }).run()
+
+  if (thread) {
+    db.update(sessions).set({ updatedAt: ts }).where(eq(sessions.id, thread.sessionId)).run()
+  }
 }

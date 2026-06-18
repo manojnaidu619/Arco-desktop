@@ -1,6 +1,6 @@
 /**
- * The conversation-history sidebar (left rail). Lists past sessions grouped by
- * recency, with inline rename and delete. Mirrors the ChatGPT-style sidebar.
+ * The conversation-history sidebar (left rail). Lists past sessions under a
+ * single "Recents" section, with inline rename and delete. Mirrors ChatGPT.
  */
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { Button } from '@/components/ui/button'
@@ -19,27 +19,6 @@ interface Props {
   onDeleteSession: (id: number) => Promise<void>
   /** Opens the global settings/usage modal (footer gear menu). */
   onOpenSettings: () => void
-}
-
-/** Human-friendly relative date used to group sessions. */
-function relativeDate(iso: string): string {
-  const date = new Date(iso)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-function groupSessions(sessions: SessionSummary[]) {
-  const groups: Record<string, SessionSummary[]> = {}
-  for (const s of sessions) {
-    const label = relativeDate(s.updatedAt)
-    if (!groups[label]) groups[label] = []
-    groups[label].push(s)
-  }
-  return groups
 }
 
 export function Sidebar({
@@ -62,9 +41,6 @@ export function Sidebar({
       (s.title ?? 'New conversation').toLowerCase().includes(searchQuery.toLowerCase())
     )
     : meaningful
-
-  const groups = groupSessions(filtered)
-  const groupKeys = Object.keys(groups)
 
   return (
     <div className="flex flex-col h-full w-full bg-muted/30 border-r border-border">
@@ -109,23 +85,19 @@ export function Sidebar({
         ) : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center mt-8 px-3">No conversations found</p>
         ) : (
-          groupKeys
-            .filter((group) => groups[group].length > 0)
-            .map((group) => (
-              <div key={group} className="mb-3">
-                <p className="text-xs font-medium text-muted-foreground px-3 py-1">{group}</p>
-                {groups[group].map((session) => (
-                  <SessionItem
-                    key={session.id}
-                    session={session}
-                    isActive={session.id === currentSessionId}
-                    onClick={() => onSelectSession(session.id)}
-                    onRename={(title) => onRenameSession(session.id, title)}
-                    onDelete={() => onDeleteSession(session.id)}
-                  />
-                ))}
-              </div>
-            ))
+          <div className="mb-3">
+            <p className="text-xs font-medium text-muted-foreground px-3 py-1">Recents</p>
+            {filtered.map((session) => (
+              <SessionItem
+                key={session.id}
+                session={session}
+                isActive={session.id === currentSessionId}
+                onClick={() => onSelectSession(session.id)}
+                onRename={(title) => onRenameSession(session.id, title)}
+                onDelete={() => onDeleteSession(session.id)}
+              />
+            ))}
+          </div>
         )}
       </div>
 
