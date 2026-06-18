@@ -133,17 +133,76 @@ The most important flow. This is where the streaming pattern earns its keep.
 
 ---
 
-## E. Adding a custom model
+## E. Adding a saved model
 
-1. 🖥️ `ModelPicker.tsx` (via `useCustomModels.ts`) calls
-   `api.settings.addCustomModel(id)`.
-2. 🌉 → `settings:addCustomModel`.
+1. 🖥️ `ModelDropdown.tsx` (via `useSavedModels.ts`) calls
+   `api.settings.addSavedModel(id)`.
+2. 🌉 → `settings:addSavedModel`.
 3. ⚙️ `settings.ts` → `services/settings-store.ts` appends the id to
    `settings.json` and returns the updated list.
 4. 🖥️ The picker shows it under "Your models", and it persists across restarts.
 
 ---
 
-These five traces cover every pattern in the app. When adding a feature, find
+## F. Summarizing the latest responses (streaming) ⭐
+
+On-demand synthesis of the most recent turn from each visible pane. Same
+streaming pattern as chat, but scoped to one summarizer model and **not
+persisted** — closing the overlay discards the summary.
+
+### When it appears
+
+1. 🖥️ `MainApp` shows the **Summarize** tab above the composer when **2+**
+   visible panes each have a completed latest exchange (user message + non-empty
+   assistant reply) and no pane is streaming.
+2. 🖥️ Clicking the tab slides up `SummaryOverlay` over the model grid (composer
+   stays visible but locked). The toolbar shows which pane models are being
+   compared and lets the user pick any model from their **saved library** as the
+   summarizer.
+
+### Kickoff
+
+3. 🖥️ User picks a summarizer model and clicks **Generate** → `generateSummary()`
+   in `MainApp.tsx`:
+   - gathers the last user question and each pane's latest assistant reply,
+   - generates a `requestId`, clears prior summary text, sets `streaming: true`,
+   - fires `api.summary.start({ requestId, model, userMessage, responses })`.
+4. 🌉 → channel `summary:start` (fire-and-forget).
+
+### The stream
+
+5. ⚙️ `electron/ipc/summary.ts` receives `summary:start`:
+   - reads the decrypted key,
+   - builds a synthesis prompt (`buildSummaryPrompt`) with the question + all
+     pane responses,
+   - stores an `AbortController` under `requestId`,
+   - calls `streamChat` (same OpenRouter client as chat).
+6. ⚙️ For every chunk, pushes `summary:delta { requestId, delta }`.
+7. 🌉🖥️ `MainApp`'s `api.summary.onDelta` subscription appends text to
+   `summaryContent`. `SummaryOverlay` renders it via `AnimatedMarkdown`.
+
+### Finish / cancel
+
+8. ⚙️ On success, sends `summary:done { requestId, content }`.
+9. 🖥️ `onDone` clears the streaming flag. **Nothing is written to SQLite.**
+10. 🖥️ **Stop** or closing the overlay calls `api.summary.abort(requestId)`;
+    partial text is discarded. Changing the summarizer model clears any existing
+    summary. Session switch or layout changes that drop below 2 comparable panes
+    close the overlay immediately.
+
+```
+🖥️ Generate ─▶ summary.start{requestId} ─▶ ⚙️ buildSummaryPrompt + streamChat
+   ▲                                              │
+   │  onDelta {requestId, delta}  (xN) ◀──────────┘
+   │  onDone  {requestId, content}        ◀── once at end
+   └─ append to summaryContent in MainApp (ephemeral)
+```
+
+See also: [internals/streaming-pipeline.md](./internals/streaming-pipeline.md)
+(summary section).
+
+---
+
+These six traces cover every pattern in the app. When adding a feature, find
 the closest trace above and follow the same hops. Recipes for doing exactly
 that are in **[04-extending.md](./04-extending.md)**.

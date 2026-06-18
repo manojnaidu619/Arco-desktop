@@ -24,7 +24,8 @@ The messaging system Electron uses for the main process and renderer to talk,
 since they're separate processes. It replaces the HTTP calls you'd use between a
 web frontend and backend. Two styles we use:
 - `invoke`/`handle` — request → response (returns a Promise).
-- `send` + `.on` events — fire-and-forget + pushed events (used for streaming).
+- `send` + `.on` events — fire-and-forget + pushed events (used for chat and
+  summary streaming).
 
 ### Preload (script)
 A small script (`electron/preload.ts`) that runs in a privileged spot between
@@ -119,6 +120,6 @@ warning. We ship **unsigned** for now and add this before public distribution �
 no code changes required, just config in `electron-builder.yml`.
 
 ### SSE (Server-Sent Events)
-The streaming format OpenRouter uses for chat: a sequence of `data: {…}` lines
-ending in `data: [DONE]`. `services/openrouter.ts` parses these into the text
-deltas we push to the UI.
+The streaming format OpenRouter uses for chat and summary: a sequence of
+`data: {…}` lines ending in `data: [DONE]`. `services/openrouter.ts` parses
+these into the text deltas we push to the UI.

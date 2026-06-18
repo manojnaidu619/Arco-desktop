@@ -13,8 +13,9 @@ how Electron does things.
 2. **[02-project-structure.md](./02-project-structure.md)** — A guided tour of
    every folder and file, and which "half" of the app each belongs to.
 3. **[03-data-flow.md](./03-data-flow.md)** — Step-by-step traces of real
-   actions (sending a message, restoring a session, saving the API key) so you
-   can see the pieces working together.
+   actions (sending a message, restoring a session, saving the API key,
+   summarizing the latest pane replies) so you can see the pieces working
+   together.
 4. **[04-extending.md](./04-extending.md)** — Copy-paste recipes for the common
    changes you'll make: add a backend call, a model, a settings field, a DB
    table, a UI screen.

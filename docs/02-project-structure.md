@@ -37,7 +37,8 @@ electron/
 │   ├── index.ts              ←   registers all handlers (called from main.ts)
 │   ├── sessions.ts           ←   conversation CRUD endpoints
 │   ├── chat.ts               ←   streaming chat (start/abort + push events)
-│   └── settings.ts           ←   API-key + custom-model endpoints
+│   ├── summary.ts            ←   multi-model summarization (same streaming pattern)
+│   └── settings.ts           ←   API-key + saved-model endpoints
 │
 ├── services/                 ← stateless logic (no IPC knowledge)
 │   ├── openrouter.ts         ←   talks to the OpenRouter API
@@ -97,16 +98,17 @@ src/
 │
 ├── hooks/
 │   ├── useChat.ts            ← all conversation state + streaming logic
-│   └── useCustomModels.ts    ← the user's saved custom model ids
+│   └── useSavedModels.ts     ← the user's saved model library
 │
 └── components/
-    ├── MainApp.tsx           ← the main screen layout (sidebar + grid + bottom bar)
+    ├── MainApp.tsx           ← main screen (sidebar + grid + composer + summary state)
     ├── Onboarding.tsx        ← first-run API-key screen
     ├── SettingsDialog.tsx    ← manage/remove key, view balance
     ├── Sidebar.tsx           ← session history list
     ├── LayoutSelector.tsx    ← the 1/2/3/4/6 grid-layout picker
     ├── ModelPane.tsx         ← one grid pane (dropdown + messages + follow-up)
-    ├── ModelDropdown.tsx     ← per-pane model picker popover (curated + custom)
+    ├── ModelDropdown.tsx     ← per-pane model picker popover (curated + saved)
+    ├── SummaryOverlay.tsx    ← slide-up summarization panel + SummaryTab handle
     ├── ChatBar.tsx           ← the shared "ask all" composer
     ├── MessageBubble.tsx     ← renders one message (Markdown for assistant)
     ├── ThemeToggle.tsx       ← light/dark/system switch
@@ -127,7 +129,8 @@ src/
   hold local UI state (what's expanded, what panel is open).
 - **`hooks/`** — shared stateful logic. `useChat` is the brain: it owns the
   in-memory conversation and is the only thing that calls `api.chat.*` and
-  `api.sessions.*`.
+  `api.sessions.*`. Summarization state lives in `MainApp` and calls
+  `api.summary.*` (ephemeral — not persisted to SQLite).
 - **`lib/api.ts`** — the single import every component/hook uses to reach the
   backend. Nothing in `src/` should ever touch `window.api` directly; always go
   through `api` from here.

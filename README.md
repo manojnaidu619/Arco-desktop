@@ -21,7 +21,7 @@ shared/     → Types + the api-contract that both sides agree on
 
 - **shared/api-contract.ts** — the single source of truth for `window.api`.
 - **electron/preload.ts** — publishes `window.api` to the UI.
-- **electron/ipc/** — backend handlers (sessions, chat streaming, settings).
+- **electron/ipc/** — backend handlers (sessions, chat streaming, summary, settings).
 - **electron/services/** — the real logic: OpenRouter client, SQLite
   repositories, Keychain (`safeStorage`) key storage, settings store.
 

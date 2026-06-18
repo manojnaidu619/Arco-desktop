@@ -55,3 +55,40 @@ Switching sessions, creating a new session, or deleting while any pane is stream
 The custom smooth-reveal buffer layer (`pendingBySlot`, `doneInfoBySlot`, `revealFrame`, `revealTick`, `ensureRevealing`, `flushSlot`) has been removed from `useChat.ts`. Deltas now go directly into `pane.messages`. `AnimatedMarkdown` in `MessageBubble.tsx` handles rendering and streaming animation with a single shared component style map.
 
 Stop behavior now matches major LLM providers: truncate and keep partial content instead of rolling back the entire turn.
+
+---
+
+## Summary streaming (multi-model synthesis)
+
+Same IPC push pattern as chat, implemented in `electron/ipc/summary.ts` and
+consumed by `MainApp.tsx` + `SummaryOverlay.tsx`. Key differences:
+
+| | Chat (`useChat`) | Summary (`MainApp`) |
+| --- | --- | --- |
+| Trigger | Send in composer / pane | Summarize tab → Generate |
+| Scope | One stream per pane | One stream total |
+| Input | Full pane message history | Latest user question + latest assistant reply per visible pane |
+| Output | Persisted to SQLite | Ephemeral (discarded on overlay close) |
+| Channels | `chat:*` | `summary:*` |
+
+```mermaid
+flowchart TD
+  tabClick[SummaryTab click] --> overlayOpen[SummaryOverlay mounts]
+  overlayOpen --> pickModel[User picks library model]
+  pickModel --> generate[generateSummary in MainApp]
+  generate --> ipcStart[api.summary.start IPC]
+  ipcStart --> buildPrompt[summary.ts buildSummaryPrompt]
+  buildPrompt --> streamChat[streamChat via OpenRouter]
+  streamChat --> onDelta[summary.onDelta]
+  onDelta --> summaryContent[Append to summaryContent state]
+  summaryContent --> animatedMarkdown[AnimatedMarkdown in SummaryOverlay]
+  streamChat --> onDone[summary.onDone]
+  onDone --> streamingFalse[streaming = false]
+```
+
+### Summary-specific edge cases
+
+- **Tab visibility:** hidden while any pane is streaming or fewer than 2 panes have a complete latest exchange.
+- **Composer locked:** `ChatBar` is read-only while the overlay is mounted.
+- **Regenerate:** uses the *current* visible panes — the toolbar lists which models are included so the user knows if layout changed since the last run.
+- **Abort:** Stop or overlay close calls `api.summary.abort`; partial summary text is discarded.

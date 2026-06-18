@@ -49,6 +49,7 @@ onto the UI's `window`. The UI may call only the methods we put there.
   ┌─ src/ (UI) ─────────────┐        ┌─ electron/ (backend) ──────────┐
   │ api.sessions.list()     │        │ ipcMain.handle('sessions:list')│
   │ api.chat.start(...)     │        │ ipcMain.on('chat:start', ...)  │
+  │ api.summary.start(...)  │        │ ipcMain.on('summary:start',...)│
   │ api.settings.saveKey()  │        │ ipcMain.handle('settings:...') │
   └───────────┬─────────────┘        └───────────────┬────────────────┘
               │  window.api  (defined in electron/preload.ts)          │
@@ -66,11 +67,12 @@ component.
    result, exactly like `fetch`. Built on `ipcRenderer.invoke` ↔
    `ipcMain.handle`. Used for sessions and settings.
 
-2. **Streaming** (chat only). A response that arrives gradually can't be a
+2. **Streaming** (chat and summary). A response that arrives gradually can't be a
    single return value. So the UI *starts* a request and then *listens* for a
    series of events: `delta` (more text), then `done` or `error`. Built on
-   `ipcRenderer.send` + pushed events. See
-   [03-data-flow.md](./03-data-flow.md) for the full trace.
+   `ipcRenderer.send` + pushed events. Chat uses `electron/ipc/chat.ts`; summary
+   uses `electron/ipc/summary.ts`. See [03-data-flow.md](./03-data-flow.md) for
+   full traces.
 
 ## The contract that keeps both sides honest
 

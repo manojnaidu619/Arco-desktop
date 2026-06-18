@@ -59,6 +59,10 @@ This document tracks upcoming features, improvements, and technical enhancements
 
 ## Completed Features
 
+### 🟢 [x] Multi-Model Response Summarization
+**Priority:** High  
+**Description:** Slide-up overlay that synthesizes the latest replies from all visible panes into a structured comparison (consensus, disagreements, standout insights). User picks a summarizer model from their library; summary streams via OpenRouter and is ephemeral (not persisted).
+
 ### 🟢 [x] Session Search Bar
 **Priority:** Medium  
 **Description:** Real-time search functionality in the sidebar to filter conversations by title.

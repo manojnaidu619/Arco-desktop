@@ -68,8 +68,9 @@ listAllModels: () => ipcRenderer.invoke(CHANNELS.settings.listAllModels),
 typed. (If you forget step 3 or 4, TypeScript/the call will tell you.)
 
 > For a **streaming** call instead of request/response, copy the pattern in
-> `electron/ipc/chat.ts` (use `ipcMain.on` + `sender.send` events, and
-> `onX(cb)` subscriptions in preload) rather than `ipcMain.handle`.
+> `electron/ipc/chat.ts` or `electron/ipc/summary.ts` (use `ipcMain.on` +
+> `sender.send` events, and `onX(cb)` subscriptions in preload) rather than
+> `ipcMain.handle`.
 
 ---
 
