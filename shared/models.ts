@@ -65,6 +65,21 @@ export function getModelDef(id: string): ModelDef {
   )
 }
 
+/** Split an OpenRouter model id into provider + model name. */
+export function parseModelSlug(fullId: string): { author: string; slug: string } | null {
+  const slash = fullId.indexOf('/')
+  if (slash === -1) return null
+  const author = fullId.slice(0, slash).trim()
+  const slug = fullId.slice(slash + 1).trim()
+  if (!author || !slug) return null
+  return { author, slug }
+}
+
+/** Compose the OpenRouter model id from provider + model name. */
+export function formatModelSlug(author: string, slug: string): string {
+  return `${author}/${slug}`
+}
+
 /** True when the model id is in the user's saved library. */
 export function isModelInLibrary(modelId: string | null, savedModels: string[]): boolean {
   return Boolean(modelId && savedModels.includes(modelId))

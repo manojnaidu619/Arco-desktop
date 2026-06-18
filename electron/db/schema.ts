@@ -1,18 +1,37 @@
 /**
  * Database schema (Drizzle ORM, SQLite).
  *
- * Three tables form a simple hierarchy:
+ * Four tables form a simple hierarchy:
  *   sessions  →  threads  →  messages
+ *   models    ←  threads (each pane references one saved model)
  *
  *   • A SESSION is one conversation tab (what you see in the sidebar).
  *   • A THREAD is one model's column within a session.
  *   • A MESSAGE is a single user or assistant turn within a thread.
+ *   • A MODEL is a user-saved OpenRouter model (author/slug + display label).
  *
  * Deletes cascade downward: removing a session removes its threads, which
  * removes their messages (enforced by the foreign keys + `PRAGMA
  * foreign_keys = ON`, set when the connection opens — see client.ts).
  */
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+
+export const models = sqliteTable(
+  'models',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** OpenRouter provider, e.g. "openai". */
+    author: text('author').notNull(),
+    /** Model name part, e.g. "gpt-4o". Full id = `${author}/${slug}`. */
+    slug: text('slug').notNull(),
+    /** Friendly display name captured when the model was added. */
+    label: text('label').notNull(),
+    createdAt: text('created_at').notNull(),
+    /** Soft-delete timestamp; null means the model is in the user's library. */
+    deletedAt: text('deleted_at')
+  },
+  (table) => [unique().on(table.author, table.slug)]
+)
 
 export const sessions = sqliteTable('sessions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -33,10 +52,10 @@ export const threads = sqliteTable('threads', {
     .references(() => sessions.id, { onDelete: 'cascade' }),
   /** Grid position 0..5 — the pane's stable identity within the session. */
   slot: integer('slot').notNull().default(0),
-  /** OpenRouter model id this pane talks to. */
-  modelId: text('model_id').notNull(),
-  /** Display label captured at creation time. */
-  label: text('label').notNull(),
+  /** FK to the model assigned to this pane. */
+  modelId: integer('model_id')
+    .notNull()
+    .references(() => models.id),
   createdAt: text('created_at').notNull()
 })
 

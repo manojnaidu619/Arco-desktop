@@ -16,6 +16,8 @@ import {
   type KeyValidationResult,
   type ModelValidationResult
 } from '@shared/api-contract'
+import { getModelDef } from '@shared/models'
+import * as modelsRepo from '../db/repositories/models.repo'
 import { validateKey as validateAgainstOpenRouter, validateModel as validateModelOnOpenRouter } from '../services/openrouter'
 import * as secureStore from '../services/secure-store'
 import * as settingsStore from '../services/settings-store'
@@ -54,6 +56,7 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle(CHANNELS.settings.clearKey, () => {
     secureStore.clearKey()
     settingsStore.resetOnboarding()
+    modelsRepo.softDeleteAll()
   })
 
   ipcMain.handle(CHANNELS.settings.getBalance, async (): Promise<KeyValidationResult> => {
@@ -62,15 +65,13 @@ export function registerSettingsHandlers(): void {
     return validate(key)
   })
 
-  ipcMain.handle(CHANNELS.settings.getSavedModels, () => settingsStore.getSavedModels())
-  ipcMain.handle(CHANNELS.settings.setSavedModels, (_e, modelIds: string[]) => settingsStore.setSavedModels(modelIds))
-  ipcMain.handle(CHANNELS.settings.removeSavedModel, (_e, modelId: string) =>
-    settingsStore.removeSavedModel(modelId)
-  )
+  ipcMain.handle(CHANNELS.settings.getSavedModels, () => modelsRepo.listActiveSlugs())
+  ipcMain.handle(CHANNELS.settings.setSavedModels, (_e, modelIds: string[]) => modelsRepo.replaceActive(modelIds))
+  ipcMain.handle(CHANNELS.settings.removeSavedModel, (_e, modelId: string) => modelsRepo.softDelete(modelId))
 
   ipcMain.handle(CHANNELS.settings.addSavedModel, async (_e, modelId: string): Promise<AddSavedModelResult> => {
     const id = modelId.trim()
-    const existing = settingsStore.getSavedModels()
+    const existing = modelsRepo.listActiveSlugs()
     if (existing.includes(id)) {
       return { ok: false, models: existing, error: 'This model is already in your library.' }
     }
@@ -78,8 +79,9 @@ export function registerSettingsHandlers(): void {
     const validation = await validateModel(id)
     if (!validation.ok) return { ok: false, models: existing, error: validation.error }
 
-    const models = settingsStore.addSavedModel(id)
-    return { ok: true, models }
+    const label = validation.modelName ?? getModelDef(id).label
+    modelsRepo.upsertActive(id, label)
+    return { ok: true, models: modelsRepo.listActiveSlugs() }
   })
 
   ipcMain.handle(CHANNELS.settings.validateModel, (_e, modelId: string) => validateModel(modelId))

@@ -8,8 +8,10 @@
  * endpoints.
  */
 import { asc, count, desc, eq, inArray } from 'drizzle-orm'
+import { formatModelSlug } from '@shared/models'
 import { getDb } from '../client'
-import { messages, sessions, threads } from '../schema'
+import * as modelsRepo from './models.repo'
+import { messages, models, sessions, threads } from '../schema'
 import type { Role, SessionData, SessionSummary, ThreadData } from '@shared/types'
 
 /** Current timestamp as an ISO string (how all dates are stored). */
@@ -26,8 +28,15 @@ function buildSessionData(sessionId: number): SessionData {
   const layout = session?.layout ?? 4
 
   const sessionThreads = db
-    .select()
+    .select({
+      id: threads.id,
+      slot: threads.slot,
+      author: models.author,
+      slug: models.slug,
+      label: models.label
+    })
     .from(threads)
+    .innerJoin(models, eq(threads.modelId, models.id))
     .where(eq(threads.sessionId, sessionId))
     .orderBy(asc(threads.slot), asc(threads.createdAt))
     .all()
@@ -53,7 +62,7 @@ function buildSessionData(sessionId: number): SessionData {
   const threadData: ThreadData[] = sessionThreads.map((t, index) => ({
     threadId: t.id,
     slot: index,
-    modelId: t.modelId,
+    modelId: formatModelSlug(t.author, t.slug),
     label: t.label,
     messages: allMessages
       .filter((m) => m.threadId === t.id)
@@ -92,8 +101,13 @@ export function listSessions(): SessionSummary[] {
 
   return allSessions.map((s) => {
     const sessionThreads = db
-      .select({ modelId: threads.modelId, label: threads.label })
+      .select({
+        author: models.author,
+        slug: models.slug,
+        label: models.label
+      })
       .from(threads)
+      .innerJoin(models, eq(threads.modelId, models.id))
       .where(eq(threads.sessionId, s.id))
       .all()
 
@@ -104,7 +118,10 @@ export function listSessions(): SessionSummary[] {
       updatedAt: s.updatedAt,
       isActive: s.isActive,
       layout: s.layout ?? 4,
-      models: sessionThreads.map((t) => ({ modelId: t.modelId, label: t.label }))
+      models: sessionThreads.map((t) => ({
+        modelId: formatModelSlug(t.author, t.slug),
+        label: t.label
+      }))
     }
   })
 }
@@ -156,10 +173,11 @@ export function setSessionLayout(sessionId: number, layout: number): void {
 }
 
 /** Add a pane (thread) at a grid slot; returns the new thread id. */
-export function addThread(sessionId: number, slot: number, modelId: string, label: string): number {
+export function addThread(sessionId: number, slot: number, modelSlug: string, label: string): number {
+  const modelRow = modelsRepo.ensureModelRow(modelSlug, label)
   const created = getDb()
     .insert(threads)
-    .values({ sessionId, slot, modelId, label, createdAt: now() })
+    .values({ sessionId, slot, modelId: modelRow.id, createdAt: now() })
     .returning()
     .get()
 
@@ -171,9 +189,10 @@ export function addThread(sessionId: number, slot: number, modelId: string, labe
  * fresh conversation for that pane. The thread row (and its slot) is reused so
  * the pane keeps its grid position.
  */
-export function updateThreadModel(threadId: number, modelId: string, label: string): void {
+export function updateThreadModel(threadId: number, modelSlug: string, label: string): void {
   const db = getDb()
-  db.update(threads).set({ modelId, label }).where(eq(threads.id, threadId)).run()
+  const modelRow = modelsRepo.ensureModelRow(modelSlug, label)
+  db.update(threads).set({ modelId: modelRow.id }).where(eq(threads.id, threadId)).run()
   db.delete(messages).where(eq(messages.threadId, threadId)).run()
 }
 
