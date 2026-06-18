@@ -20,16 +20,27 @@ interface Props {
   skippedCount?: number
   /** True while any pane is streaming — shows the stop button. */
   streaming?: boolean
+  /** When true, the composer is read-only (e.g. summary overlay is open). */
+  locked?: boolean
   onSend: (content: string) => void
   onAbort: () => void
 }
 
-export function ChatBar({ value, onValueChange, activeCount, skippedCount = 0, streaming, onSend, onAbort }: Props) {
+export function ChatBar({
+  value,
+  onValueChange,
+  activeCount,
+  skippedCount = 0,
+  streaming,
+  locked,
+  onSend,
+  onAbort
+}: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const send = () => {
     const text = value.trim()
-    if (!text || streaming || activeCount === 0) return
+    if (!text || streaming || locked || activeCount === 0) return
     onSend(text)
     textareaRef.current?.focus()
   }
@@ -50,13 +61,15 @@ export function ChatBar({ value, onValueChange, activeCount, skippedCount = 0, s
           onChange={(e) => onValueChange(e.target.value)}
           onKeyDown={handleKey}
           placeholder={
-            streaming
-              ? 'Generating… press ■ to stop'
-              : activeCount === 0
-                ? 'Pick a model in a pane to begin…'
-                : `Ask all ${activeCount} model${activeCount > 1 ? 's' : ''} at once…`
+            locked
+              ? 'Close summary to send a message…'
+              : streaming
+                ? 'Generating… press ■ to stop'
+                : activeCount === 0
+                  ? 'Pick a model in a pane to begin…'
+                  : `Ask all ${activeCount} model${activeCount > 1 ? 's' : ''} at once…`
           }
-          disabled={activeCount === 0}
+          disabled={activeCount === 0 || locked}
           rows={2}
           className="resize-none text-sm leading-relaxed flex-1 min-h-[56px] max-h-[200px] overflow-y-auto"
         />
@@ -75,7 +88,7 @@ export function ChatBar({ value, onValueChange, activeCount, skippedCount = 0, s
             size="icon"
             className="h-[56px] w-[56px] shrink-0 rounded-full"
             onClick={send}
-            disabled={!value.trim() || activeCount === 0}
+            disabled={!value.trim() || activeCount === 0 || locked}
           >
             <ArrowUp className="h-5 w-5" />
           </Button>
@@ -84,11 +97,13 @@ export function ChatBar({ value, onValueChange, activeCount, skippedCount = 0, s
       {activeCount > 0 && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <BrainCircuit className="h-3.5 w-3.5" />
-          {streaming
-            ? 'Generating across panes · click stop to end generation'
-            : skippedCount > 0
-              ? `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} · ${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
-              : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
+          {locked
+            ? 'Composer paused while summary is open · close summary to continue chatting'
+            : streaming
+              ? 'Generating across panes · click stop to end generation'
+              : skippedCount > 0
+                ? `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} · ${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
+                : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
         </p>
       )}
     </div>

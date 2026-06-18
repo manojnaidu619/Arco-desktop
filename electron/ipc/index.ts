@@ -6,9 +6,11 @@
 import { registerChatHandlers } from './chat'
 import { registerSessionHandlers } from './sessions'
 import { registerSettingsHandlers } from './settings'
+import { registerSummaryHandlers } from './summary'
 
 export function registerIpcHandlers(): void {
   registerSessionHandlers()
   registerChatHandlers()
+  registerSummaryHandlers()
   registerSettingsHandlers()
 }

@@ -10,12 +10,14 @@ import { GenerationInProgressDialog } from '@/components/GenerationInProgressDia
 import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
 import { Sidebar } from '@/components/Sidebar'
+import { SUMMARY_OVERLAY_ANIM_MS, SummaryOverlay, SummaryTab } from '@/components/SummaryOverlay'
 import { Button } from '@/components/ui/button'
-import { useChat } from '@/hooks/useChat'
+import { useChat, type Pane } from '@/hooks/useChat'
 import { useSavedModels } from '@/hooks/useSavedModels'
+import { api } from '@/lib/api'
 import { isModelInLibrary } from '@shared/models'
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 /** How many grid columns each layout preset uses (rows then fill the height). */
 const COLS: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 2, 6: 3 }
@@ -25,6 +27,18 @@ const STREAMING_NAV_DIALOG = {
   message:
     'Stop generating before switching sessions or starting a new conversation. Use the ■ stop button in the composer or a pane.'
 } as const
+
+/** True when a pane has a completed latest turn (user asked + assistant replied). */
+function paneHasLatestExchange(pane: Pane): boolean {
+  const hasUser = pane.messages.some((m) => m.role === 'user')
+  const last = pane.messages.at(-1)
+  return (
+    hasUser &&
+    last?.role === 'assistant' &&
+    last.content.length > 0 &&
+    pane.status !== 'streaming'
+  )
+}
 
 interface Props {
   onOpenSettings: () => void
@@ -54,10 +68,16 @@ export function MainApp({ onOpenSettings }: Props) {
 
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null)
-  // The bottom composer's text is controlled here so an abort can restore the
-  // just-sent message for editing.
   const [composerValue, setComposerValue] = useState('')
   const [streamingNavBlocked, setStreamingNavBlocked] = useState(false)
+
+  // Summary overlay — streams a structured comparison via IPC
+  const [summaryOverlayOpen, setSummaryOverlayOpen] = useState(false)
+  const [summaryOverlayMounted, setSummaryOverlayMounted] = useState(false)
+  const [summaryModelId, setSummaryModelId] = useState<string | null>(null)
+  const [summaryContent, setSummaryContent] = useState('')
+  const [summaryStreaming, setSummaryStreaming] = useState(false)
+  const summaryRequestIdRef = useRef<string | null>(null)
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
   const activeCount = useMemo(() => visiblePanes.filter((p) => p.modelId).length, [visiblePanes])
@@ -66,12 +86,154 @@ export function MainApp({ onOpenSettings }: Props) {
     [visiblePanes, savedModels]
   )
   const skippedCount = activeCount - sendableCount
-  // Populated panes (with a model) for the layout selector's keep-which picker.
   const populatedPanes = useMemo(
     () => panes.filter((p) => p.modelId).map((p) => ({ slot: p.slot, modelId: p.modelId!, label: p.label })),
     [panes]
   )
   const isAnyStreaming = panes.some((p) => p.status === 'streaming')
+
+  const panesWithLatestExchange = useMemo(
+    () => visiblePanes.filter(paneHasLatestExchange),
+    [visiblePanes]
+  )
+  const comparedPanes = useMemo(
+    () =>
+      panesWithLatestExchange.map((p) => ({
+        modelId: p.modelId!,
+        label: p.label
+      })),
+    [panesWithLatestExchange]
+  )
+  const showSummarizeTab = panesWithLatestExchange.length >= 2 && !isAnyStreaming
+
+  const resetSummaryState = () => {
+    setSummaryContent('')
+    setSummaryStreaming(false)
+    setSummaryModelId(null)
+    summaryRequestIdRef.current = null
+  }
+
+  const abortSummary = () => {
+    if (summaryRequestIdRef.current) {
+      api.summary.abort(summaryRequestIdRef.current)
+      summaryRequestIdRef.current = null
+    }
+    setSummaryContent('')
+    setSummaryStreaming(false)
+  }
+
+  const generateSummary = () => {
+    if (!summaryModelId) return
+
+    const panesWithExchange = panesWithLatestExchange
+    const userMessages = panesWithExchange[0]?.messages.filter((m) => m.role === 'user')
+    const lastUserMessage = userMessages?.at(-1)?.content ?? ''
+
+    const responses = panesWithExchange.map((p) => ({
+      modelLabel: p.label,
+      content: p.messages.at(-1)?.content ?? ''
+    }))
+
+    const requestId = crypto.randomUUID()
+    summaryRequestIdRef.current = requestId
+    setSummaryContent('')
+    setSummaryStreaming(true)
+
+    api.summary.start({
+      requestId,
+      model: summaryModelId,
+      userMessage: lastUserMessage,
+      responses
+    })
+  }
+
+  const handleSelectSummaryModel = (modelId: string) => {
+    setSummaryModelId(modelId)
+    if (summaryContent) {
+      setSummaryContent('')
+      setSummaryStreaming(false)
+      if (summaryRequestIdRef.current) {
+        api.summary.abort(summaryRequestIdRef.current)
+        summaryRequestIdRef.current = null
+      }
+    }
+  }
+
+  const openSummaryOverlay = () => {
+    resetSummaryState()
+    setSummaryOverlayMounted(true)
+    // Double rAF so the closed transform paints before animating open.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSummaryOverlayOpen(true))
+    })
+  }
+
+  const closeSummaryOverlay = () => {
+    if (summaryStreaming) abortSummary()
+    setSummaryOverlayOpen(false)
+  }
+
+  const closeSummaryOverlayImmediate = () => {
+    closeSummaryOverlay()
+    setSummaryOverlayMounted(false)
+    resetSummaryState()
+  }
+
+  const toggleSummaryOverlay = () => {
+    if (summaryOverlayOpen) {
+      closeSummaryOverlay()
+    } else if (!summaryOverlayMounted) {
+      openSummaryOverlay()
+    }
+  }
+
+  useEffect(() => {
+    const offDelta = api.summary.onDelta(({ requestId, delta }) => {
+      if (requestId !== summaryRequestIdRef.current) return
+      setSummaryContent((prev) => prev + delta)
+    })
+
+    const offDone = api.summary.onDone(({ requestId }) => {
+      if (requestId !== summaryRequestIdRef.current) return
+      setSummaryStreaming(false)
+    })
+
+    const offError = api.summary.onError(({ requestId, message }) => {
+      if (requestId !== summaryRequestIdRef.current) return
+      setSummaryStreaming(false)
+      setSummaryContent('')
+      console.error('Summary error:', message)
+    })
+
+    return () => {
+      offDelta()
+      offDone()
+      offError()
+    }
+  }, [])
+
+  // Unmount overlay after slide-down; purge summary state once fully collapsed.
+  useEffect(() => {
+    if (!summaryOverlayOpen && summaryOverlayMounted) {
+      const t = window.setTimeout(() => {
+        setSummaryOverlayMounted(false)
+        resetSummaryState()
+      }, SUMMARY_OVERLAY_ANIM_MS)
+      return () => clearTimeout(t)
+    }
+  }, [summaryOverlayOpen, summaryOverlayMounted])
+
+  // Always start collapsed when the active session changes (any navigation path).
+  useEffect(() => {
+    closeSummaryOverlayImmediate()
+  }, [sessionId])
+
+  // Close overlay if summarize is no longer available (e.g. while panes are streaming).
+  useEffect(() => {
+    if (!showSummarizeTab && summaryOverlayMounted) {
+      closeSummaryOverlayImmediate()
+    }
+  }, [showSummarizeTab, summaryOverlayMounted])
 
   // Reset an out-of-range expansion when the layout shrinks.
   useEffect(() => {
@@ -93,6 +255,7 @@ export function MainApp({ onOpenSettings }: Props) {
       setStreamingNavBlocked(true)
       return
     }
+    closeSummaryOverlayImmediate()
     await newSession()
     setExpandedSlot(null)
   }
@@ -102,6 +265,7 @@ export function MainApp({ onOpenSettings }: Props) {
       setStreamingNavBlocked(true)
       return
     }
+    closeSummaryOverlayImmediate()
     await loadSession(id)
   }
 
@@ -110,6 +274,7 @@ export function MainApp({ onOpenSettings }: Props) {
       setStreamingNavBlocked(true)
       return
     }
+    closeSummaryOverlayImmediate()
     await deleteSession(id)
     setExpandedSlot(null)
   }
@@ -170,59 +335,79 @@ export function MainApp({ onOpenSettings }: Props) {
           />
         </header>
 
-        {/* Grid of panes (or a single expanded pane) */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {expandedPane ? (
-            <ModelPane
-              pane={expandedPane}
-              isExpanded
-              onToggleExpand={() => setExpandedSlot(null)}
-              onSelectModel={setPaneModel}
-              onAskOne={askOne}
-              onAbortPane={abortPane}
-            />
-          ) : (
-            <div
-              // `key={layout}` re-mounts the grid on every layout change, which
-              // re-triggers the tw-animate-css enter animation below — a subtle
-              // fade + zoom as the panes reflow into the new grid.
-              //
-              // Clean cross dividers: the grid's background is the border color
-              // and cells are opaque, so the gap-0.5 reads as crisp 2px lines
-              // forming a continuous cross across every layout.
-              key={layout}
-              className="grid gap-0.5 bg-border h-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
-              style={{ gridTemplateColumns: `repeat(${COLS[layout]}, minmax(0, 1fr))`, gridAutoRows: '1fr' }}
-            >
-              {visiblePanes.map((pane) => (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+            <div className="absolute inset-0 z-0">
+              {expandedPane ? (
                 <ModelPane
-                  key={pane.slot}
-                  pane={pane}
-                  isExpanded={false}
-                  onToggleExpand={() => setExpandedSlot(pane.slot)}
+                  pane={expandedPane}
+                  isExpanded
+                  onToggleExpand={() => setExpandedSlot(null)}
                   onSelectModel={setPaneModel}
                   onAskOne={askOne}
                   onAbortPane={abortPane}
                 />
-              ))}
+              ) : (
+                <div
+                  key={layout}
+                  className="grid gap-0.5 bg-border h-full w-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+                  style={{ gridTemplateColumns: `repeat(${COLS[layout]}, minmax(0, 1fr))`, gridAutoRows: '1fr' }}
+                >
+                  {visiblePanes.map((pane) => (
+                    <ModelPane
+                      key={pane.slot}
+                      pane={pane}
+                      isExpanded={false}
+                      onToggleExpand={() => setExpandedSlot(pane.slot)}
+                      onSelectModel={setPaneModel}
+                      onAskOne={askOne}
+                      onAbortPane={abortPane}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Bottom bar: full-width composer */}
-        <div className="shrink-0 border-t border-border px-4 py-3">
-          <ChatBar
-            value={composerValue}
-            onValueChange={setComposerValue}
-            activeCount={sendableCount}
-            skippedCount={skippedCount}
-            streaming={isAnyStreaming}
-            onSend={(text) => {
-              askAll(text)
-              setComposerValue('')
-            }}
-            onAbort={abort}
-          />
+            {summaryOverlayMounted && (
+              <SummaryOverlay
+                open={summaryOverlayOpen}
+                onOpenChange={(open) => {
+                  if (!open) closeSummaryOverlay()
+                }}
+                models={savedModels}
+                comparedPanes={comparedPanes}
+                disabled={!showSummarizeTab}
+                selectedModelId={summaryModelId}
+                onSelectModel={handleSelectSummaryModel}
+                content={summaryContent}
+                streaming={summaryStreaming}
+                onGenerate={generateSummary}
+                onAbort={abortSummary}
+              />
+            )}
+          </div>
+
+          <div
+            className={`shrink-0 border-t border-border px-4 pb-3 relative z-40 bg-background ${showSummarizeTab || summaryOverlayMounted ? 'pt-4' : 'pt-3'
+              }`}
+          >
+            {(showSummarizeTab || summaryOverlayMounted) && (
+              <SummaryTab open={summaryOverlayOpen} onClick={toggleSummaryOverlay} />
+            )}
+            <ChatBar
+              value={composerValue}
+              onValueChange={setComposerValue}
+              activeCount={sendableCount}
+              skippedCount={skippedCount}
+              streaming={isAnyStreaming}
+              locked={summaryOverlayMounted}
+              onSend={(text) => {
+                askAll(text)
+                setComposerValue('')
+              }}
+              onAbort={abort}
+            />
+          </div>
         </div>
       </div>
 

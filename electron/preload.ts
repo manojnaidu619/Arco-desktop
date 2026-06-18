@@ -17,7 +17,8 @@ import {
   type ChatDeltaEvent,
   type ChatDoneEvent,
   type ChatErrorEvent,
-  type MultiMindApi
+  type MultiMindApi,
+  type SummaryStartRequest
 } from '@shared/api-contract'
 
 /**
@@ -57,6 +58,14 @@ const api: MultiMindApi = {
     onDelta: (cb) => subscribe<ChatDeltaEvent>(CHANNELS.chat.delta, cb),
     onDone: (cb) => subscribe<ChatDoneEvent>(CHANNELS.chat.done, cb),
     onError: (cb) => subscribe<ChatErrorEvent>(CHANNELS.chat.error, cb)
+  },
+
+  summary: {
+    start: (req: SummaryStartRequest) => ipcRenderer.send(CHANNELS.summary.start, req),
+    abort: (requestId: string) => ipcRenderer.send(CHANNELS.summary.abort, requestId),
+    onDelta: (cb) => subscribe<ChatDeltaEvent>(CHANNELS.summary.delta, cb),
+    onDone: (cb) => subscribe<ChatDoneEvent>(CHANNELS.summary.done, cb),
+    onError: (cb) => subscribe<ChatErrorEvent>(CHANNELS.summary.error, cb)
   },
 
   settings: {

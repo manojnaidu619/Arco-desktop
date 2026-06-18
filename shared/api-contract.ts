@@ -53,6 +53,21 @@ export interface ChatErrorEvent {
   message: string
 }
 
+/**
+ * Payload to start a summary request.
+ * Contains the user's question and all model responses to compare.
+ */
+export interface SummaryStartRequest {
+  /** Unique id to correlate streaming events. */
+  requestId: string
+  /** Model to use for summarization. */
+  model: string
+  /** The user's original question being summarized. */
+  userMessage: string
+  /** Responses from each model pane to compare. */
+  responses: Array<{ modelLabel: string; content: string }>
+}
+
 /* ── Settings / API-key payloads ─────────────────────────────────────────── */
 
 /** Remaining-credit info pulled from OpenRouter, shown during onboarding. */
@@ -147,6 +162,20 @@ export interface MultiMindApi {
     onError(cb: (event: ChatErrorEvent) => void): () => void
   }
 
+  /** Multi-model response summarization via OpenRouter. */
+  summary: {
+    /** Begin streaming a summary. Listen via onDelta/onDone/onError. */
+    start(req: SummaryStartRequest): void
+    /** Cancel an in-flight summary by its requestId. */
+    abort(requestId: string): void
+    /** Subscribe to streamed summary text. Returns an unsubscribe function. */
+    onDelta(cb: (event: ChatDeltaEvent) => void): () => void
+    /** Subscribe to summary-complete events. Returns an unsubscribe function. */
+    onDone(cb: (event: ChatDoneEvent) => void): () => void
+    /** Subscribe to summary-error events. Returns an unsubscribe function. */
+    onError(cb: (event: ChatErrorEvent) => void): () => void
+  }
+
   /** API key management + the user's saved model library. */
   settings: {
     /** Whether an API key is stored (drives the first-run gate). */
@@ -202,6 +231,13 @@ export const CHANNELS = {
     delta: 'chat:delta',
     done: 'chat:done',
     error: 'chat:error'
+  },
+  summary: {
+    start: 'summary:start',
+    abort: 'summary:abort',
+    delta: 'summary:delta',
+    done: 'summary:done',
+    error: 'summary:error'
   },
   settings: {
     getKeyStatus: 'settings:getKeyStatus',
