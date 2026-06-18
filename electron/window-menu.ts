@@ -10,7 +10,7 @@
  */
 import { app, Menu, type MenuItemConstructorOptions } from 'electron'
 
-export function buildAppMenu(): void {
+export function buildAppMenu({ devTools = false }: { devTools?: boolean } = {}): void {
   const isMac = process.platform === 'darwin'
 
   const template: MenuItemConstructorOptions[] = [
@@ -56,9 +56,13 @@ export function buildAppMenu(): void {
       label: 'View',
       submenu: [
         { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
+        ...(devTools
+          ? ([
+              { role: 'forceReload' as const },
+              { role: 'toggleDevTools' as const },
+              { type: 'separator' as const }
+            ] as const)
+          : []),
         { role: 'resetZoom' },
         { role: 'zoomIn' },
         { role: 'zoomOut' },

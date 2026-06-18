@@ -25,6 +25,26 @@ app.setName('Multi-Mind')
 /** In dev, electron-vite serves the renderer over http and sets this env var. */
 const RENDERER_DEV_URL = process.env.ELECTRON_RENDERER_URL
 
+/** True for `npm run dev` / `npm run preview`; false for packaged builds. */
+const isDev = !app.isPackaged
+
+/** Wire up DevTools toggles — only available outside packaged production builds. */
+function configureDevTools(win: BrowserWindow): void {
+  if (!isDev) return
+
+  // Chrome-style shortcuts (Electron's View menu uses Option+Cmd+I by default).
+  win.webContents.on('before-input-event', (_event, input) => {
+    if (input.type !== 'keyDown' || !input.meta || !input.alt) return
+    if (input.key === 'i' || input.key === 'j') {
+      win.webContents.toggleDevTools()
+    }
+  })
+
+  win.webContents.once('did-finish-load', () => {
+    win.webContents.openDevTools()
+  })
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1400,
@@ -41,10 +61,12 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true, // UI and preload run in separate JS contexts
       nodeIntegration: false, // UI cannot use Node APIs directly
-      sandbox: false // preload bundles the bridge; safe with the two flags above
+      sandbox: false, // preload bundles the bridge; safe with the two flags above
+      devTools: isDev
     }
   })
 
+  configureDevTools(win)
   win.once('ready-to-show', () => win.show())
 
   // Open any external links (e.g. an OpenRouter docs link) in the user's real
@@ -103,7 +125,7 @@ app.whenReady().then(() => {
   }
 
   registerIpcHandlers()
-  buildAppMenu()
+  buildAppMenu({ devTools: isDev })
   applyContentSecurityPolicy()
   createWindow()
 
