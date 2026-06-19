@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
-import { BrainCircuit, Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import arcoLogo from '@/assets/arco.png'
 import { useEffect, useRef, useState } from 'react'
 
 interface Props {
@@ -45,7 +46,7 @@ export function Sidebar({
   return (
     <div className="flex flex-col h-full w-full bg-muted/30 border-r border-border">
       <div className="flex items-center gap-2 h-14 px-3 border-b border-border shrink-0">
-        <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+        <img src={arcoLogo} alt="Arco" className="h-6 w-6 rounded-md shrink-0" />
         <span className="text-sm font-semibold flex-1 truncate">Arco</span>
         <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={onNewSession} title="New session">
           <Plus className="h-4 w-4" />

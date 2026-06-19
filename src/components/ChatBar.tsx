@@ -9,7 +9,7 @@
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowUp, BrainCircuit, Square } from 'lucide-react'
+import { ArrowUp, Square } from 'lucide-react'
 
 interface Props {
   value: string
@@ -96,7 +96,6 @@ export function ChatBar({
       </div>
       {activeCount > 0 && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <BrainCircuit className="h-3.5 w-3.5" />
           {locked
             ? 'Composer paused while summary is open · close summary to continue chatting'
             : streaming

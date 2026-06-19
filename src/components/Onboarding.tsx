@@ -15,7 +15,7 @@ import { ModelList } from '@/components/ModelList'
 import { ModelInput } from '@/components/ModelInput'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ArrowRight, BrainCircuit, ExternalLink, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, ExternalLink, KeyRound, LayoutGrid, Loader2 } from 'lucide-react'
 
 interface Props {
   /** Called once the user finishes model selection and clicks Get started. */
@@ -107,7 +107,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
         <div className="w-full max-w-md flex flex-col gap-6">
           <div className="flex flex-col items-center text-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <BrainCircuit className="h-7 w-7 text-primary" />
+              <LayoutGrid className="h-7 w-7 text-primary" />
             </div>
             <div>
               <h1 className="text-xl font-semibold">Choose Your Models</h1>
@@ -168,7 +168,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
       <div className="w-full max-w-md flex flex-col items-center text-center gap-6">
         <div className="flex flex-col items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <BrainCircuit className="h-7 w-7 text-primary" />
+            <KeyRound className="h-7 w-7 text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-semibold">Welcome to Arco</h1>
