@@ -38,7 +38,7 @@
 /**
  * useChat — the renderer's conversation state machine (grid/pane model).
  *
- * Multi-Mind is a multi-model broadcast chat: one composer sends the same prompt
+ * Arco is a multi-model broadcast chat: one composer sends the same prompt
  * to every visible pane, and each pane streams its model's reply independently.
  *
  * A "pane" is a GRID SLOT, not a model. The session holds a pool of panes

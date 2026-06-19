@@ -9,7 +9,7 @@ Your web app normally needs two things to run:
 
 **Electron bundles a private copy of both — Chromium (the browser engine) and
 Node.js (the server runtime) — inside one downloadable app.** When the user
-opens Multi-Mind:
+opens Arco:
 
 - it opens its own Chromium window showing your React UI, and
 - it runs its own Node.js process for the "backend" work,
@@ -79,7 +79,7 @@ component.
 Three files implement the bridge and must always agree. To keep them in sync,
 the **types and channel names live in one shared file**:
 
-- **`shared/api-contract.ts`** — defines the `window.api` shape (`MultiMindApi`)
+- **`shared/api-contract.ts`** — defines the `window.api` shape (`ArcoApi`)
   and the channel-name constants (`CHANNELS`). **The single source of truth.**
 - **`electron/preload.ts`** — implements `window.api` by wiring each method to
   an IPC channel.
@@ -92,11 +92,11 @@ implement it).
 ## Where data physically lives
 
 Nothing is in a cloud database. Everything is a file in the app's data folder:
-`~/Library/Application Support/Multi-Mind/`.
+`~/Library/Application Support/Arco/`.
 
 | What | Where | How |
 |---|---|---|
-| Chat history | `multi-mind.db` | SQLite (better-sqlite3 + Drizzle) |
+| Chat history | `arco.db` | SQLite (better-sqlite3 + Drizzle) |
 | API key | `credentials.bin` | Encrypted via macOS Keychain (`safeStorage`) |
 | Custom model ids | `settings.json` | Plain JSON |
 
@@ -131,7 +131,7 @@ index.html + src/    ──▶  out/renderer/...         (browser)
                                   │
                           electron-builder
                                   ▼
-                         dist/Multi-Mind.dmg
+                         dist/Arco.dmg
 ```
 
 - `npm run dev` — runs all three with hot-reload and opens the app.

@@ -2,7 +2,7 @@
  * Native application menu.
  *
  * Without an explicit menu, Electron's default menu still works, but building
- * our own lets us label it "Multi-Mind" and keep only the items that make
+ * our own lets us label it "Arco" and keep only the items that make
  * sense. Almost everything here uses Electron's built-in "roles", which wire
  * up the standard macOS keyboard shortcuts automatically:
  *   Cmd+C / Cmd+V / Cmd+A (copy/paste/select all), Cmd+Q (quit),
@@ -14,7 +14,7 @@ export function buildAppMenu({ devTools = false }: { devTools?: boolean } = {}):
   const isMac = process.platform === 'darwin'
 
   const template: MenuItemConstructorOptions[] = [
-    // App menu (macOS only): About / Hide / Quit Multi-Mind.
+    // App menu (macOS only): About / Hide / Quit Arco.
     ...(isMac
       ? [
           {

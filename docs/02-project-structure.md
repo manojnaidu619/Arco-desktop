@@ -139,7 +139,7 @@ src/
 
 ```
 shared/
-├── api-contract.ts           ← window.api shape (MultiMindApi) + CHANNELS names
+├── api-contract.ts           ← window.api shape (ArcoApi) + CHANNELS names
 ├── types.ts                  ← domain types: Message, SessionSummary, …
 └── models.ts                 ← curated model list + getModelDef()
 ```

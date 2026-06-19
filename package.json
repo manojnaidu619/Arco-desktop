@@ -1,8 +1,8 @@
 {
-  "name": "multi-mind-desktop",
+  "name": "arco-desktop",
   "version": "0.1.0",
-  "description": "Multi-Mind — compare answers from multiple AI models side by side. Private, local-only macOS desktop app.",
-  "author": "Multi-Mind",
+  "description": "Arco — compare answers from multiple AI models side by side. Private, local-only macOS desktop app.",
+  "author": "Arco",
   "license": "UNLICENSED",
   "private": true,
   "main": "out/main/index.js",

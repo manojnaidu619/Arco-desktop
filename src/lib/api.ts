@@ -5,6 +5,6 @@
  * hooks import this typed `api` object. It's the renderer's single doorway to
  * the main process — sessions, chat, and settings all flow through here.
  */
-import type { MultiMindApi } from '@shared/api-contract'
+import type { ArcoApi } from '@shared/api-contract'
 
-export const api: MultiMindApi = window.api
+export const api: ArcoApi = window.api

@@ -25,7 +25,7 @@ settings: {
   listAllModels: 'settings:listAllModels'
 }
 
-// add the method to the MultiMindApi interface
+// add the method to the ArcoApi interface
 settings: {
   // …existing…
   listAllModels(): Promise<string[]>

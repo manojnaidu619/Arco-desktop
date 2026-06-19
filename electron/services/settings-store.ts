@@ -1,6 +1,6 @@
 /**
  * Non-secret user preferences, stored as plain JSON in the app data folder
- * (~/Library/Application Support/Multi-Mind/settings.json).
+ * (~/Library/Application Support/Arco/settings.json).
  *
  * Holds onboarding state only. The saved model library lives in SQLite.
  *

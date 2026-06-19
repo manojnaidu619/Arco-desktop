@@ -119,7 +119,7 @@ export interface AddSavedModelResult {
  * handler files. Adding a feature = add a method here, implement it in the
  * matching electron/ipc file, and wire it in preload.ts.
  */
-export interface MultiMindApi {
+export interface ArcoApi {
   /** Conversation history persistence (SQLite-backed). */
   sessions: {
     /** Get the active session (creating one if none exists). */

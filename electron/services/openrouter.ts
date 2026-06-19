@@ -19,8 +19,8 @@ function headers(apiKey: string) {
   return {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
-    'HTTP-Referer': 'https://multi-mind.app',
-    'X-Title': 'Multi-Mind'
+    'HTTP-Referer': 'https://arco.chat',
+    'X-Title': 'Arco'
   }
 }
 

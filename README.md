@@ -1,63 +1,69 @@
-# Multi-Mind (macOS desktop)
+# Arco
 
-Ask one question, compare answers from multiple AI models side by side — as a
-private, local-only macOS app. You bring your own OpenRouter API key; your key
-and all conversation history live only on your Mac.
+**One question. Every model. All on your Mac.**
 
-Built with **Electron + Vite + React + TypeScript**, with a local **SQLite**
-database (better-sqlite3 + Drizzle).
+Arco lets you send a single prompt to multiple AI models at once and compare their answers side by side. No subscription. No data leaving your device. You connect your own OpenRouter API key and get access to every model OpenRouter supports.
 
-## How it's structured
+---
 
-The app is two processes that talk over a typed bridge:
+## What makes Arco different
 
-```
-src/        → Renderer: the React UI (sandboxed; no file/network access)
-              talks to the backend ONLY via window.api
-electron/   → Main process: the "backend" — owns the DB, the network calls
-              to OpenRouter, and the encrypted API key
-shared/     → Types + the api-contract that both sides agree on
-```
+### You bring your own key
 
-- **shared/api-contract.ts** — the single source of truth for `window.api`.
-- **electron/preload.ts** — publishes `window.api` to the UI.
-- **electron/ipc/** — backend handlers (sessions, chat streaming, summary, settings).
-- **electron/services/** — the real logic: OpenRouter client, SQLite
-  repositories, Keychain (`safeStorage`) key storage, settings store.
+Most AI chat tools lock you into their subscription and their model selection. Arco connects directly through your OpenRouter API key — you pay OpenRouter's rates, choose any model they offer, and Arco takes nothing on top.
 
-### Where your data lives
+### Your data stays on your Mac
 
-- Conversations: `~/Library/Application Support/Multi-Mind/multi-mind.db`
-- API key: encrypted via the macOS Keychain (`credentials.bin` in the same folder)
-- Custom model ids: `settings.json` in the same folder
+Every conversation is stored in a local database on your machine. Nothing is sent to our servers because we don't have any. Arco is a Mac app, not a cloud service.
 
-## Develop
+### Any model, not just a whitelist
 
-```bash
-npm install          # also rebuilds better-sqlite3 for Electron (postinstall)
-npm run dev          # launches the app with hot-reload
-npm run typecheck    # type-check both halves
-```
+Because Arco routes through OpenRouter, you have access to thousands of models — open source, frontier, experimental — not just the ones a platform decided to support. Add any model by its OpenRouter ID.
 
-### Changing the database schema
+### Compare, don't just chat
 
-The schema evolves through versioned Drizzle migrations (applied automatically
-on each user's machine at startup — see `docs/04-extending.md`, Recipe 4):
+Send one message and see every model's answer at the same time, in a side-by-side grid. Useful for evaluating models, pressure-testing an idea, or just getting a second (and third) opinion.
 
-```bash
-# 1. edit electron/db/schema.ts
-npm run db:generate  # 2. writes a new file to drizzle/ — commit it
-# 3. it applies itself on next launch (with a safety backup)
-```
+---
 
-## Build a distributable
+## Brand usage
 
-```bash
-npm run dist:mac     # produces an unsigned .dmg + .zip in dist/
-```
+| Context                      | Use                  |
+| ---------------------------- | -------------------- |
+| Product / app name           | **Arco**             |
+| Website                      | **arco.chat**        |
+| Social handles               | **@arcochat**        |
+| Email                        | **hello@arco.chat**  |
+| In press or PR copy          | **Arco (arco.chat)** |
+| App Store / dock / title bar | **Arco**             |
 
-The build is **unsigned** for now (see `mac.identity: null` in
-`electron-builder.yml`). On first open, right-click the app → Open to bypass the
-macOS "unidentified developer" warning. To ship to the public later, get an
-Apple Developer ID and add code-signing + notarization there — no other code
-changes needed.
+**Rules:**
+
+- Always **Arco**, never "ArcoChat", "Arco Chat", or "ARCO"
+- The `.chat` TLD does the descriptive work — don't append "Chat" to the product name
+- Use **arco.chat** when pointing someone to download or learn more; use **Arco** when talking about the product in copy
+
+---
+
+## Core value props (for marketing copy)
+
+- **BYOK** — Bring your own OpenRouter key. No platform fee, no markup.
+- **Private by design** — Conversations live on your Mac, not our servers.
+- **Model-agnostic** — Any model on OpenRouter, not a curated shortlist.
+- **Side-by-side comparison** — One prompt, multiple answers, instant comparison.
+- **Mac-native** — Built as a proper macOS desktop app, not a web wrapper.
+
+---
+
+## Tagline options
+
+- _One question. Every model._
+- _Your key. Your models. Your Mac._
+- _Compare AI models side by side — privately._
+- _All the models. None of the subscription._
+
+---
+
+## Technical docs
+
+For architecture, project structure, data flow, and how to extend the app — see the [`docs/`](./docs/README.md) folder.

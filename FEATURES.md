@@ -1,7 +1,7 @@
-# Multi-Mind Feature Roadmap
+# Arco Feature Roadmap
 
 ## Guidelines
-This document tracks upcoming features, improvements, and technical enhancements for the Multi-Mind desktop application.
+This document tracks upcoming features, improvements, and technical enhancements for the Arco desktop application.
 
 ### Status Legend
 - 🔴 `[ ]` **Not Started** - Feature identified but not yet begun

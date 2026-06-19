@@ -17,7 +17,7 @@ import {
   type ChatDeltaEvent,
   type ChatDoneEvent,
   type ChatErrorEvent,
-  type MultiMindApi,
+  type ArcoApi,
   type SummaryStartRequest
 } from '@shared/api-contract'
 
@@ -33,7 +33,7 @@ function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
   }
 }
 
-const api: MultiMindApi = {
+const api: ArcoApi = {
   sessions: {
     getCurrent: () => ipcRenderer.invoke(CHANNELS.sessions.getCurrent),
     list: () => ipcRenderer.invoke(CHANNELS.sessions.list),

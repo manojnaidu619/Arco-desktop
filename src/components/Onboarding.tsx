@@ -171,7 +171,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             <BrainCircuit className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Welcome to Multi-Mind</h1>
+            <h1 className="text-xl font-semibold">Welcome to Arco</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
               Compare answers from multiple AI models side by side. Everything stays on your Mac — connect your own
               OpenRouter API key to begin.

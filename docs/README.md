@@ -1,4 +1,4 @@
-# Multi-Mind — Developer Docs
+# Arco — Developer Docs
 
 These docs explain how the desktop app is built and how to extend it. They're
 written for a **web developer who is new to desktop apps**, so they lean on

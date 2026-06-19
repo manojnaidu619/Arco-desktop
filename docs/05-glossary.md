@@ -45,7 +45,7 @@ tamper with the bridge. Paired with `nodeIntegration: false` (the UI gets no
 Node access).
 
 ### Contract (api-contract)
-`shared/api-contract.ts` — the TypeScript interface (`MultiMindApi`) and channel
+`shared/api-contract.ts` — the TypeScript interface (`ArcoApi`) and channel
 names (`CHANNELS`) that both the UI and backend import, so they can't drift
 apart. The "single source of truth" for the bridge.
 
@@ -94,7 +94,7 @@ passwords). We use it to encrypt the OpenRouter API key (`secure-store.ts`).
 
 ### userData folder
 The per-app writable folder Electron gives you:
-`~/Library/Application Support/Multi-Mind/`. Our database, encrypted key, and
+`~/Library/Application Support/Arco/`. Our database, encrypted key, and
 settings live here. (The app bundle in `/Applications` is read-only, so data
 *can't* live next to the code.)
 

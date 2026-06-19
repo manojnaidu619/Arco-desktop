@@ -1,8 +1,8 @@
 # ── Packaging configuration (electron-builder) ──
 # Turns the built code into a double-clickable macOS app inside a .dmg
 # installer. Run with `npm run dist:mac`.
-appId: com.multimind.desktop
-productName: Multi-Mind
+appId: com.arco.desktop
+productName: Arco
 
 directories:
   # Icons and other packaging assets live here (e.g. build/icon.icns).

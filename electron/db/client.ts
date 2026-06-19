@@ -4,7 +4,7 @@
  * WHERE THE FILE LIVES: a packaged macOS app is installed read-only in
  * /Applications, so the database can't sit next to the code. It lives in the
  * user's writable per-app folder instead:
- *   ~/Library/Application Support/Multi-Mind/multi-mind.db
+ *   ~/Library/Application Support/Arco/arco.db
  *
  * HOW THE SCHEMA EVOLVES (the production-grade part): we use versioned Drizzle
  * migrations. The SQL files in the project's `drizzle/` folder are generated at
@@ -43,7 +43,7 @@ function migrationsFolder(): string {
 export function getDb() {
   if (dbInstance) return dbInstance
 
-  const dbPath = join(app.getPath('userData'), 'multi-mind.db')
+  const dbPath = join(app.getPath('userData'), 'arco.db')
   const sqlite = new Database(dbPath)
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')

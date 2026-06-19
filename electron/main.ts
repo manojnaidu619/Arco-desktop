@@ -2,7 +2,7 @@
  * MAIN PROCESS ENTRY POINT — the app's "backend" and its launcher.
  *
  * Responsibilities, in order:
- *   1. Name the app (so its data folder is ".../Application Support/Multi-Mind").
+ *   1. Name the app (so its data folder is ".../Application Support/Arco").
  *   2. When Electron is ready: register all IPC handlers, build the menu,
  *      and open the window.
  *   3. Apply a Content-Security-Policy to the packaged app for hardening.
@@ -20,7 +20,7 @@ import { buildAppMenu } from './window-menu'
 
 // Set the product name early so app.getPath('userData') resolves to a stable,
 // branded folder in both dev and production.
-app.setName('Multi-Mind')
+app.setName('Arco')
 
 /** In dev, electron-vite serves the renderer over http and sets this env var. */
 const RENDERER_DEV_URL = process.env.ELECTRON_RENDERER_URL
@@ -53,7 +53,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false, // avoid a white flash; reveal once content is ready
     backgroundColor: '#0a0a0a',
-    // Standard macOS title bar (shows "Multi-Mind"). Reliable and needs no
+    // Standard macOS title bar (shows "Arco"). Reliable and needs no
     // custom drag regions. Can be swapped for 'hiddenInset' later for a
     // frameless look if desired.
     titleBarStyle: 'default',
@@ -117,7 +117,7 @@ app.whenReady().then(() => {
   } catch (err) {
     dialog.showErrorBox(
       'Database error',
-      'Multi-Mind could not prepare its database, so it can’t start safely. Your data has been left untouched. Please reopen the app, and contact support if this keeps happening.\n\n' +
+      ‘Arco could not prepare its database, so it can’t start safely. Your data has been left untouched. Please reopen the app, and contact support if this keeps happening.\n\n’ +
         String(err)
     )
     app.quit()

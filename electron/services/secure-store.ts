@@ -14,7 +14,7 @@ import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** Where the encrypted key lives: ~/Library/Application Support/Multi-Mind/credentials.bin */
+/** Where the encrypted key lives: ~/Library/Application Support/Arco/credentials.bin */
 function credentialsPath(): string {
   return join(app.getPath('userData'), 'credentials.bin')
 }
