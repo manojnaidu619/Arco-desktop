@@ -9,7 +9,7 @@ A guided tour of the repo. The golden rule for keeping things tidy:
 ## Top-level map
 
 ```
-multi-mind-desktop/
+arco-desktop/
 ├── electron/                 ← MAIN PROCESS ("the backend")
 ├── src/                      ← RENDERER ("the UI")
 ├── shared/                   ← types/contract shared by both
