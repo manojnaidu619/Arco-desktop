@@ -117,7 +117,7 @@ app.whenReady().then(() => {
   } catch (err) {
     dialog.showErrorBox(
       'Database error',
-      ‘Arco could not prepare its database, so it can’t start safely. Your data has been left untouched. Please reopen the app, and contact support if this keeps happening.\n\n’ +
+      "Arco could not prepare its database, so it can’t start safely. Your data has been left untouched. Please reopen the app, and contact support if this keeps happening.\n\n" +
         String(err)
     )
     app.quit()
