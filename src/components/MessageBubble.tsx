@@ -43,7 +43,7 @@ function renderTextWithStreamingAnimation(
 
 /** Bubble chrome for assistant markdown content. Element-level styles live below. */
 const assistantMarkdownClass = cn(
-  'rounded-2xl rounded-tl-sm px-3.5 py-2 max-w-[95%] min-w-0 text-sm break-words',
+  'rounded-lg px-3.5 py-2 max-w-[95%] min-w-0 text-sm break-words',
   'bg-muted text-foreground'
 )
 
@@ -246,7 +246,7 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
   if (isUser) {
     return (
       <div className="group flex flex-col items-end">
-        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap break-words">
+        <div className="bg-primary text-primary-foreground rounded-lg px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap break-words">
           {message.content}
         </div>
         <div className="h-5 mt-1 flex items-center pr-0.5">{copyButton}</div>
@@ -257,7 +257,7 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
   if (isStreaming && !message.content) {
     return (
       <div className="flex justify-start">
-        <div className="rounded-2xl rounded-tl-sm px-3.5 py-2.5 bg-muted">
+        <div className="rounded-lg px-3.5 py-2.5 bg-muted">
           <div className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
