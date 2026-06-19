@@ -21,6 +21,9 @@ how Electron does things.
    table, a UI screen.
 5. **[05-glossary.md](./05-glossary.md)** — Plain-language definitions of the
    desktop/Electron terms used throughout.
+6. **[06-design-system.md](./06-design-system.md)** — Single source of truth for all visual
+   decisions: brand, color tokens, typography, spacing, components, tone of voice, and marketing
+   guidelines. Reference this for any surface where Arco appears.
 
 ## The one-sentence summary
 
