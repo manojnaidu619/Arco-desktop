@@ -108,7 +108,15 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
       })),
     [panesWithLatestExchange]
   )
-  const showSummarizeTab = panesWithLatestExchange.length >= 2 && !isAnyStreaming
+  // Summarize is a multi-pane feature — hide it while a single pane is expanded.
+  // `expandedSlot === null` in showSummarizeTab also triggers the effect below that
+  // closes the summary overlay when the user maximizes a pane.
+  const showSummarizeTab =
+    panesWithLatestExchange.length >= 2 && !isAnyStreaming && expandedSlot === null
+  // Tab + extra composer padding stay visible while the overlay is animating closed,
+  // but never while a pane is expanded (even mid-overlay teardown).
+  const showSummarizeTabArea =
+    expandedSlot === null && (showSummarizeTab || summaryOverlayMounted)
 
   const resetSummaryState = () => {
     setSummaryContent('')
@@ -232,7 +240,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
     closeSummaryOverlayImmediate()
   }, [sessionId])
 
-  // Close overlay if summarize is no longer available (e.g. while panes are streaming).
+  // Close overlay when summarize is unavailable: streaming, <2 panes, or a pane expanded.
   useEffect(() => {
     if (!showSummarizeTab && summaryOverlayMounted) {
       closeSummaryOverlayImmediate()
@@ -349,6 +357,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
           <div className="flex-1 min-h-0 relative overflow-hidden">
             <div className="absolute inset-0 z-0">
               {expandedPane ? (
+                // Match the grid's enter animation when switching to a single expanded pane.
                 <div className="h-full w-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out">
                   <ModelPane
                     pane={expandedPane}
@@ -360,6 +369,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
                   />
                 </div>
               ) : (
+                // Grid remounts on collapse — same fade/zoom as the expanded view above.
                 <div
                   key={layout}
                   className="grid gap-0.5 bg-border h-full w-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
@@ -400,10 +410,10 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
           </div>
 
           <div
-            className={`shrink-0 border-t border-border px-4 pb-3 relative z-40 bg-background ${showSummarizeTab || summaryOverlayMounted ? 'pt-4' : 'pt-3'
+            className={`shrink-0 border-t border-border px-4 pb-3 relative z-40 bg-background ${showSummarizeTabArea ? 'pt-4' : 'pt-3'
               }`}
           >
-            {(showSummarizeTab || summaryOverlayMounted) && (
+            {showSummarizeTabArea && (
               <SummaryTab open={summaryOverlayOpen} onClick={toggleSummaryOverlay} />
             )}
             <ChatBar
