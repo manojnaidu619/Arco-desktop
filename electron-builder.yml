@@ -5,47 +5,52 @@ appId: com.arco.desktop
 productName: Arco
 
 directories:
-  # Icons and other packaging assets live here (e.g. build/icon.icns).
-  buildResources: build
+    # Icons and other packaging assets live here (e.g. build/icon.icns).
+    buildResources: build
 
 # Only ship the compiled output + the manifest. Source/dev files are excluded.
 files:
-  - out/**/*
-  - package.json
+    - out/**/*
+    - package.json
 
 # Ship the generated migration SQL files alongside the app (into
 # Contents/Resources/drizzle). The app reads these at startup to migrate the
 # user's database — see electron/services/db/client.ts (`migrationsFolder`).
 extraResources:
-  - from: drizzle
-    to: drizzle
+    - from: drizzle
+      to: drizzle
 
 # `better-sqlite3` ships a native binary (.node). Native binaries CANNOT be
 # loaded from inside Electron's compressed "asar" archive, so we unpack them
 # to a real folder on disk. Without this the database fails to open in the
 # packaged app.
 asarUnpack:
-  - '**/*.node'
-  - node_modules/better-sqlite3/**
-
+    - '**/*.node'
+    - node_modules/better-sqlite3/**
+# Packaging configuration for macOS
+# supports only Silicon Macs
 mac:
-  category: public.app-category.productivity
-  target:
-    - dmg
-    - zip
-  # IMPORTANT: unsigned for now (no Apple Developer account yet).
-  # `identity: null` disables code-signing so local builds succeed.
-  # When you get a Developer ID, set this to your identity and add
-  # notarization here — that's the only change needed for clean downloads.
-  identity: null
+    category: public.app-category.productivity
+    target:
+        - target: dmg
+          arch: arm64
+        - target: zip
+          arch: arm64
+    # IMPORTANT: unsigned for now (no Apple Developer account yet).
+    # `identity: null` disables code-signing so local builds succeed.
+    # When you get a Developer ID, set this to your identity and add
+    # notarization here — that's the only change needed for clean downloads.
+    identity: null
 
+# Packaging configuration for macOS DMG
+# supports only Silicon Macs
 dmg:
-  # The familiar "drag the app into Applications" installer window.
-  contents:
-    - x: 130
-      y: 220
-      type: file
-    - x: 410
-      y: 220
-      type: link
-      path: /Applications
+    # The familiar "drag the app into Applications" installer window.
+    contents:
+        - x: 130
+          y: 220
+          type: file
+        - x: 410
+          y: 220
+          type: link
+          path: /Applications
