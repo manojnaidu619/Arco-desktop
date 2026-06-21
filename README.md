@@ -64,6 +64,38 @@ Send one message and see every model's answer at the same time, in a side-by-sid
 
 ---
 
+## Logo & app icon
+
+### Icon description
+
+Deep midnight-blue squircle (macOS rounded-corner square) containing multiple concentric glowing arcs that fan outward from a lower-left origin point. The arcs graduate in color from electric cyan (innermost) through indigo to violet (outermost), with a soft ambient glow against the dark background. The mark reads at any size from 16 px to 1024 px without text.
+
+### Icon files
+
+All files live in `build/` at the project root (configured in `electron-builder.yml` as `buildResources: build`):
+
+| File | Size | Purpose |
+| ---- | ---- | ------- |
+| `build/icon.icns` | Multi-resolution | macOS dock, Finder, title bar |
+| `build/icon.ico` | Multi-resolution | Windows taskbar (future) |
+| `build/icon.png` | 1024 × 1024 px | Fallback, DMG window, marketing |
+
+The source PNG must be exactly **1024 × 1024 px**. To convert to `.icns`:
+
+```bash
+sips -z 1024 1024 icon.png --out icon-1024.png
+# then use Image2icon or iconutil to produce the .icns bundle
+```
+
+### Icon usage rules
+
+- Never place the icon on a light or white background — it requires a dark surface to read correctly
+- Never crop, rotate, recolor, or add drop shadows to the icon itself
+- Minimum display size: 16 × 16 px (macOS menu bar)
+- For marketing, use the 1024 px PNG at 2× resolution for Retina
+
+---
+
 ## Technical docs
 
 For architecture, project structure, data flow, and how to extend the app — see the [`docs/`](./docs/README.md) folder.
