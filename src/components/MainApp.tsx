@@ -349,14 +349,16 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
           <div className="flex-1 min-h-0 relative overflow-hidden">
             <div className="absolute inset-0 z-0">
               {expandedPane ? (
-                <ModelPane
-                  pane={expandedPane}
-                  isExpanded
-                  onToggleExpand={() => setExpandedSlot(null)}
-                  onSelectModel={setPaneModel}
-                  onAskOne={askOne}
-                  onAbortPane={abortPane}
-                />
+                <div className="h-full w-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out">
+                  <ModelPane
+                    pane={expandedPane}
+                    isExpanded
+                    onToggleExpand={() => setExpandedSlot(null)}
+                    onSelectModel={setPaneModel}
+                    onAskOne={askOne}
+                    onAbortPane={abortPane}
+                  />
+                </div>
               ) : (
                 <div
                   key={layout}
