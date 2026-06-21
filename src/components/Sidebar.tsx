@@ -3,11 +3,12 @@
  * single "Recents" section, with inline rename and delete. Mirrors ChatGPT.
  */
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { LicenseBadge } from '@/components/LicenseBadge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
-import { Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import arcoLogo from '@/assets/arco.png'
 import { useEffect, useRef, useState } from 'react'
 
@@ -20,6 +21,10 @@ interface Props {
   onDeleteSession: (id: number) => Promise<void>
   /** Opens the global settings/usage modal (footer gear menu). */
   onOpenSettings: () => void
+  /** Whether Unlimited license is active on this device. */
+  isLicenseActivated: boolean
+  /** Opens the upgrade / license activation modal (free users only). */
+  onOpenLicense: () => void
 }
 
 export function Sidebar({
@@ -29,7 +34,9 @@ export function Sidebar({
   onNewSession,
   onRenameSession,
   onDeleteSession,
-  onOpenSettings
+  onOpenSettings,
+  isLicenseActivated,
+  onOpenLicense
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -47,7 +54,10 @@ export function Sidebar({
     <div className="flex flex-col h-full w-full bg-muted/30 border-r border-border">
       <div className="flex items-center gap-2 h-14 px-3 border-b border-border shrink-0">
         <img src={arcoLogo} alt="Arco" className="h-6 w-6 rounded-md shrink-0" />
-        <span className="text-sm font-semibold flex-1 truncate">Arco</span>
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="text-sm font-semibold truncate leading-none">Arco</span>
+          <LicenseBadge isActivated={isLicenseActivated} />
+        </div>
         <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={onNewSession} title="New session">
           <Plus className="h-4 w-4" />
         </Button>
@@ -102,8 +112,19 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Footer: global settings (theme + usage), opens upward. */}
-      <div className="px-2 py-2 border-t border-border shrink-0">
+      {/* Footer: upgrade (free only) + global settings. */}
+      <div className="px-2 py-2 border-t border-border shrink-0 space-y-1">
+        {!isLicenseActivated && (
+          <Button
+            variant="ghost"
+            className="h-8 w-full justify-start gap-2 px-2 text-sm text-muted-foreground hover:text-foreground"
+            onClick={onOpenLicense}
+            title="Upgrade to Unlimited"
+          >
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <span>Upgrade</span>
+          </Button>
+        )}
         <SettingsMenu onOpenUsage={onOpenSettings} openUp labeled />
       </div>
     </div>

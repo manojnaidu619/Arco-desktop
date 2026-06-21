@@ -65,17 +65,22 @@
  * For a full step-by-step diagram of the streaming pipeline, see
  * docs/internals/streaming-pipeline.md
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { api } from '@/lib/api'
 import { useSavedModels } from '@/hooks/useSavedModels'
+import { api } from '@/lib/api'
 import { getModelDef, isModelInLibrary } from '@shared/models'
 import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 /** Re-exported so consumers can import session types from this hook alone. */
 export type { SessionSummary }
 
 /** Valid pane-count presets; each maps to a grid layout option in the toolbar. */
 export const LAYOUTS = [1, 2, 3, 4, 6] as const
+
+/** Outcome of `newSession` — includes backend session-limit rejection. */
+export type NewSessionResult =
+  | { ok: true; sessionId: number }
+  | { ok: false; code?: 'session_limit' }
 
 /** One grid slot. `modelId === null` means an empty pane awaiting selection. */
 export interface Pane {
@@ -611,28 +616,43 @@ export function useChat() {
    *
    * @used-by  MainApp → Sidebar onNewSession, deleteSession (when none remain)
    * @param    options.force — skip the "reuse current empty session" shortcut
-   * @returns  id of the active session (existing empty one or newly created)
+   * @returns  success with session id, or failure (e.g. free-tier session cap)
    */
-  const newSession = useCallback(async (options?: { force?: boolean }) => {
-    if (isAnyStreaming()) return sessionIdRef.current ?? 0
+  const newSession = useCallback(async (options?: { force?: boolean }): Promise<NewSessionResult> => {
+    if (isAnyStreaming()) {
+      return { ok: true, sessionId: sessionIdRef.current ?? 0 }
+    }
 
+    // If the user is not licensed and is trying to reuse an empty session, or if the user has reached the session limit, open the session limit modal
     if (!options?.force) {
       const currentHasMessages = panesRef.current.some((p) => p.messages.length > 0)
       if (!currentHasMessages && sessionIdRef.current !== null) {
-        return sessionIdRef.current
+        if (await api.sessions.canCreate()) {
+          return { ok: true, sessionId: sessionIdRef.current }
+        }
+        return { ok: false, code: 'session_limit' }
       }
+    }
+
+    if (!(await api.sessions.canCreate())) {
+      return { ok: false, code: 'session_limit' }
     }
 
     cancelStreams()
     titleSet.current = false
-    const newId = await api.sessions.create()
+    const result = await api.sessions.create()
+    if (!result.ok) {
+      return { ok: false, code: result.code }
+    }
+
+    const newId = result.sessionId!
     setSessionId(newId)
     sessionIdRef.current = newId
     const fresh = await buildDefaultPanes(newId, 0, 4)
     setPanes(fresh)
     setLayoutState(4)
     refreshSessions()
-    return newId
+    return { ok: true, sessionId: newId }
   }, [cancelStreams, buildDefaultPanes, refreshSessions, isAnyStreaming])
 
   /**

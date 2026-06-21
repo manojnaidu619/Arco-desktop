@@ -16,6 +16,7 @@ import { api } from '@/lib/api'
 import { Onboarding } from '@/components/Onboarding'
 import { MainApp } from '@/components/MainApp'
 import { SettingsDialog } from '@/components/SettingsDialog'
+import { LicenseModal } from '@/components/LicenseModal'
 import { SavedModelsProvider } from '@/hooks/useSavedModels'
 import { Loader2 } from 'lucide-react'
 
@@ -24,16 +25,24 @@ export function App() {
   const [hasKey, setHasKey] = useState<boolean | null>(null)
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [licenseOpen, setLicenseOpen] = useState(false)
+  const [isLicenseActivated, setIsLicenseActivated] = useState(false)
 
   useEffect(() => {
-    Promise.all([api.settings.getKeyStatus(), api.settings.isOnboardingCompleted()])
-      .then(([keyStatus, completed]) => {
+    Promise.all([
+      api.settings.getKeyStatus(),
+      api.settings.isOnboardingCompleted(),
+      api.license.getStatus()
+    ])
+      .then(([keyStatus, completed, licenseStatus]) => {
         setHasKey(keyStatus.hasKey)
         setOnboardingComplete(completed)
+        setIsLicenseActivated(licenseStatus.isActivated)
       })
       .catch(() => {
         setHasKey(false)
         setOnboardingComplete(false)
+        setIsLicenseActivated(false)
       })
   }, [])
 
@@ -68,8 +77,18 @@ export function App() {
   return (
     <>
       <SavedModelsProvider>
-        <MainApp onOpenSettings={() => setSettingsOpen(true)} />
+        <MainApp
+          onOpenSettings={() => setSettingsOpen(true)}
+          isLicenseActivated={isLicenseActivated}
+          onOpenLicense={() => setLicenseOpen(true)}
+        />
       </SavedModelsProvider>
+      {licenseOpen && (
+        <LicenseModal
+          onClose={() => setLicenseOpen(false)}
+          onActivated={() => setIsLicenseActivated(true)}
+        />
+      )}
       {settingsOpen && (
         <SettingsDialog
           onClose={() => setSettingsOpen(false)}

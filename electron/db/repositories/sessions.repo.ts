@@ -8,10 +8,13 @@
  * endpoints.
  */
 import { formatModelSlug } from '@shared/models'
+import type { SessionCreateResult } from '@shared/api-contract'
+import { FREE_TIER_SESSION_LIMIT } from '@shared/license'
 import type { Role, SessionData, SessionSummary, ThreadData } from '@shared/types'
 import { asc, count, desc, eq, inArray } from 'drizzle-orm'
 import { getDb } from '../client'
 import { messages, models, sessions, threads } from '../schema'
+import * as licenseStore from '../../services/license-store'
 import * as modelsRepo from './models.repo'
 
 /** Current timestamp as an ISO string (how all dates are stored). */
@@ -122,8 +125,26 @@ export function listSessions(): SessionSummary[] {
   })
 }
 
+/** Whether the free-tier session cap has been reached. */
+function isSessionLimitReached(): boolean {
+  return !licenseStore.hasActivatedLicense() && listSessions().length >= FREE_TIER_SESSION_LIMIT
+}
+
+/** Whether another saved conversation may be created (no DB write). */
+export function canCreateSession(): boolean {
+  return !isSessionLimitReached()
+}
+
 /** Create a fresh session, deactivating any currently-active one. */
-export function createSession(): number {
+export function createSession(): SessionCreateResult {
+  if (isSessionLimitReached()) {
+    return {
+      ok: false,
+      error: `The free plan includes up to ${FREE_TIER_SESSION_LIMIT} saved conversations.`,
+      code: 'session_limit'
+    }
+  }
+
   const db = getDb()
   const ts = now()
 
@@ -135,7 +156,7 @@ export function createSession(): number {
     .returning()
     .get()
 
-  return created.id
+  return { ok: true, sessionId: created.id }
 }
 
 /** Switch the active session to `sessionId` and return its full data. */

@@ -37,6 +37,7 @@ const api: ArcoApi = {
   sessions: {
     getCurrent: () => ipcRenderer.invoke(CHANNELS.sessions.getCurrent),
     list: () => ipcRenderer.invoke(CHANNELS.sessions.list),
+    canCreate: () => ipcRenderer.invoke(CHANNELS.sessions.canCreate),
     create: () => ipcRenderer.invoke(CHANNELS.sessions.create),
     load: (sessionId) => ipcRenderer.invoke(CHANNELS.sessions.load, sessionId),
     delete: (sessionId) => ipcRenderer.invoke(CHANNELS.sessions.delete, sessionId),
@@ -81,6 +82,13 @@ const api: ArcoApi = {
     validateModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.validateModel, modelId),
     isOnboardingCompleted: () => ipcRenderer.invoke(CHANNELS.settings.isOnboardingCompleted),
     completeOnboarding: () => ipcRenderer.invoke(CHANNELS.settings.completeOnboarding)
+  },
+
+  license: {
+    getStatus: () => ipcRenderer.invoke(CHANNELS.license.getStatus),
+    activate: (key) => ipcRenderer.invoke(CHANNELS.license.activate, key),
+    getDeviceId: () => ipcRenderer.invoke(CHANNELS.license.getDeviceId),
+    getCheckoutUrl: () => ipcRenderer.invoke(CHANNELS.license.getCheckoutUrl)
   }
 }
 

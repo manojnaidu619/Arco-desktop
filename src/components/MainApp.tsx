@@ -9,6 +9,7 @@ import { ChatBar } from '@/components/ChatBar'
 import { GenerationInProgressDialog } from '@/components/GenerationInProgressDialog'
 import { LayoutSelector } from '@/components/LayoutSelector'
 import { ModelPane } from '@/components/ModelPane'
+import { SessionLimitModal } from '@/components/SessionLimitModal'
 import { Sidebar } from '@/components/Sidebar'
 import { SUMMARY_OVERLAY_ANIM_MS, SummaryOverlay, SummaryTab } from '@/components/SummaryOverlay'
 import { Button } from '@/components/ui/button'
@@ -42,9 +43,11 @@ function paneHasLatestExchange(pane: Pane): boolean {
 
 interface Props {
   onOpenSettings: () => void
+  isLicenseActivated: boolean
+  onOpenLicense: () => void
 }
 
-export function MainApp({ onOpenSettings }: Props) {
+export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: Props) {
   const {
     panes,
     layout,
@@ -70,6 +73,7 @@ export function MainApp({ onOpenSettings }: Props) {
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null)
   const [composerValue, setComposerValue] = useState('')
   const [streamingNavBlocked, setStreamingNavBlocked] = useState(false)
+  const [sessionLimitOpen, setSessionLimitOpen] = useState(false)
 
   // Summary overlay — streams a structured comparison via IPC
   const [summaryOverlayOpen, setSummaryOverlayOpen] = useState(false)
@@ -255,8 +259,12 @@ export function MainApp({ onOpenSettings }: Props) {
       setStreamingNavBlocked(true)
       return
     }
+
     closeSummaryOverlayImmediate()
-    await newSession()
+    const result = await newSession()
+    if (!result.ok && result.code === 'session_limit') {
+      setSessionLimitOpen(true)
+    }
     setExpandedSlot(null)
   }
 
@@ -303,6 +311,8 @@ export function MainApp({ onOpenSettings }: Props) {
             onRenameSession={renameSession}
             onDeleteSession={handleDeleteSession}
             onOpenSettings={onOpenSettings}
+            isLicenseActivated={isLicenseActivated}
+            onOpenLicense={onOpenLicense}
           />
         </div>
       )}
@@ -416,6 +426,15 @@ export function MainApp({ onOpenSettings }: Props) {
           title={STREAMING_NAV_DIALOG.title}
           message={STREAMING_NAV_DIALOG.message}
           onClose={() => setStreamingNavBlocked(false)}
+        />
+      )}
+      {sessionLimitOpen && (
+        <SessionLimitModal
+          onClose={() => setSessionLimitOpen(false)}
+          onUpgrade={() => {
+            setSessionLimitOpen(false)
+            onOpenLicense()
+          }}
         />
       )}
     </div>

@@ -112,6 +112,35 @@ export interface AddSavedModelResult {
   error?: string
 }
 
+/* ── License / Unlimited plan payloads ─────────────────────────────────────── */
+
+/** Whether the Unlimited license is active on this device. */
+export interface LicenseStatus {
+  isActivated: boolean
+  /** Present when activated — the stored license key (masked is not required for phase 1). */
+  key?: string
+}
+
+/**
+ * Result of attempting to activate a license key.
+ * The `message` field always comes from the license server and must be shown
+ * to the user — success or failure.
+ */
+export interface LicenseActivationResult {
+  ok: boolean
+  message: string
+}
+
+/** Result of creating a new session. */
+export interface SessionCreateResult {
+  ok: boolean
+  sessionId?: number
+  /** Present when `ok` is false — a human-readable reason. */
+  error?: string
+  /** Free-tier cap hit; UI may show the upgrade modal. */
+  code?: 'session_limit'
+}
+
 /**
  * The complete `window.api` surface available to the UI.
  *
@@ -126,8 +155,10 @@ export interface ArcoApi {
     getCurrent(): Promise<SessionData>
     /** List all sessions for the sidebar, newest first. */
     list(): Promise<SessionSummary[]>
-    /** Create a fresh session and make it active. Returns its id. */
-    create(): Promise<number>
+    /** Whether the user may create another saved conversation. */
+    canCreate(): Promise<boolean>
+    /** Create a fresh session and make it active. */
+    create(): Promise<SessionCreateResult>
     /** Switch the active session and return its full data. */
     load(sessionId: number): Promise<SessionData>
     /** Permanently delete a session (threads + messages cascade). */
@@ -203,6 +234,24 @@ export interface ArcoApi {
     /** Mark onboarding complete after the user selects starter models. */
     completeOnboarding(): Promise<void>
   }
+
+  /** Unlimited plan license activation (one-time purchase, device-bound). */
+  license: {
+    /** Whether a valid license is stored locally for this device. */
+    getStatus(): Promise<LicenseStatus>
+    /**
+     * Validate and activate a license key against the Arco license server.
+     * Always returns a `message` from the server for display in the UI.
+     */
+    activate(key: string): Promise<LicenseActivationResult>
+    /** Stable hardware fingerprint for this machine (node-machine-id). */
+    getDeviceId(): Promise<string>
+    /**
+     * Checkout URL for purchasing Unlimited. `null` in production until configured.
+     * Dev: Creem test payment link.
+     */
+    getCheckoutUrl(): Promise<string | null>
+  }
 }
 
 /**
@@ -214,6 +263,7 @@ export const CHANNELS = {
   sessions: {
     getCurrent: 'sessions:getCurrent',
     list: 'sessions:list',
+    canCreate: 'sessions:canCreate',
     create: 'sessions:create',
     load: 'sessions:load',
     delete: 'sessions:delete',
@@ -252,5 +302,11 @@ export const CHANNELS = {
     validateModel: 'settings:validateModel',
     isOnboardingCompleted: 'settings:isOnboardingCompleted',
     completeOnboarding: 'settings:completeOnboarding'
+  },
+  license: {
+    getStatus: 'license:getStatus',
+    activate: 'license:activate',
+    getDeviceId: 'license:getDeviceId',
+    getCheckoutUrl: 'license:getCheckoutUrl'
   }
 } as const

@@ -14,6 +14,7 @@ import * as repo from '../db/repositories/sessions.repo'
 export function registerSessionHandlers(): void {
   ipcMain.handle(CHANNELS.sessions.getCurrent, () => repo.getCurrentSession())
   ipcMain.handle(CHANNELS.sessions.list, () => repo.listSessions())
+  ipcMain.handle(CHANNELS.sessions.canCreate, () => repo.canCreateSession())
   ipcMain.handle(CHANNELS.sessions.create, () => repo.createSession())
   ipcMain.handle(CHANNELS.sessions.load, (_e, sessionId: number) => repo.loadSession(sessionId))
   ipcMain.handle(CHANNELS.sessions.delete, (_e, sessionId: number) => repo.deleteSession(sessionId))

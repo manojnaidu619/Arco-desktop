@@ -47,7 +47,9 @@ This document tracks upcoming features, improvements, and technical enhancements
 
 ## Performance & Technical
 
-*Add performance optimizations and technical improvements here*
+### 🔴 [ ] License Key Server Validation
+**Priority:** Medium  
+**Description:** On app launch, re-validate the stored license with the Arco license server (send license key from `license.bin` and current `machineIdSync()` device ID). If validation fails, treat the user as Free tier and show a support modal — do not delete the local license file. Complements encrypted `license.bin` storage (which blocks casual file copy) by catching revoked keys and device mismatches when online. Activation via `/api/licenses/activate` remains unchanged.
 
 ---
 
