@@ -34,7 +34,7 @@ export const CURATED_MODELS: ModelDef[] = [
   { id: 'z-ai/glm-4.7-flash', label: 'GLM-4.7 Flash', vendor: 'Zhipu AI', color: 'bg-blue-500' },
   { id: 'minimax/minimax-m2.7', label: 'MiniMax M2.7', vendor: 'MiniMax', color: 'bg-rose-500' },
   { id: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', vendor: 'Alibaba', color: 'bg-orange-500' },
-  { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', vendor: 'Anthropic', color: 'bg-amber-500' }
+  { id: 'anthropic/claude-opus-4.8', label: 'Claude Opus 4.8', vendor: 'Anthropic', color: 'bg-amber-500' }
 ]
 
 /** Minimum models required during onboarding before the user can continue. */
