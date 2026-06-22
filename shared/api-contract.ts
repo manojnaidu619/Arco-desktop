@@ -112,9 +112,9 @@ export interface AddSavedModelResult {
   error?: string
 }
 
-/* ── License / Unlimited plan payloads ─────────────────────────────────────── */
+/* ── License / Pro plan payloads ─────────────────────────────────────────── */
 
-/** Whether the Unlimited license is active on this device. */
+/** Whether the Pro license is active on this device. */
 export interface LicenseStatus {
   isActivated: boolean
   /** Present when activated — the stored license key (masked is not required for phase 1). */
@@ -235,7 +235,7 @@ export interface ArcoApi {
     completeOnboarding(): Promise<void>
   }
 
-  /** Unlimited plan license activation (one-time purchase, device-bound). */
+  /** Pro plan license activation (annual license, device-bound). */
   license: {
     /** Whether a valid license is stored locally for this device. */
     getStatus(): Promise<LicenseStatus>
@@ -247,7 +247,7 @@ export interface ArcoApi {
     /** Stable hardware fingerprint for this machine (node-machine-id). */
     getDeviceId(): Promise<string>
     /**
-     * Checkout URL for purchasing Unlimited. `null` in production until configured.
+     * Checkout URL for purchasing Pro. `null` in production until configured.
      * Dev: Creem test payment link.
      */
     getCheckoutUrl(): Promise<string | null>

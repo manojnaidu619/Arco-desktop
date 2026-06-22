@@ -6,11 +6,11 @@
  */
 import { app } from 'electron'
 
-/** Creem test checkout for Unlimited (development / unpackaged builds). */
+/** Creem test checkout for Pro (development / unpackaged builds). */
 const CHECKOUT_URL_DEV =
   'https://www.creem.io/test/payment/prod_6FOGXk6mKLjdVuAdBDnKrA'
 
-/** Production checkout — Creem live payment link for Unlimited. */
+/** Production checkout — Creem live payment link for Pro. */
 // TODO: Provision production checkout URL (live Creem product link) before release.
 const CHECKOUT_URL_PROD: string | null = null
 

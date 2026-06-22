@@ -1,5 +1,5 @@
 /**
- * IPC handlers for Unlimited license activation and status.
+ * IPC handlers for Pro license activation and status.
  *
  * Flow:
  *   • getStatus   — read encrypted license.bin (local only, no server call)

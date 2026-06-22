@@ -2,25 +2,19 @@
  * Upgrade / license activation modal.
  *
  * Two paths for users:
- *   1. Purchase Unlimited via Creem checkout (opens in the system browser)
+ *   1. Purchase Pro via Creem checkout (opens in the system browser)
  *   2. Activate an existing license key against the Arco license server
+ *
+ * Pricing and plan details live on the checkout page so they can be updated
+ * without shipping a new app build.
  *
  * Always displays the server's `message` after an activation attempt.
  * Follows the same overlay pattern as SettingsDialog.
  */
-import { useEffect, useState } from 'react'
-import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 import { Check, ExternalLink, Loader2, Sparkles, X } from 'lucide-react'
-
-const UNLIMITED_FEATURES = [
-  'Compare from 400+ AI models',
-  'Unlimited saved conversations',
-  'Your data stays on your device (BYOK)',
-  'Lifetime license — one payment, no subscription',
-  'Free updates',
-  'Works on 1 device'
-] as const
+import { useEffect, useState } from 'react'
 
 interface Props {
   onClose: () => void
@@ -114,36 +108,22 @@ export function LicenseModal({ onClose, onActivated }: Props) {
           <>
             <div className="flex items-center gap-2 mb-4 pr-8">
               <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Upgrade to Unlimited</h2>
+              <h2 className="text-sm font-semibold">Upgrade to Pro</h2>
             </div>
 
-            {/* Purchase section */}
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                Unlimited
+            {/* Purchase section: pricing details live on the checkout page */}
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Take Arco further with Pro. Full access, full control, with your data staying on
+                your device.
               </p>
-              <p className="text-2xl font-bold mb-1">
-                $39{' '}
-                <span className="text-sm font-normal text-muted-foreground">one-time</span>
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Lifetime license — one payment, no subscription
-              </p>
-              <ul className="space-y-1.5 mb-4">
-                {UNLIMITED_FEATURES.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
               <Button
                 className="w-full"
                 onClick={openCheckout}
                 disabled={!checkoutUrl}
               >
                 <ExternalLink className="h-4 w-4" />
-                {checkoutUrl ? 'Get full access' : 'Checkout unavailable'}
+                {checkoutUrl ? 'Unlock Pro' : 'Checkout unavailable'}
               </Button>
             </div>
 

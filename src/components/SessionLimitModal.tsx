@@ -1,6 +1,6 @@
 /**
  * Modal shown when a free-tier user tries to create more than the allowed
- * number of saved conversations. Offers a path to upgrade to Unlimited.
+ * number of saved conversations. Offers a path to upgrade to Pro.
  * Follows the same overlay pattern as SettingsDialog.
  */
 import { useEffect } from 'react'
@@ -38,13 +38,13 @@ export function SessionLimitModal({ onClose, onUpgrade }: Props) {
           </h2>
         </div>
         <p id="session-limit-dialog-message" className="text-sm text-muted-foreground leading-relaxed">
-          The free plan includes up to {FREE_TIER_SESSION_LIMIT} saved conversations. Upgrade to Unlimited
+          The free plan includes up to {FREE_TIER_SESSION_LIMIT} saved conversations. Upgrade to Pro
           to save as many conversations as you need.
         </p>
         <div className="flex flex-col gap-2 mt-4">
           <Button className="w-full" onClick={onUpgrade}>
             <Sparkles className="h-4 w-4" />
-            Upgrade to Unlimited
+            Upgrade to Pro
           </Button>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Cancel

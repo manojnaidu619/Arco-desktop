@@ -1,10 +1,10 @@
 /**
- * Encrypted local storage for an activated Unlimited license.
+ * Encrypted local storage for an activated Pro license.
  *
  * Uses Electron `safeStorage` (macOS Keychain-backed), same pattern as
  * secure-store.ts for the OpenRouter API key. The encrypted blob lives at
  * ~/Library/Application Support/Arco/license.bin — copying it to another
- * machine typically fails decryption, so Unlimited does not travel with the file.
+ * machine typically fails decryption, so Pro does not travel with the file.
  */
 import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

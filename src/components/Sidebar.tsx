@@ -21,7 +21,7 @@ interface Props {
   onDeleteSession: (id: number) => Promise<void>
   /** Opens the global settings/usage modal (footer gear menu). */
   onOpenSettings: () => void
-  /** Whether Unlimited license is active on this device. */
+  /** Whether Pro license is active on this device. */
   isLicenseActivated: boolean
   /** Opens the upgrade / license activation modal (free users only). */
   onOpenLicense: () => void
@@ -119,10 +119,10 @@ export function Sidebar({
             variant="ghost"
             className="h-8 w-full justify-start gap-2 px-2 text-sm text-muted-foreground hover:text-foreground"
             onClick={onOpenLicense}
-            title="Upgrade to Unlimited"
+            title="Upgrade to Pro"
           >
             <Sparkles className="h-4 w-4 shrink-0" />
-            <span>Upgrade</span>
+            <span>Upgrade to Pro</span>
           </Button>
         )}
         <SettingsMenu onOpenUsage={onOpenSettings} openUp labeled />

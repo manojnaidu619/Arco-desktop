@@ -1,6 +1,6 @@
 /**
  * Plan badge shown next to the Arco logo in the sidebar header.
- * "Free" for default users; "Unlimited" after license activation.
+ * "Free" for default users; "Pro" after license activation.
  */
 import { cn } from '@/lib/utils'
 
@@ -18,7 +18,7 @@ export function LicenseBadge({ isActivated }: Props) {
           : 'bg-muted text-muted-foreground'
       )}
     >
-      {isActivated ? 'Unlimited' : 'Free'}
+      {isActivated ? 'Pro' : 'Free'}
     </span>
   )
 }
