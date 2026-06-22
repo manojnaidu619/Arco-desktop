@@ -355,7 +355,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 relative overflow-hidden">
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0">
               {expandedPane ? (
                 // Match the grid's enter animation when switching to a single expanded pane.
                 <div className="h-full w-full animate-in fade-in-0 zoom-in-95 duration-200 ease-out">
