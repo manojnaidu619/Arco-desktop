@@ -2,14 +2,14 @@
  * The conversation-history sidebar (left rail). Lists past sessions under a
  * single "Recents" section, with inline rename and delete. Mirrors ChatGPT.
  */
-import { SettingsMenu } from '@/components/SettingsMenu'
+import arcoLogo from '@/assets/arco-transparent.png'
 import { LicenseBadge } from '@/components/LicenseBadge'
+import { SettingsMenu } from '@/components/SettingsMenu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
 import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
-import arcoLogo from '@/assets/arco.png'
 import { useEffect, useRef, useState } from 'react'
 
 interface Props {
