@@ -2,25 +2,21 @@
  * First-run gate and model-selection onboarding.
  *
  * Step 1: paste and validate an OpenRouter API key.
- * Step 2: choose at least four models from the suggested list or add custom ids.
- * The key is stored encrypted in the macOS Keychain — never in the renderer.
+ * Step 2: manage at least four saved models via the shared ModelManagerPanel
+ * (same add/remove UI as Settings). The key is stored encrypted in the macOS
+ * Keychain — never in the renderer.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { ModelInput } from '@/components/model/ModelInput'
-import { ModelList } from '@/components/model/ModelList'
+import { ModelManagerPanel } from '@/components/model/ModelManagerPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useSavedModels } from '@/hooks/useSavedModels'
 import { api } from '@/lib/api'
-import {
-  getCuratedColorByOpenRouterId,
-  getModelDef,
-  ONBOARDING_MIN_MODELS,
-  ONBOARDING_SUGGESTED_MODELS
-} from '@shared/models'
+import { ONBOARDING_MIN_MODELS, ONBOARDING_SUGGESTED_MODELS } from '@shared/models'
 import type { SavedModel } from '@shared/types'
 import { AlertCircle, ArrowRight, ExternalLink, KeyRound, LayoutGrid, Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   /** Called once the user finishes model selection and clicks Get started. */
@@ -31,13 +27,19 @@ interface Props {
 
 type ApiKeyPhase = 'enter' | 'validating'
 
-/** Default selection: first four suggested models. */
-function defaultSelected(): Set<string> {
-  return new Set(ONBOARDING_SUGGESTED_MODELS.slice(0, ONBOARDING_MIN_MODELS).map((m) => m.openRouterModelId))
+/** Default starter library: first four suggested curated models. */
+function defaultOnboardingModels(): SavedModel[] {
+  return ONBOARDING_SUGGESTED_MODELS.slice(0, ONBOARDING_MIN_MODELS).map((m) => ({
+    openRouterModelId: m.openRouterModelId,
+    label: m.label,
+    color: m.color
+  }))
 }
 
 export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
   const [step, setStep] = useState<'api-key' | 'model-selection'>(initialStep)
+  const { savedModels, loading, set, refresh } = useSavedModels()
+  const seededRef = useRef(false)
 
   // ── API key step state ──
   const [key, setKey] = useState('')
@@ -45,17 +47,25 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
 
   // ── Model selection step state ──
-  const [selected, setSelected] = useState<Set<string>>(defaultSelected)
-  const [extraModels, setExtraModels] = useState<string[]>([])
-  const [customColors, setCustomColors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const displayModels = useMemo(() => {
-    const suggestedIds = ONBOARDING_SUGGESTED_MODELS.map((m) => m.openRouterModelId)
-    const extras = extraModels.filter((id) => !suggestedIds.includes(id))
-    return [...suggestedIds, ...extras]
-  }, [extraModels])
+  // Refresh from DB, then seed four defaults when the library is empty (e.g. first visit or after key removal)
+  useEffect(() => {
+    if (step !== 'model-selection') return
+
+    let cancelled = false
+    ;(async () => {
+      const models = await refresh()
+      if (cancelled || seededRef.current || models.length > 0) return
+      seededRef.current = true
+      await set(defaultOnboardingModels())
+    })().catch(console.error)
+
+    return () => {
+      cancelled = true
+    }
+  }, [step, refresh, set])
 
   const submitKey = async () => {
     if (!key.trim() || apiKeyPhase === 'validating') return
@@ -72,46 +82,23 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     }
   }
 
-  const toggleModel = (openRouterModelId: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(openRouterModelId)) next.delete(openRouterModelId)
-      else next.add(openRouterModelId)
-      return next
-    })
-  }
-
-  const addModelToSelection = async (openRouterModelId: string, color: string) => {
-    if (!displayModels.includes(openRouterModelId)) {
-      setExtraModels((prev) => [...prev, openRouterModelId])
-    }
-    setCustomColors((prev) => ({ ...prev, [openRouterModelId]: color }))
-    setSelected((prev) => new Set(prev).add(openRouterModelId))
-  }
-
   const finishOnboarding = async () => {
-    if (selected.size < ONBOARDING_MIN_MODELS || saving) return
+    if (savedModels.length < ONBOARDING_MIN_MODELS || saving) return
     setSaving(true)
     setSaveError(null)
 
     try {
-      const models: SavedModel[] = [...selected].map((openRouterModelId) => ({
-        openRouterModelId,
-        label: getModelDef(openRouterModelId).label,
-        color: customColors[openRouterModelId] ?? getCuratedColorByOpenRouterId(openRouterModelId)
-      }))
-      await api.settings.setSavedModels(models)
       await api.settings.completeOnboarding()
       onComplete()
     } catch {
-      setSaveError('Could not save your models. Please try again.')
+      setSaveError('Could not finish onboarding. Please try again.')
     } finally {
       setSaving(false)
     }
   }
 
   if (step === 'model-selection') {
-    const count = selected.size
+    const count = savedModels.length
     const canContinue = count >= ONBOARDING_MIN_MODELS
 
     return (
@@ -124,36 +111,17 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             <div>
               <h1 className="text-xl font-semibold">Choose Your Models</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Select at least {ONBOARDING_MIN_MODELS} models to get started. You can change these anytime in Settings.
+                Add at least {ONBOARDING_MIN_MODELS} models to get started. You can change these anytime in Settings.
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border overflow-hidden">
-            <ModelList
-              openRouterModelIds={displayModels}
-              colorOverrides={customColors}
-              heading="Suggested models"
-              selectable
-              selected={selected}
-              onToggle={toggleModel}
-            />
-          </div>
-
           <div className="rounded-xl border border-border p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Add custom model
-            </p>
-            <ModelInput
-              onAdd={addModelToSelection}
-              disabled={saving}
-              existingOpenRouterModelIds={displayModels}
-              skipValidation
-            />
+            <ModelManagerPanel />
           </div>
 
           <p className="text-sm text-center text-muted-foreground">
-            Selected: <span className="font-medium text-foreground">{count}</span> of {ONBOARDING_MIN_MODELS} minimum
+            Saved: <span className="font-medium text-foreground">{count}</span> of {ONBOARDING_MIN_MODELS} minimum
           </p>
 
           {saveError && (
@@ -163,7 +131,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             </div>
           )}
 
-          <Button className="w-full" onClick={finishOnboarding} disabled={!canContinue || saving}>
+          <Button className="w-full" onClick={finishOnboarding} disabled={!canContinue || saving || loading}>
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

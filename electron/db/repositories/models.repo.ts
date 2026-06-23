@@ -137,10 +137,10 @@ export function upsertActive(openRouterModelId: string, label: string, color: st
 
   if (existing) {
     db.update(models)
-      .set({ label, color, deletedAt: null })
+      .set({ label, color, deletedAt: null, createdAt: ts })
       .where(eq(models.id, existing.id))
       .run()
-    return mapRow({ ...existing, label, color, deletedAt: null })
+    return mapRow({ ...existing, label, color, deletedAt: null, createdAt: ts })
   }
 
   const created = db
@@ -237,7 +237,8 @@ export function replaceActive(entries: SavedModel[]): SavedModel[] {
         .where(and(eq(models.author, parsed.author), eq(models.slug, parsed.slug)))
         .get()
 
-      const createdAt = new Date(Date.now() + index).toISOString()
+      // Earlier entries in the array get newer timestamps so they appear at the top (listActive is desc).
+      const createdAt = new Date(Date.now() - index).toISOString()
 
       if (existing) {
         tx.update(models)

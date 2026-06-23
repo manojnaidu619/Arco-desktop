@@ -5,7 +5,7 @@
  * model manager modal all share the same source of truth. The library is persisted
  * via the main process and loaded on app startup.
  *
- * @used-by Onboarding, ModelDropdown, ModelManagerModal, ModelPane, useChat
+ * @used-by Onboarding, ModelDropdown, ModelManagerModal, ModelManagerPanel, ModelPane, useChat
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import {
@@ -54,7 +54,7 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
   /**
    * Fetch the current saved models list from the backend.
    *
-   * @used-by initial mount, ModelManagerModal on open
+   * @used-by initial mount, ModelManagerModal on open, Onboarding seeding
    * @returns the refreshed array of saved models
    */
   const refresh = useCallback(async () => {
@@ -73,7 +73,7 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
   /**
    * Replace the entire saved model library.
    *
-   * @used-by Onboarding when the user confirms their model selection
+   * @used-by Onboarding to seed default models on first visit to model selection
    * @param models — complete set of models to save
    * @returns the persisted models (may differ if backend normalizes)
    */
@@ -86,7 +86,7 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
   /**
    * Validate a model id against OpenRouter and add it to the library.
    *
-   * @used-by ModelManagerModal, ModelInput
+   * @used-by ModelManagerPanel, ModelInput
    * @param openRouterModelId — OpenRouter model ID to validate and add, e.g. "openai/gpt-4o"
    * @param color — hex color for UI dots/badges
    * @returns result with success flag and updated models array
@@ -100,7 +100,7 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
   /**
    * Remove a model from the user's saved library.
    *
-   * @used-by ModelManagerModal, ModelDropdown
+   * @used-by ModelManagerPanel, ModelDropdown
    * @param openRouterModelId — OpenRouter model ID to remove, e.g. "openai/gpt-4o"
    * @returns the updated array of saved models
    */

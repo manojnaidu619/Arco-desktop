@@ -56,51 +56,43 @@ export function App() {
     )
   }
 
-  if (!hasKey) {
-    return (
-      <Onboarding
-        onComplete={() => {
-          setHasKey(true)
-          setOnboardingComplete(true)
-        }}
-      />
-    )
-  }
-
-  if (!onboardingComplete) {
-    return (
-      <Onboarding
-        initialStep="model-selection"
-        onComplete={() => setOnboardingComplete(true)}
-      />
-    )
-  }
-
+  // SavedModelsProvider wraps onboarding too so model selection uses the same library as Settings.
   return (
-    <>
-      <SavedModelsProvider>
-        <MainApp
-          onOpenSettings={() => setSettingsOpen(true)}
-          isLicenseActivated={isLicenseActivated}
-          onOpenLicense={() => setLicenseOpen(true)}
-        />
-      </SavedModelsProvider>
-      {licenseOpen && (
-        <LicenseModal
-          onClose={() => setLicenseOpen(false)}
-          onActivated={() => setIsLicenseActivated(true)}
-        />
-      )}
-      {settingsOpen && (
-        <SettingsDialog
-          onClose={() => setSettingsOpen(false)}
-          onKeyCleared={() => {
-            setSettingsOpen(false)
-            setHasKey(false)
-            setOnboardingComplete(false)
+    <SavedModelsProvider>
+      {!hasKey ? (
+        <Onboarding
+          onComplete={() => {
+            setHasKey(true)
+            setOnboardingComplete(true)
           }}
         />
+      ) : !onboardingComplete ? (
+        <Onboarding initialStep="model-selection" onComplete={() => setOnboardingComplete(true)} />
+      ) : (
+        <>
+          <MainApp
+            onOpenSettings={() => setSettingsOpen(true)}
+            isLicenseActivated={isLicenseActivated}
+            onOpenLicense={() => setLicenseOpen(true)}
+          />
+          {licenseOpen && (
+            <LicenseModal
+              onClose={() => setLicenseOpen(false)}
+              onActivated={() => setIsLicenseActivated(true)}
+            />
+          )}
+          {settingsOpen && (
+            <SettingsDialog
+              onClose={() => setSettingsOpen(false)}
+              onKeyCleared={() => {
+                setSettingsOpen(false)
+                setHasKey(false)
+                setOnboardingComplete(false)
+              }}
+            />
+          )}
+        </>
       )}
-    </>
+    </SavedModelsProvider>
   )
 }

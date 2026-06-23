@@ -2,7 +2,7 @@
  * Shared input for adding an OpenRouter model by ID.
  *
  * Validates the ID against OpenRouter (via the backend) before calling
- * `onAdd`. Used in onboarding and the model manager modal.
+ * `onAdd`. Used by ModelManagerPanel in onboarding and the settings modal.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
@@ -19,8 +19,6 @@ interface Props {
   /** Disable the input (e.g. while parent is saving). */
   disabled?: boolean
   placeholder?: string
-  /** When true, skip the backend validation call (onboarding local selection). */
-  skipValidation?: boolean
   /** OpenRouter model IDs already present — blocks duplicate adds with an inline message. */
   existingOpenRouterModelIds?: string[]
 }
@@ -29,7 +27,6 @@ export function ModelInput({
   onAdd,
   disabled = false,
   placeholder = 'openai/gpt-4o',
-  skipValidation = false,
   existingOpenRouterModelIds = []
 }: Props) {
   const [value, setValue] = useState('')
@@ -50,12 +47,10 @@ export function ModelInput({
         return
       }
 
-      if (!skipValidation) {
-        const result = await api.settings.validateModel(openRouterModelId)
-        if (!result.ok) {
-          setError(result.error ?? 'That model could not be validated.')
-          return
-        }
+      const result = await api.settings.validateModel(openRouterModelId)
+      if (!result.ok) {
+        setError(result.error ?? 'That model could not be validated.')
+        return
       }
 
       await onAdd(openRouterModelId, color)

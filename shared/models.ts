@@ -47,7 +47,7 @@ export const CURATED_MODELS: ModelDef[] = [
 /** Minimum models required during onboarding before the user can continue. */
 export const ONBOARDING_MIN_MODELS = 4
 
-/** Suggested models shown as checkboxes during onboarding (first six curated). */
+/** Curated models offered as the default seed list during onboarding (first six). */
 export const ONBOARDING_SUGGESTED_MODELS = CURATED_MODELS.slice(0, 6)
 
 /** Generate a random hex color for custom model defaults. */

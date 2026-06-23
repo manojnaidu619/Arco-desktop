@@ -2,8 +2,8 @@
  * Shared list component for displaying OpenRouter models.
  *
  * Supports two modes:
- *   • Selection (onboarding) — checkboxes to toggle models in a set
- *   • Management (modal) — delete buttons to remove saved models
+ *   • Management — delete buttons to remove saved models (model manager)
+ *   • Picker — click a row to select the active model (dropdowns, summary overlay)
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
@@ -18,34 +18,22 @@ interface Props {
   openRouterModelIds: string[]
   /** Optional saved library for persisted colors. */
   savedModels?: SavedModel[]
-  /** Optional per-ID color overrides (e.g. onboarding custom models). */
-  colorOverrides?: Record<string, string>
   /** Optional section heading above the list. */
   heading?: string
-  /** When true, rows show checkboxes and call onToggle. */
-  selectable?: boolean
-  /** Currently selected OpenRouter model IDs (selection mode only). */
-  selected?: Set<string>
-  /** Toggle a model in/out of the selection set. */
-  onToggle?: (openRouterModelId: string) => void
   /** When set, rows show a delete button (management mode). */
   onRemove?: (openRouterModelId: string) => void
   /** Disable delete buttons (e.g. when only one model remains). */
   removeDisabled?: boolean
-  /** Highlight the active pane model (dropdown mode). */
+  /** Highlight the active pane model (picker mode). */
   activeOpenRouterModelId?: string | null
-  /** Select a model (dropdown mode — no checkbox). */
+  /** Select a model (picker mode). */
   onSelect?: (openRouterModelId: string) => void
 }
 
 export function ModelList({
   openRouterModelIds,
   savedModels,
-  colorOverrides,
   heading,
-  selectable = false,
-  selected,
-  onToggle,
   onRemove,
   removeDisabled = false,
   activeOpenRouterModelId,
@@ -59,8 +47,7 @@ export function ModelList({
     )
   }
 
-  const colorFor = (openRouterModelId: string) =>
-    colorOverrides?.[openRouterModelId] ?? resolveModelColor(openRouterModelId, savedModels)
+  const colorFor = (openRouterModelId: string) => resolveModelColor(openRouterModelId, savedModels)
 
   return (
     <div className="py-1">
@@ -71,40 +58,26 @@ export function ModelList({
       )}
       {openRouterModelIds.map((openRouterModelId) => {
         const def = getModelDef(openRouterModelId)
-        const isSelected = selected?.has(openRouterModelId)
         const isActive = activeOpenRouterModelId === openRouterModelId
-        const interactive = selectable || Boolean(onSelect)
+        const interactive = Boolean(onSelect)
 
         return (
           <div key={openRouterModelId} className="group flex items-start">
             <button
               type="button"
-              onClick={() => {
-                if (selectable) onToggle?.(openRouterModelId)
-                else onSelect?.(openRouterModelId)
-              }}
+              onClick={() => onSelect?.(openRouterModelId)}
               disabled={!interactive}
               className={cn(
                 'flex flex-1 items-start gap-2 px-3 py-1.5 text-left min-w-0',
                 interactive && 'hover:bg-muted transition-colors'
               )}
             >
-              {selectable && (
-                <span
-                  className={cn(
-                    'mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                    isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                  )}
-                >
-                  {isSelected && <Check className="h-3 w-3" />}
-                </span>
-              )}
               <ModelColorDot color={colorFor(openRouterModelId)} className="mt-1.5" />
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm truncate leading-tight">{def.label}</span>
                 <span className="text-xs text-muted-foreground truncate leading-snug mt-0.5">{def.author}</span>
               </div>
-              {isActive && !selectable && <Check className="h-3.5 w-3.5 shrink-0 mt-1 text-foreground" />}
+              {isActive && <Check className="h-3.5 w-3.5 shrink-0 mt-1 text-foreground" />}
             </button>
             {onRemove && (
               <button

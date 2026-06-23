@@ -1,18 +1,17 @@
 /**
- * Modal for managing the user's saved model library.
+ * Modal shell for managing the user's saved model library.
  *
  * Opened from Settings or from a pane's model dropdown ("Add or remove models").
- * Composes ModelList (management mode) and ModelInput for a consistent UX.
+ * Delegates the inner UI to ModelManagerPanel for a consistent UX with onboarding.
  *
- * @used-by MainApp, SettingsMenu, ModelDropdown
+ * @used-by SettingsMenu, ModelDropdown
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect } from 'react'
+import { ModelManagerPanel } from '@/components/model/ModelManagerPanel'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
-import { ModelInput } from '@/components/model/ModelInput'
 import { Button } from '@/components/ui/button'
-import { Loader2, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 interface Props {
   /** Whether the modal is currently visible. */
@@ -21,8 +20,14 @@ interface Props {
   onClose: () => void
 }
 
+/**
+ * Full-screen modal wrapper around the shared model manager panel.
+ *
+ * @param open — whether the modal is visible
+ * @param onClose — called when the user dismisses the modal
+ */
 export function ModelManagerModal({ open, onClose }: Props) {
-  const { savedModels, loading, refresh, add, remove } = useSavedModels()
+  const { refresh } = useSavedModels()
 
   // Refresh the model list when the modal opens to ensure fresh data
   useEffect(() => {
@@ -30,26 +35,6 @@ export function ModelManagerModal({ open, onClose }: Props) {
   }, [open, refresh])
 
   if (!open) return null
-
-  /**
-   * Remove a model from the user's library.
-   * Prevents removal if it would leave the library empty (must have at least one model).
-   */
-  const handleRemove = async (openRouterModelId: string) => {
-    if (savedModels.length <= 1) return
-    await remove(openRouterModelId)
-  }
-
-  /**
-   * Validate and add a new model to the library.
-   * Throws an error if validation fails (consumed by ModelInput for error display).
-   */
-  const handleAdd = async (openRouterModelId: string, color: string) => {
-    const result = await add(openRouterModelId, color)
-    if (!result.ok) {
-      throw new Error(result.error ?? 'Could not add model.')
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={onClose}>
@@ -64,33 +49,8 @@ export function ModelManagerModal({ open, onClose }: Props) {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Your models</p>
-            {loading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border max-h-60 overflow-y-auto">
-                <ModelList
-                  openRouterModelIds={savedOpenRouterModelIds(savedModels)}
-                  savedModels={savedModels}
-                  onRemove={handleRemove}
-                  removeDisabled={savedModels.length <= 1}
-                />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Add new model</p>
-            <ModelInput
-              onAdd={handleAdd}
-              disabled={loading}
-              existingOpenRouterModelIds={savedOpenRouterModelIds(savedModels)}
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <ModelManagerPanel />
         </div>
 
         <div className="px-5 py-4 border-t border-border flex justify-end">
