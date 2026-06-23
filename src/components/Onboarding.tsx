@@ -11,8 +11,8 @@ import {
   ONBOARDING_MIN_MODELS,
   ONBOARDING_SUGGESTED_MODELS
 } from '@shared/models'
-import { ModelList } from '@/components/ModelList'
-import { ModelInput } from '@/components/ModelInput'
+import { ModelList } from '@/components/model/ModelList'
+import { ModelInput } from '@/components/model/ModelInput'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AlertCircle, ArrowRight, ExternalLink, KeyRound, LayoutGrid, Loader2 } from 'lucide-react'

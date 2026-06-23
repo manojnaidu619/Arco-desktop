@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { ModelManagerModal } from '@/components/ModelManagerModal'
+import { ModelManagerModal } from '@/components/model/ModelManagerModal'
 import { cn } from '@/lib/utils'
 import { BarChart3, Bot, Settings } from 'lucide-react'
 

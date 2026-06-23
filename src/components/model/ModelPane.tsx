@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { getModelDef, isModelInLibrary } from '@shared/models'
 import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { MessageBubble } from './MessageBubble'
+import { MessageBubble } from '@/components/chat/MessageBubble'
 import { ModelDropdown } from './ModelDropdown'
 
 interface Props {

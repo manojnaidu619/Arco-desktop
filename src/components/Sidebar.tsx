@@ -3,8 +3,8 @@
  * single "Recents" section, with inline rename and delete. Mirrors ChatGPT.
  */
 import arcoLogo from '@/assets/arco-transparent.png'
-import { LicenseBadge } from '@/components/LicenseBadge'
-import { SettingsMenu } from '@/components/SettingsMenu'
+import { LicenseBadge } from '@/components/license/LicenseBadge'
+import { SettingsMenu } from '@/components/settings/SettingsMenu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'

@@ -3,7 +3,7 @@
  * that covers the model grid without changing its layout. User picks a model,
  * taps Generate / Regenerate, and sees a streaming structured comparison.
  */
-import { ModelList } from '@/components/ModelList'
+import { ModelList } from '@/components/model/ModelList'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef } from '@shared/models'

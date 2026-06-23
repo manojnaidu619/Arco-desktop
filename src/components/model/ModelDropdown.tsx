@@ -8,8 +8,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { getModelDef } from '@shared/models'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList } from '@/components/ModelList'
-import { ModelManagerModal } from '@/components/ModelManagerModal'
+import { ModelList } from '@/components/model/ModelList'
+import { ModelManagerModal } from '@/components/model/ModelManagerModal'
 import { cn } from '@/lib/utils'
 import { ChevronDown, Plus } from 'lucide-react'
 

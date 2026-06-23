@@ -6,8 +6,8 @@
  */
 import { useEffect } from 'react'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList } from '@/components/ModelList'
-import { ModelInput } from '@/components/ModelInput'
+import { ModelList } from '@/components/model/ModelList'
+import { ModelInput } from '@/components/model/ModelInput'
 import { Button } from '@/components/ui/button'
 import { Loader2, X } from 'lucide-react'
 

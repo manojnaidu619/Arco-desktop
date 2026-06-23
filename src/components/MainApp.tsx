@@ -5,10 +5,10 @@
  * Conversation state lives in `useChat`; this component owns layout/UI state
  * (sidebar open, which pane is expanded) and arranges the grid.
  */
-import { ChatBar } from '@/components/ChatBar'
+import { ChatBar } from '@/components/chat/ChatBar'
 import { GenerationInProgressDialog } from '@/components/GenerationInProgressDialog'
 import { LayoutSelector } from '@/components/LayoutSelector'
-import { ModelPane } from '@/components/ModelPane'
+import { ModelPane } from '@/components/model/ModelPane'
 import { SessionLimitModal } from '@/components/SessionLimitModal'
 import { Sidebar } from '@/components/Sidebar'
 import { SUMMARY_OVERLAY_ANIM_MS, SummaryOverlay, SummaryTab } from '@/components/SummaryOverlay'
