@@ -27,7 +27,8 @@ export type ThreadStatus = 'idle' | 'streaming' | 'error' | 'done'
  * `dbThreadId` is the row id once the thread has been persisted to SQLite.
  */
 export interface ModelThread {
-  modelId: string
+  /** OpenRouter model ID, e.g. "openai/gpt-4o" or "anthropic/claude-opus-4.8". */
+  openRouterModelId: string
   label: string
   messages: Message[]
   status: ThreadStatus
@@ -42,7 +43,8 @@ export interface ThreadData {
   threadId: number
   /** Grid position 0..5 — a pane's stable identity within the session. */
   slot: number
-  modelId: string
+  /** OpenRouter model ID, e.g. "openai/gpt-4o" or "anthropic/claude-opus-4.8". */
+  openRouterModelId: string
   label: string
   messages: Message[]
 }
@@ -65,13 +67,14 @@ export interface SessionSummary {
   /** Number of visible panes for this session. */
   layout: number
   /** Distinct models used in this session — drives the colored dots. */
-  models: { modelId: string; label: string }[]
+  models: { openRouterModelId: string; label: string }[]
 }
 
 /** A user-saved OpenRouter model in the library. */
 export interface SavedModel {
-  /** OpenRouter model id, e.g. "openai/gpt-4o". */
-  id: string
+  /** OpenRouter model ID, e.g. "openai/gpt-4o" or "anthropic/claude-opus-4.8". */
+  openRouterModelId: string
+  /** Human-readable model name, e.g. "GPT-4o" or "Claude Opus 4.8". */
   label: string
   /** Hex color for UI dots/badges, e.g. "#f43f5e". */
   color: string

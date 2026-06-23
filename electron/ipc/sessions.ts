@@ -46,12 +46,12 @@ export function registerSessionHandlers(): void {
 
   // ── Thread (pane) management ──────────────────────────────────────────────
   /** Add a new model thread at a grid slot. */
-  ipcMain.handle(CHANNELS.sessions.addThread, (_e, sessionId: number, slot: number, modelId: string, label: string) =>
-    repo.addThread(sessionId, slot, modelId, label)
+  ipcMain.handle(CHANNELS.sessions.addThread, (_e, sessionId: number, slot: number, openRouterModelId: string, label: string) =>
+    repo.addThread(sessionId, slot, openRouterModelId, label)
   )
   /** Change a thread's model and clear its messages. */
-  ipcMain.handle(CHANNELS.sessions.updateThreadModel, (_e, threadId: number, modelId: string, label: string) =>
-    repo.updateThreadModel(threadId, modelId, label)
+  ipcMain.handle(CHANNELS.sessions.updateThreadModel, (_e, threadId: number, openRouterModelId: string, label: string) =>
+    repo.updateThreadModel(threadId, openRouterModelId, label)
   )
   /** Remove a thread from a session. */
   ipcMain.handle(CHANNELS.sessions.deleteThread, (_e, threadId: number) => repo.deleteThread(threadId))

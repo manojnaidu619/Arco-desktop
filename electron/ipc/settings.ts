@@ -34,11 +34,15 @@ async function validate(key: string): Promise<KeyValidationResult> {
   }
 }
 
-/** Validate a model id using the stored API key (never throws). */
-async function validateModel(modelId: string): Promise<ModelValidationResult> {
+/**
+ * Validate an OpenRouter model ID using the stored API key (never throws).
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o"
+ */
+async function validateModel(openRouterModelId: string): Promise<ModelValidationResult> {
   const key = secureStore.getKey()
   if (!key) return { ok: false, error: 'No API key stored.' }
-  return validateModelOnOpenRouter(key, modelId)
+  return validateModelOnOpenRouter(key, openRouterModelId)
 }
 
 export function registerSettingsHandlers(): void {
@@ -71,14 +75,16 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle(CHANNELS.settings.setSavedModels, (_e, models: Parameters<typeof modelsRepo.replaceActive>[0]) =>
     modelsRepo.replaceActive(models)
   )
-  ipcMain.handle(CHANNELS.settings.removeSavedModel, (_e, modelId: string) => modelsRepo.softDelete(modelId))
+  ipcMain.handle(CHANNELS.settings.removeSavedModel, (_e, openRouterModelId: string) =>
+    modelsRepo.softDelete(openRouterModelId)
+  )
 
   ipcMain.handle(
     CHANNELS.settings.addSavedModel,
-    async (_e, modelId: string, color: string): Promise<AddSavedModelResult> => {
-      const id = modelId.trim()
+    async (_e, openRouterModelId: string, color: string): Promise<AddSavedModelResult> => {
+      const id = openRouterModelId.trim()
       const existing = modelsRepo.listActive()
-      if (existing.some((m) => m.id === id)) {
+      if (existing.some((m) => m.openRouterModelId === id)) {
         return { ok: false, models: existing, error: 'This model is already in your library.' }
       }
 
@@ -91,7 +97,9 @@ export function registerSettingsHandlers(): void {
     }
   )
 
-  ipcMain.handle(CHANNELS.settings.validateModel, (_e, modelId: string) => validateModel(modelId))
+  ipcMain.handle(CHANNELS.settings.validateModel, (_e, openRouterModelId: string) =>
+    validateModel(openRouterModelId)
+  )
 
   ipcMain.handle(CHANNELS.settings.isOnboardingCompleted, () => settingsStore.isOnboardingCompleted())
   ipcMain.handle(CHANNELS.settings.completeOnboarding, () => settingsStore.completeOnboarding())

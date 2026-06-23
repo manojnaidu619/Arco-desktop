@@ -44,7 +44,8 @@ const ICONS: Record<number, { Icon: React.ComponentType<{ className?: string }>;
 /** A populated pane the user can choose to keep visible. */
 export interface SelectablePane {
   slot: number
-  modelId: string
+  /** OpenRouter model ID, e.g. "openai/gpt-4o". */
+  openRouterModelId: string
   label: string
 }
 
@@ -167,7 +168,7 @@ export function LayoutSelector({ value, onChange, panes, onApplySelection }: Pro
                       </svg>
                     )}
                   </span>
-                  <ModelColorDot color={resolveModelColor(p.modelId, savedModels)} />
+                  <ModelColorDot color={resolveModelColor(p.openRouterModelId, savedModels)} />
                   <span className="truncate">{p.label}</span>
                 </button>
               )

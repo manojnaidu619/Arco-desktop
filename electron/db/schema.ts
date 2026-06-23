@@ -18,13 +18,22 @@
  */
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
+/**
+ * User's saved OpenRouter model library.
+ *
+ * - `id`: Database row ID (auto-increment primary key) — use `dbModelId` in code when passed outside this table
+ * - `author`: OpenRouter provider, e.g. "openai"
+ * - `slug`: Model name, e.g. "gpt-4o"
+ * - OpenRouter model ID = `${author}/${slug}`, e.g. "openai/gpt-4o" — use `openRouterModelId` in code
+ */
 export const models = sqliteTable(
   'models',
   {
+    /** Database row ID (auto-increment primary key). */
     id: integer('id').primaryKey({ autoIncrement: true }),
-    /** OpenRouter provider, e.g. "openai". */
+    /** OpenRouter author (provider), e.g. "openai". */
     author: text('author').notNull(),
-    /** Model name part, e.g. "gpt-4o". Full id = `${author}/${slug}`. */
+    /** Model name slug, e.g. "gpt-4o". OpenRouter model ID = `${author}/${slug}`. */
     slug: text('slug').notNull(),
     /** Friendly display name captured when the model was added. */
     label: text('label').notNull(),
@@ -56,7 +65,7 @@ export const threads = sqliteTable('threads', {
     .references(() => sessions.id, { onDelete: 'cascade' }),
   /** Grid position 0..5 — the pane's stable identity within the session. */
   slot: integer('slot').notNull().default(0),
-  /** FK to the model assigned to this pane. */
+  /** FK to models.id (database row ID of the assigned model). */
   modelId: integer('model_id')
     .notNull()
     .references(() => models.id),

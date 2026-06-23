@@ -86,10 +86,11 @@ export type NewSessionResult =
   | { ok: true; sessionId: number }
   | { ok: false; code?: 'session_limit' }
 
-/** One grid slot. `modelId === null` means an empty pane awaiting selection. */
+/** One grid slot. `openRouterModelId === null` means an empty pane awaiting selection. */
 export interface Pane {
   slot: number // Zero-based index; also the pane's grid position (0 = top-left)
-  modelId: string | null // AI model assigned to this pane; null = empty, awaiting selection
+  /** OpenRouter model ID assigned to this pane, e.g. "openai/gpt-4o"; null = empty, awaiting selection. */
+  openRouterModelId: string | null
   label: string // Human-readable model name shown in the pane header (e.g. "DeepSeek V4 Flash")
   messages: Message[] // Full conversation history for this pane, in chronological order
   status: ThreadStatus // Current state: 'idle' | 'streaming' | 'done' | 'error'
@@ -118,7 +119,7 @@ function clampLayout(n: number): number {
  * @param slot — grid index for the new pane
  */
 function emptyPane(slot: number): Pane {
-  return { slot, modelId: null, label: '', messages: [], status: 'idle' }
+  return { slot, openRouterModelId: null, label: '', messages: [], status: 'idle' }
 }
 
 export function useChat() {
@@ -185,8 +186,8 @@ export function useChat() {
     for (let slot = from; slot < to; slot++) {
       const model = saved[slot]
       if (model) {
-        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, model.id, model.label)
-        result.push({ slot, modelId: model.id, label: model.label, messages: [], status: 'idle', dbThreadId })
+        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, model.openRouterModelId, model.label)
+        result.push({ slot, openRouterModelId: model.openRouterModelId, label: model.label, messages: [], status: 'idle', dbThreadId })
       } else {
         result.push(emptyPane(slot))
       }
@@ -222,7 +223,7 @@ export function useChat() {
           const t = data.threads.find((x) => x.slot === slot)
           restored.push(
             t
-              ? { slot, modelId: t.modelId, label: t.label, messages: t.messages, status: 'idle', dbThreadId: t.threadId }
+              ? { slot, openRouterModelId: t.openRouterModelId, label: t.label, messages: t.messages, status: 'idle', dbThreadId: t.threadId }
               : emptyPane(slot)
           )
         }
@@ -428,7 +429,7 @@ export function useChat() {
    *
    * @used-by  askAll, askOne
    * @param    slot — target grid slot
-   * @param    model — model id to call
+   * @param    openRouterModelId — OpenRouter model ID to call, e.g. "openai/gpt-4o"
    * @param    requestMessages — full message history including the new user turn
    *
    * Internal steps:
@@ -437,7 +438,7 @@ export function useChat() {
    *  3. Append an empty assistant placeholder and set status to 'streaming'.
    *  4. Fire api.chat.start with the request id and messages.
    */
-  const startStream = useCallback((slot: number, model: string, requestMessages: Message[]) => {
+  const startStream = useCallback((slot: number, openRouterModelId: string, requestMessages: Message[]) => {
     const prev = activeReqBySlot.current[slot]
     if (prev) {
       api.chat.abort(prev)
@@ -456,7 +457,7 @@ export function useChat() {
       )
     )
 
-    api.chat.start({ requestId, model, messages: requestMessages })
+    api.chat.start({ requestId, openRouterModelId, messages: requestMessages })
   }, [])
 
   /**
@@ -537,24 +538,24 @@ export function useChat() {
    *
    * @used-by  MainApp → ModelPane onSelectModel
    * @param    slot — grid slot to update
-   * @param    modelId — new model id (UI should confirm before calling if messages exist)
+   * @param    openRouterModelId — OpenRouter model ID, e.g. "openai/gpt-4o" (UI should confirm before calling if messages exist)
    */
-  const setPaneModel = useCallback((slot: number, modelId: string) => {
+  const setPaneModel = useCallback((slot: number, openRouterModelId: string) => {
     const sid = sessionIdRef.current
     if (sid === null) return
     const pane = panesRef.current.find((p) => p.slot === slot)
     if (!pane) return
-    const label = getModelDef(modelId).label
+    const label = getModelDef(openRouterModelId).label
 
     const active = activeReqBySlot.current[slot]
     if (active) api.chat.abort(active)
 
     if (pane.dbThreadId) {
-      api.sessions.updateThreadModel(pane.dbThreadId, modelId, label)
-      patchPane(slot, { modelId, label, messages: [], status: 'idle', error: undefined })
+      api.sessions.updateThreadModel(pane.dbThreadId, openRouterModelId, label)
+      patchPane(slot, { openRouterModelId, label, messages: [], status: 'idle', error: undefined })
     } else {
-      api.sessions.addThread(sid, slot, modelId, label).then((dbThreadId) => {
-        patchPane(slot, { modelId, label, messages: [], status: 'idle', error: undefined, dbThreadId })
+      api.sessions.addThread(sid, slot, openRouterModelId, label).then((dbThreadId) => {
+        patchPane(slot, { openRouterModelId, label, messages: [], status: 'idle', error: undefined, dbThreadId })
       })
     }
     refreshSessions()
@@ -576,7 +577,7 @@ export function useChat() {
       const sid = sessionIdRef.current
       const visible = panesRef.current
         .slice(0, layout)
-        .filter((p) => isModelInLibrary(p.modelId, savedModels))
+        .filter((p) => isModelInLibrary(p.openRouterModelId, savedModels))
       if (visible.length === 0) return
 
       if (!titleSet.current && sid !== null) {
@@ -588,7 +589,7 @@ export function useChat() {
         const updated: Message[] = [...pane.messages, { role: 'user', content }]
         if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
         patchPane(pane.slot, { messages: updated })
-        startStream(pane.slot, pane.modelId!, updated)
+        startStream(pane.slot, pane.openRouterModelId!, updated)
       }
     },
     [layout, patchPane, startStream, refreshSessions, savedModels]
@@ -605,11 +606,11 @@ export function useChat() {
   const askOne = useCallback(
     (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
-      if (!pane?.modelId || !isModelInLibrary(pane.modelId, savedModels)) return
+      if (!pane?.openRouterModelId || !isModelInLibrary(pane.openRouterModelId, savedModels)) return
       const updated: Message[] = [...pane.messages, { role: 'user', content }]
       if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
       patchPane(slot, { messages: updated })
-      startStream(slot, pane.modelId, updated)
+      startStream(slot, pane.openRouterModelId, updated)
     },
     [patchPane, startStream, savedModels]
   )

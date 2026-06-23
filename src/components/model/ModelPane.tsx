@@ -23,7 +23,7 @@ interface Props {
   pane: Pane
   isExpanded?: boolean
   onToggleExpand?: () => void
-  onSelectModel: (slot: number, modelId: string) => void
+  onSelectModel: (slot: number, openRouterModelId: string) => void
   onAskOne: (slot: number, content: string) => void
   /** Stop this pane's stream. */
   onAbortPane: (slot: number) => void
@@ -35,7 +35,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
   const [showInput, setShowInput] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const isRemoved = Boolean(pane.modelId && !isModelInLibrary(pane.modelId, savedModels))
+  const isRemoved = Boolean(pane.openRouterModelId && !isModelInLibrary(pane.openRouterModelId, savedModels))
 
   // Hide the follow-up input when the model is removed from the library.
   useEffect(() => {
@@ -52,7 +52,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
 
   const send = () => {
     const text = input.trim()
-    if (!text || pane.status === 'streaming' || !pane.modelId || isRemoved) return
+    if (!text || pane.status === 'streaming' || !pane.openRouterModelId || isRemoved) return
     setInput('')
     onAskOne(pane.slot, text)
   }
@@ -61,15 +61,15 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
     onAbortPane(pane.slot)
   }
 
-  const handleSelectModel = (modelId: string) => {
+  const handleSelectModel = (openRouterModelId: string) => {
     // Confirm before clearing an in-progress conversation.
-    if (pane.modelId && modelId !== pane.modelId && pane.messages.length > 0) {
+    if (pane.openRouterModelId && openRouterModelId !== pane.openRouterModelId && pane.messages.length > 0) {
       const ok = window.confirm(
-        `Switch this pane to "${getModelDef(modelId).label}"? Its current conversation will be cleared.`
+        `Switch this pane to "${getModelDef(openRouterModelId).label}"? Its current conversation will be cleared.`
       )
       if (!ok) return
     }
-    onSelectModel(pane.slot, modelId)
+    onSelectModel(pane.slot, openRouterModelId)
   }
 
   return (
@@ -77,7 +77,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2 bg-muted/30 shrink-0">
         <div className="flex-1 min-w-0">
-          <ModelDropdown value={pane.modelId} onSelect={handleSelectModel} />
+          <ModelDropdown value={pane.openRouterModelId} onSelect={handleSelectModel} />
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {pane.status === 'streaming' && (
@@ -140,7 +140,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin">
-        {!pane.modelId ? (
+        {!pane.openRouterModelId ? (
           <p className="text-xs text-muted-foreground text-center mt-8">Pick a model to start.</p>
         ) : (
           <>
@@ -170,7 +170,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
       </div>
 
       {/* Per-pane follow-up input (hidden until toggled) */}
-      {showInput && pane.modelId && !isRemoved && (
+      {showInput && pane.openRouterModelId && !isRemoved && (
         <div className="flex gap-2 px-3 py-2.5 shrink-0">
           <Input
             value={input}

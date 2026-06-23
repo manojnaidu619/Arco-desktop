@@ -1,7 +1,7 @@
 /**
- * Shared input for adding an OpenRouter model by id.
+ * Shared input for adding an OpenRouter model by ID.
  *
- * Validates the id against OpenRouter (via the backend) before calling
+ * Validates the ID against OpenRouter (via the backend) before calling
  * `onAdd`. Used in onboarding and the model manager modal.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
@@ -14,15 +14,15 @@ import { Button } from '@/components/ui/button'
 import { AlertCircle, Loader2, Plus } from 'lucide-react'
 
 interface Props {
-  /** Called with a validated model id and chosen color after OpenRouter confirms it exists. */
-  onAdd: (modelId: string, color: string) => void | Promise<void>
+  /** Called with a validated OpenRouter model ID and chosen color after OpenRouter confirms it exists. */
+  onAdd: (openRouterModelId: string, color: string) => void | Promise<void>
   /** Disable the input (e.g. while parent is saving). */
   disabled?: boolean
   placeholder?: string
   /** When true, skip the backend validation call (onboarding local selection). */
   skipValidation?: boolean
-  /** Model ids already present — blocks duplicate adds with an inline message. */
-  existingModels?: string[]
+  /** OpenRouter model IDs already present — blocks duplicate adds with an inline message. */
+  existingOpenRouterModelIds?: string[]
 }
 
 export function ModelInput({
@@ -30,7 +30,7 @@ export function ModelInput({
   disabled = false,
   placeholder = 'openai/gpt-4o',
   skipValidation = false,
-  existingModels = []
+  existingOpenRouterModelIds = []
 }: Props) {
   const [value, setValue] = useState('')
   const [color, setColor] = useState(randomHexColor)
@@ -38,27 +38,27 @@ export function ModelInput({
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
-    const id = value.trim()
-    if (!id || validating || disabled) return
+    const openRouterModelId = value.trim()
+    if (!openRouterModelId || validating || disabled) return
 
     setValidating(true)
     setError(null)
 
     try {
-      if (existingModels.includes(id)) {
+      if (existingOpenRouterModelIds.includes(openRouterModelId)) {
         setError('This model is already in your list.')
         return
       }
 
       if (!skipValidation) {
-        const result = await api.settings.validateModel(id)
+        const result = await api.settings.validateModel(openRouterModelId)
         if (!result.ok) {
           setError(result.error ?? 'That model could not be validated.')
           return
         }
       }
 
-      await onAdd(id, color)
+      await onAdd(openRouterModelId, color)
       setValue('')
       setColor(randomHexColor())
     } catch (err) {
@@ -116,7 +116,9 @@ export function ModelInput({
           <span>{error}</span>
         </div>
       )}
-      <p className="text-[11px] text-muted-foreground">Paste any OpenRouter model ID (e.g. openai/gpt-4o)</p>
+      <p className="text-[11px] text-muted-foreground">
+        Paste any OpenRouter model ID (e.g. openai/gpt-4o or anthropic/claude-opus-4.8)
+      </p>
     </div>
   )
 }

@@ -45,10 +45,10 @@ const api: ArcoApi = {
     delete: (sessionId) => ipcRenderer.invoke(CHANNELS.sessions.delete, sessionId),
     setTitle: (sessionId, title) => ipcRenderer.invoke(CHANNELS.sessions.setTitle, sessionId, title),
     setLayout: (sessionId, layout) => ipcRenderer.invoke(CHANNELS.sessions.setLayout, sessionId, layout),
-    addThread: (sessionId, slot, modelId, label) =>
-      ipcRenderer.invoke(CHANNELS.sessions.addThread, sessionId, slot, modelId, label),
-    updateThreadModel: (threadId, modelId, label) =>
-      ipcRenderer.invoke(CHANNELS.sessions.updateThreadModel, threadId, modelId, label),
+    addThread: (sessionId, slot, openRouterModelId, label) =>
+      ipcRenderer.invoke(CHANNELS.sessions.addThread, sessionId, slot, openRouterModelId, label),
+    updateThreadModel: (threadId, openRouterModelId, label) =>
+      ipcRenderer.invoke(CHANNELS.sessions.updateThreadModel, threadId, openRouterModelId, label),
     deleteThread: (threadId) => ipcRenderer.invoke(CHANNELS.sessions.deleteThread, threadId),
     reorderThreads: (threadIds) => ipcRenderer.invoke(CHANNELS.sessions.reorderThreads, threadIds),
     addMessage: (threadId, role, content) =>
@@ -79,9 +79,11 @@ const api: ArcoApi = {
     getBalance: () => ipcRenderer.invoke(CHANNELS.settings.getBalance),
     getSavedModels: () => ipcRenderer.invoke(CHANNELS.settings.getSavedModels),
     setSavedModels: (models) => ipcRenderer.invoke(CHANNELS.settings.setSavedModels, models),
-    addSavedModel: (modelId, color) => ipcRenderer.invoke(CHANNELS.settings.addSavedModel, modelId, color),
-    removeSavedModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.removeSavedModel, modelId),
-    validateModel: (modelId) => ipcRenderer.invoke(CHANNELS.settings.validateModel, modelId),
+    addSavedModel: (openRouterModelId, color) =>
+      ipcRenderer.invoke(CHANNELS.settings.addSavedModel, openRouterModelId, color),
+    removeSavedModel: (openRouterModelId) =>
+      ipcRenderer.invoke(CHANNELS.settings.removeSavedModel, openRouterModelId),
+    validateModel: (openRouterModelId) => ipcRenderer.invoke(CHANNELS.settings.validateModel, openRouterModelId),
     isOnboardingCompleted: () => ipcRenderer.invoke(CHANNELS.settings.isOnboardingCompleted),
     completeOnboarding: () => ipcRenderer.invoke(CHANNELS.settings.completeOnboarding)
   },

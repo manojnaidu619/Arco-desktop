@@ -14,32 +14,32 @@ import { cn } from '@/lib/utils'
 import { Check, X } from 'lucide-react'
 
 interface Props {
-  /** OpenRouter model ids to render. */
-  models: string[]
+  /** OpenRouter model IDs to render, e.g. ["openai/gpt-4o", "anthropic/claude-opus-4.8"]. */
+  openRouterModelIds: string[]
   /** Optional saved library for persisted colors. */
   savedModels?: SavedModel[]
-  /** Optional per-id color overrides (e.g. onboarding custom models). */
+  /** Optional per-ID color overrides (e.g. onboarding custom models). */
   colorOverrides?: Record<string, string>
   /** Optional section heading above the list. */
   heading?: string
   /** When true, rows show checkboxes and call onToggle. */
   selectable?: boolean
-  /** Currently selected ids (selection mode only). */
+  /** Currently selected OpenRouter model IDs (selection mode only). */
   selected?: Set<string>
   /** Toggle a model in/out of the selection set. */
-  onToggle?: (modelId: string) => void
+  onToggle?: (openRouterModelId: string) => void
   /** When set, rows show a delete button (management mode). */
-  onRemove?: (modelId: string) => void
+  onRemove?: (openRouterModelId: string) => void
   /** Disable delete buttons (e.g. when only one model remains). */
   removeDisabled?: boolean
   /** Highlight the active pane model (dropdown mode). */
-  activeModelId?: string | null
+  activeOpenRouterModelId?: string | null
   /** Select a model (dropdown mode — no checkbox). */
-  onSelect?: (modelId: string) => void
+  onSelect?: (openRouterModelId: string) => void
 }
 
 export function ModelList({
-  models,
+  openRouterModelIds,
   savedModels,
   colorOverrides,
   heading,
@@ -48,10 +48,10 @@ export function ModelList({
   onToggle,
   onRemove,
   removeDisabled = false,
-  activeModelId,
+  activeOpenRouterModelId,
   onSelect
 }: Props) {
-  if (models.length === 0) {
+  if (openRouterModelIds.length === 0) {
     return (
       <p className="px-3 py-4 text-xs text-muted-foreground text-center">
         No models yet. Add one below.
@@ -59,7 +59,8 @@ export function ModelList({
     )
   }
 
-  const colorFor = (id: string) => colorOverrides?.[id] ?? resolveModelColor(id, savedModels)
+  const colorFor = (openRouterModelId: string) =>
+    colorOverrides?.[openRouterModelId] ?? resolveModelColor(openRouterModelId, savedModels)
 
   return (
     <div className="py-1">
@@ -68,19 +69,19 @@ export function ModelList({
           {heading}
         </p>
       )}
-      {models.map((id) => {
-        const def = getModelDef(id)
-        const isSelected = selected?.has(id)
-        const isActive = activeModelId === id
+      {openRouterModelIds.map((openRouterModelId) => {
+        const def = getModelDef(openRouterModelId)
+        const isSelected = selected?.has(openRouterModelId)
+        const isActive = activeOpenRouterModelId === openRouterModelId
         const interactive = selectable || Boolean(onSelect)
 
         return (
-          <div key={id} className="group flex items-start">
+          <div key={openRouterModelId} className="group flex items-start">
             <button
               type="button"
               onClick={() => {
-                if (selectable) onToggle?.(id)
-                else onSelect?.(id)
+                if (selectable) onToggle?.(openRouterModelId)
+                else onSelect?.(openRouterModelId)
               }}
               disabled={!interactive}
               className={cn(
@@ -98,17 +99,17 @@ export function ModelList({
                   {isSelected && <Check className="h-3 w-3" />}
                 </span>
               )}
-              <ModelColorDot color={colorFor(id)} className="mt-1.5" />
+              <ModelColorDot color={colorFor(openRouterModelId)} className="mt-1.5" />
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm truncate leading-tight">{def.label}</span>
-                <span className="text-xs text-muted-foreground truncate leading-snug mt-0.5">{def.vendor}</span>
+                <span className="text-xs text-muted-foreground truncate leading-snug mt-0.5">{def.author}</span>
               </div>
               {isActive && !selectable && <Check className="h-3.5 w-3.5 shrink-0 mt-1 text-foreground" />}
             </button>
             {onRemove && (
               <button
                 type="button"
-                onClick={() => onRemove(id)}
+                onClick={() => onRemove(openRouterModelId)}
                 disabled={removeDisabled}
                 className="px-2 pt-2.5 text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Remove from your models"
@@ -123,7 +124,7 @@ export function ModelList({
   )
 }
 
-/** Map saved models to id strings for list rendering. */
-export function savedModelIds(models: SavedModel[]): string[] {
-  return models.map((m) => m.id)
+/** Map saved models to OpenRouter model ID strings for list rendering. */
+export function savedOpenRouterModelIds(models: SavedModel[]): string[] {
+  return models.map((m) => m.openRouterModelId)
 }

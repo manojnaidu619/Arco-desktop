@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import {
-  getCuratedColorByModelId,
+  getCuratedColorByOpenRouterId,
   getModelDef,
   ONBOARDING_MIN_MODELS,
   ONBOARDING_SUGGESTED_MODELS
@@ -33,7 +33,7 @@ type ApiKeyPhase = 'enter' | 'validating'
 
 /** Default selection: first four suggested models. */
 function defaultSelected(): Set<string> {
-  return new Set(ONBOARDING_SUGGESTED_MODELS.slice(0, ONBOARDING_MIN_MODELS).map((m) => m.id))
+  return new Set(ONBOARDING_SUGGESTED_MODELS.slice(0, ONBOARDING_MIN_MODELS).map((m) => m.openRouterModelId))
 }
 
 export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
@@ -52,7 +52,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const displayModels = useMemo(() => {
-    const suggestedIds = ONBOARDING_SUGGESTED_MODELS.map((m) => m.id)
+    const suggestedIds = ONBOARDING_SUGGESTED_MODELS.map((m) => m.openRouterModelId)
     const extras = extraModels.filter((id) => !suggestedIds.includes(id))
     return [...suggestedIds, ...extras]
   }, [extraModels])
@@ -72,21 +72,21 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     }
   }
 
-  const toggleModel = (modelId: string) => {
+  const toggleModel = (openRouterModelId: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (next.has(modelId)) next.delete(modelId)
-      else next.add(modelId)
+      if (next.has(openRouterModelId)) next.delete(openRouterModelId)
+      else next.add(openRouterModelId)
       return next
     })
   }
 
-  const addModelToSelection = async (modelId: string, color: string) => {
-    if (!displayModels.includes(modelId)) {
-      setExtraModels((prev) => [...prev, modelId])
+  const addModelToSelection = async (openRouterModelId: string, color: string) => {
+    if (!displayModels.includes(openRouterModelId)) {
+      setExtraModels((prev) => [...prev, openRouterModelId])
     }
-    setCustomColors((prev) => ({ ...prev, [modelId]: color }))
-    setSelected((prev) => new Set(prev).add(modelId))
+    setCustomColors((prev) => ({ ...prev, [openRouterModelId]: color }))
+    setSelected((prev) => new Set(prev).add(openRouterModelId))
   }
 
   const finishOnboarding = async () => {
@@ -95,10 +95,10 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     setSaveError(null)
 
     try {
-      const models: SavedModel[] = [...selected].map((id) => ({
-        id,
-        label: getModelDef(id).label,
-        color: customColors[id] ?? getCuratedColorByModelId(id)
+      const models: SavedModel[] = [...selected].map((openRouterModelId) => ({
+        openRouterModelId,
+        label: getModelDef(openRouterModelId).label,
+        color: customColors[openRouterModelId] ?? getCuratedColorByOpenRouterId(openRouterModelId)
       }))
       await api.settings.setSavedModels(models)
       await api.settings.completeOnboarding()
@@ -131,7 +131,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
 
           <div className="rounded-xl border border-border overflow-hidden">
             <ModelList
-              models={displayModels}
+              openRouterModelIds={displayModels}
               colorOverrides={customColors}
               heading="Suggested models"
               selectable
@@ -147,7 +147,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             <ModelInput
               onAdd={addModelToSelection}
               disabled={saving}
-              existingModels={displayModels}
+              existingOpenRouterModelIds={displayModels}
               skipValidation
             />
           </div>

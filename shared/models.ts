@@ -3,11 +3,11 @@
  *
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │ HOW TO ADD / CHANGE THE DEFAULT MODELS                                │
- * │ Edit the CURATED_MODELS array below. Each `id` must be a valid        │
- * │ OpenRouter model id (the exact string from openrouter.ai/models,      │
- * │ e.g. "openai/gpt-4o" or "anthropic/claude-3.5-sonnet").               │
+ * │ Edit the CURATED_MODELS array below. Each `openRouterModelId` must be │
+ * │ a valid OpenRouter model ID (the exact string from openrouter.ai/     │
+ * │ models, e.g. "openai/gpt-4o" or "anthropic/claude-3.5-sonnet").      │
  * │                                                                       │
- * │ Users can ALSO paste any model id at runtime via the "Add model"      │
+ * │ Users can ALSO paste any model ID at runtime via the "Add model"      │
  * │ field — those are stored per-user and merged with this list. So this  │
  * │ array is just the convenient starting set, not a hard limit.          │
  * └─────────────────────────────────────────────────────────────────────┘
@@ -25,23 +25,23 @@ export const DEFAULT_MODEL_COLOR = '#64748b'
 
 /** Metadata describing a single selectable model. */
 export interface ModelDef {
-  /** OpenRouter model id, e.g. "openai/gpt-4o". */
-  id: string
-  /** Friendly display name. */
+  /** OpenRouter model ID, e.g. "openai/gpt-4o" or "anthropic/claude-opus-4.8". */
+  openRouterModelId: string
+  /** Friendly display name, e.g. "GPT-4o" or "Claude Opus 4.8". */
   label: string
-  /** Provider/vendor shown as a small label. */
-  vendor: string
+  /** OpenRouter author (provider), e.g. "openai" or "anthropic". */
+  author: string
   /** Hex color for the model's colored dot/badge, e.g. "#f43f5e". */
   color: string
 }
 
 export const CURATED_MODELS: ModelDef[] = [
-  { id: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash', vendor: 'DeepSeek', color: '#06b6d4' },
-  { id: 'moonshotai/kimi-k2-thinking', label: 'Kimi K2 Thinking', vendor: 'Moonshot AI', color: '#8b5cf6' },
-  { id: 'z-ai/glm-4.7-flash', label: 'GLM-4.7 Flash', vendor: 'Zhipu AI', color: '#3b82f6' },
-  { id: 'minimax/minimax-m2.7', label: 'MiniMax M2.7', vendor: 'MiniMax', color: '#f43f5e' },
-  { id: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', vendor: 'Alibaba', color: '#f97316' },
-  { id: 'anthropic/claude-opus-4.8', label: 'Claude Opus 4.8', vendor: 'Anthropic', color: '#f59e0b' }
+  { openRouterModelId: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash', author: 'DeepSeek', color: '#06b6d4' },
+  { openRouterModelId: 'moonshotai/kimi-k2-thinking', label: 'Kimi K2 Thinking', author: 'Moonshot AI', color: '#8b5cf6' },
+  { openRouterModelId: 'z-ai/glm-4.7-flash', label: 'GLM-4.7 Flash', author: 'Zhipu AI', color: '#3b82f6' },
+  { openRouterModelId: 'minimax/minimax-m2.7', label: 'MiniMax M2.7', author: 'MiniMax', color: '#f43f5e' },
+  { openRouterModelId: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', author: 'Alibaba', color: '#f97316' },
+  { openRouterModelId: 'anthropic/claude-opus-4.8', label: 'Claude Opus 4.8', author: 'Anthropic', color: '#f59e0b' }
 ]
 
 /** Minimum models required during onboarding before the user can continue. */
@@ -57,56 +57,85 @@ export function randomHexColor(): string {
     .padStart(6, '0')}`
 }
 
-/** Hex color from the curated list, or the default fallback. */
-export function getCuratedColorByModelId(id: string): string {
-  return CURATED_MODELS.find((m) => m.id === id)?.color ?? DEFAULT_MODEL_COLOR
+/**
+ * Hex color from the curated list, or the default fallback.
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o"
+ */
+export function getCuratedColorByOpenRouterId(openRouterModelId: string): string {
+  return CURATED_MODELS.find((m) => m.openRouterModelId === openRouterModelId)?.color ?? DEFAULT_MODEL_COLOR
 }
 
 /**
- * Resolve a model id to its display metadata.
+ * Resolve an OpenRouter model ID to its display metadata.
  *
- * Falls back to a sensible derived label/vendor for ids that aren't in the
- * curated list (e.g. a custom id the user pasted). This means the UI can
- * render ANY model id gracefully.
+ * Falls back to a sensible derived label/author for IDs that aren't in the
+ * curated list (e.g. a custom ID the user pasted). This means the UI can
+ * render ANY OpenRouter model ID gracefully.
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o"
  *
  * @example
  *   getModelDef('openai/gpt-4o')
- *   // → { id: 'openai/gpt-4o', label: 'gpt-4o', vendor: 'openai', color: '#64748b' }
+ *   // → { openRouterModelId: 'openai/gpt-4o', label: 'gpt-4o', author: 'openai', color: '#64748b' }
  */
-export function getModelDef(id: string): ModelDef {
+export function getModelDef(openRouterModelId: string): ModelDef {
   return (
-    CURATED_MODELS.find((m) => m.id === id) ?? {
-      id,
-      label: id.split('/').pop() ?? id,
-      vendor: id.split('/')[0] ?? 'Unknown',
+    CURATED_MODELS.find((m) => m.openRouterModelId === openRouterModelId) ?? {
+      openRouterModelId,
+      label: openRouterModelId.split('/').pop() ?? openRouterModelId,
+      author: openRouterModelId.split('/')[0] ?? 'Unknown',
       color: DEFAULT_MODEL_COLOR
     }
   )
 }
 
-/** Prefer persisted color from the library; fall back to curated/default. */
-export function resolveModelColor(id: string, savedModels?: SavedModel[]): string {
-  const saved = savedModels?.find((m) => m.id === id)
+/**
+ * Prefer persisted color from the library; fall back to curated/default.
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o"
+ */
+export function resolveModelColor(openRouterModelId: string, savedModels?: SavedModel[]): string {
+  const saved = savedModels?.find((m) => m.openRouterModelId === openRouterModelId)
   if (saved?.color) return saved.color
-  return getCuratedColorByModelId(id)
+  return getCuratedColorByOpenRouterId(openRouterModelId)
 }
 
-/** Split an OpenRouter model id into provider + model name. */
-export function parseModelSlug(fullId: string): { author: string; slug: string } | null {
-  const slash = fullId.indexOf('/')
+/**
+ * Parse an OpenRouter model ID into its component parts.
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o"
+ * @returns Object with author (e.g. "openai") and slug (e.g. "gpt-4o"), or null if invalid
+ *
+ * @example
+ *   parseOpenRouterModelId("anthropic/claude-opus-4.8")
+ *   // → { author: "anthropic", slug: "claude-opus-4.8" }
+ */
+export function parseOpenRouterModelId(openRouterModelId: string): { author: string; slug: string } | null {
+  const slash = openRouterModelId.indexOf('/')
   if (slash === -1) return null
-  const author = fullId.slice(0, slash).trim()
-  const slug = fullId.slice(slash + 1).trim()
+  const author = openRouterModelId.slice(0, slash).trim()
+  const slug = openRouterModelId.slice(slash + 1).trim()
   if (!author || !slug) return null
   return { author, slug }
 }
 
-/** Compose the OpenRouter model id from provider + model name. */
-export function formatModelSlug(author: string, slug: string): string {
+/**
+ * Compose an OpenRouter model ID from author + slug.
+ *
+ * @param author - OpenRouter provider, e.g. "openai"
+ * @param slug - Model name, e.g. "gpt-4o"
+ * @returns Full OpenRouter model ID, e.g. "openai/gpt-4o"
+ */
+export function formatOpenRouterModelId(author: string, slug: string): string {
   return `${author}/${slug}`
 }
 
-/** True when the model id is in the user's saved library. */
-export function isModelInLibrary(modelId: string | null, savedModels: SavedModel[]): boolean {
-  return Boolean(modelId && savedModels.some((m) => m.id === modelId))
+/**
+ * True when the OpenRouter model ID is in the user's saved library.
+ *
+ * @param openRouterModelId - OpenRouter model ID, e.g. "openai/gpt-4o", or null for an empty pane
+ */
+export function isModelInLibrary(openRouterModelId: string | null, savedModels: SavedModel[]): boolean {
+  return Boolean(openRouterModelId && savedModels.some((m) => m.openRouterModelId === openRouterModelId))
 }

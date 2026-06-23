@@ -79,10 +79,10 @@ typed. (If you forget step 3 or 4, TypeScript/the call will tell you.)
 Pure data, one file. Edit `CURATED_MODELS` in `shared/models.ts`:
 
 ```ts
-{ id: 'openai/gpt-4o', label: 'GPT-4o', vendor: 'OpenAI', color: 'bg-green-500' },
+{ openRouterModelId: 'openai/gpt-4o', label: 'GPT-4o', author: 'OpenAI', color: '#22c55e' },
 ```
 
-`id` must be an exact OpenRouter model id. The new entry shows up as a checkbox
+`openRouterModelId` must be an exact OpenRouter model ID (e.g. `"openai/gpt-4o"`). The new entry shows up as a checkbox
 automatically — no other changes needed.
 
 ---

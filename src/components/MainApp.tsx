@@ -80,20 +80,23 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   // Summary overlay — streams a structured comparison via IPC
   const [summaryOverlayOpen, setSummaryOverlayOpen] = useState(false)
   const [summaryOverlayMounted, setSummaryOverlayMounted] = useState(false)
-  const [summaryModelId, setSummaryModelId] = useState<string | null>(null)
+  const [summaryOpenRouterModelId, setSummaryOpenRouterModelId] = useState<string | null>(null)
   const [summaryContent, setSummaryContent] = useState('')
   const [summaryStreaming, setSummaryStreaming] = useState(false)
   const summaryRequestIdRef = useRef<string | null>(null)
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
-  const activeCount = useMemo(() => visiblePanes.filter((p) => p.modelId).length, [visiblePanes])
+  const activeCount = useMemo(() => visiblePanes.filter((p) => p.openRouterModelId).length, [visiblePanes])
   const sendableCount = useMemo(
-    () => visiblePanes.filter((p) => isModelInLibrary(p.modelId, savedModels)).length,
+    () => visiblePanes.filter((p) => isModelInLibrary(p.openRouterModelId, savedModels)).length,
     [visiblePanes, savedModels]
   )
   const skippedCount = activeCount - sendableCount
   const populatedPanes = useMemo(
-    () => panes.filter((p) => p.modelId).map((p) => ({ slot: p.slot, modelId: p.modelId!, label: p.label })),
+    () =>
+      panes
+        .filter((p) => p.openRouterModelId)
+        .map((p) => ({ slot: p.slot, openRouterModelId: p.openRouterModelId!, label: p.label })),
     [panes]
   )
   const isAnyStreaming = panes.some((p) => p.status === 'streaming')
@@ -105,7 +108,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   const comparedPanes = useMemo(
     () =>
       panesWithLatestExchange.map((p) => ({
-        modelId: p.modelId!,
+        openRouterModelId: p.openRouterModelId!,
         label: p.label
       })),
     [panesWithLatestExchange]
@@ -123,7 +126,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   const resetSummaryState = () => {
     setSummaryContent('')
     setSummaryStreaming(false)
-    setSummaryModelId(null)
+    setSummaryOpenRouterModelId(null)
     summaryRequestIdRef.current = null
   }
 
@@ -137,7 +140,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   }
 
   const generateSummary = () => {
-    if (!summaryModelId) return
+    if (!summaryOpenRouterModelId) return
 
     const panesWithExchange = panesWithLatestExchange
     const userMessages = panesWithExchange[0]?.messages.filter((m) => m.role === 'user')
@@ -155,14 +158,14 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
 
     api.summary.start({
       requestId,
-      model: summaryModelId,
+      openRouterModelId: summaryOpenRouterModelId,
       userMessage: lastUserMessage,
       responses
     })
   }
 
-  const handleSelectSummaryModel = (modelId: string) => {
-    setSummaryModelId(modelId)
+  const handleSelectSummaryModel = (openRouterModelId: string) => {
+    setSummaryOpenRouterModelId(openRouterModelId)
     if (summaryContent) {
       setSummaryContent('')
       setSummaryStreaming(false)
@@ -401,7 +404,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
                 models={savedModels}
                 comparedPanes={comparedPanes}
                 disabled={!showSummarizeTab}
-                selectedModelId={summaryModelId}
+                selectedOpenRouterModelId={summaryOpenRouterModelId}
                 onSelectModel={handleSelectSummaryModel}
                 content={summaryContent}
                 streaming={summaryStreaming}

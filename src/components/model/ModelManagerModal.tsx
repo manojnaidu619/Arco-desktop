@@ -9,7 +9,7 @@
  */
 import { useEffect } from 'react'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList, savedModelIds } from '@/components/model/ModelList'
+import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
 import { ModelInput } from '@/components/model/ModelInput'
 import { Button } from '@/components/ui/button'
 import { Loader2, X } from 'lucide-react'
@@ -35,17 +35,17 @@ export function ModelManagerModal({ open, onClose }: Props) {
    * Remove a model from the user's library.
    * Prevents removal if it would leave the library empty (must have at least one model).
    */
-  const handleRemove = async (modelId: string) => {
+  const handleRemove = async (openRouterModelId: string) => {
     if (savedModels.length <= 1) return
-    await remove(modelId)
+    await remove(openRouterModelId)
   }
 
   /**
    * Validate and add a new model to the library.
    * Throws an error if validation fails (consumed by ModelInput for error display).
    */
-  const handleAdd = async (modelId: string, color: string) => {
-    const result = await add(modelId, color)
+  const handleAdd = async (openRouterModelId: string, color: string) => {
+    const result = await add(openRouterModelId, color)
     if (!result.ok) {
       throw new Error(result.error ?? 'Could not add model.')
     }
@@ -74,7 +74,7 @@ export function ModelManagerModal({ open, onClose }: Props) {
             ) : (
               <div className="rounded-lg border border-border max-h-60 overflow-y-auto">
                 <ModelList
-                  models={savedModelIds(savedModels)}
+                  openRouterModelIds={savedOpenRouterModelIds(savedModels)}
                   savedModels={savedModels}
                   onRemove={handleRemove}
                   removeDisabled={savedModels.length <= 1}
@@ -88,7 +88,7 @@ export function ModelManagerModal({ open, onClose }: Props) {
             <ModelInput
               onAdd={handleAdd}
               disabled={loading}
-              existingModels={savedModelIds(savedModels)}
+              existingOpenRouterModelIds={savedOpenRouterModelIds(savedModels)}
             />
           </div>
         </div>

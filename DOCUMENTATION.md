@@ -89,8 +89,8 @@ For files that maintainers frequently edit, include a "how to" box:
  *
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │ HOW TO ADD / CHANGE THE DEFAULT MODELS                              │
- * │ Edit the CURATED_MODELS array below. Each `id` must be a valid      │
- * │ OpenRouter model id (the exact string from openrouter.ai/models).   │
+ * │ Edit the CURATED_MODELS array below. Each `openRouterModelId` must be a │
+ * │ valid OpenRouter model ID (the exact string from openrouter.ai/models). │
  * └─────────────────────────────────────────────────────────────────────┘
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
@@ -163,17 +163,17 @@ const askAll = useCallback((content: string) => {
 
 ```typescript
 /**
- * Resolve a model id to its display metadata.
+ * Resolve an OpenRouter model ID to its display metadata.
  *
- * Falls back to a sensible derived label/vendor for ids that aren't in the
- * curated list (e.g. a custom id the user pasted). This means the UI can
- * render ANY model id gracefully.
+ * Falls back to a sensible derived label/author for IDs that aren't in the
+ * curated list (e.g. a custom ID the user pasted). This means the UI can
+ * render ANY OpenRouter model ID gracefully.
  *
  * @example
  *   getModelDef('openai/gpt-4o')
- *   // → { id: 'openai/gpt-4o', label: 'gpt-4o', vendor: 'openai', color: 'bg-slate-500' }
+ *   // → { openRouterModelId: 'openai/gpt-4o', label: 'gpt-4o', author: 'openai', color: '#64748b' }
  */
-export function getModelDef(id: string): ModelDef {
+export function getModelDef(openRouterModelId: string): ModelDef {
   // ...
 }
 ```
@@ -213,34 +213,34 @@ All exported interfaces and types **must** have JSDoc on:
 
 ```typescript
 interface Props {
-  /** OpenRouter model ids to render. */
-  models: string[]
+  /** OpenRouter model IDs to render, e.g. ["openai/gpt-4o"]. */
+  openRouterModelIds: string[]
   /** Optional section heading above the list. */
   heading?: string
   /** When true, rows show checkboxes and call onToggle. */
   selectable?: boolean
-  /** Currently selected ids (selection mode only). */
+  /** Currently selected OpenRouter model IDs (selection mode only). */
   selected?: Set<string>
   /** Toggle a model in/out of the selection set. */
-  onToggle?: (modelId: string) => void
+  onToggle?: (openRouterModelId: string) => void
   /** When set, rows show a delete button (management mode). */
-  onRemove?: (modelId: string) => void
+  onRemove?: (openRouterModelId: string) => void
   /** Disable delete buttons (e.g. when only one model remains). */
   removeDisabled?: boolean
   /** Highlight the active pane model (dropdown mode). */
-  activeModelId?: string | null
+  activeOpenRouterModelId?: string | null
   /** Select a model (dropdown mode — no checkbox). */
-  onSelect?: (modelId: string) => void
+  onSelect?: (openRouterModelId: string) => void
 }
 ```
 
 ### Example: Domain Type
 
 ```typescript
-/** One grid slot. `modelId === null` means an empty pane awaiting selection. */
+/** One grid slot. `openRouterModelId === null` means an empty pane awaiting selection. */
 export interface Pane {
   slot: number        // Zero-based index; also the pane's grid position (0 = top-left)
-  modelId: string | null  // AI model assigned to this pane; null = empty, awaiting selection
+  openRouterModelId: string | null  // OpenRouter model ID, e.g. "openai/gpt-4o"; null = empty pane
   label: string       // Human-readable model name shown in the pane header
   messages: Message[] // Full conversation history for this pane, in chronological order
   status: ThreadStatus    // Current state: 'idle' | 'streaming' | 'done' | 'error'
@@ -361,6 +361,28 @@ Use product and domain terms, not just implementation details. This helps both h
 | **Layout** | Number of visible panes (1, 2, 3, 4, or 6) |
 | **Streaming** | Token-by-token response from OpenRouter |
 | **Delta** | A single chunk of streamed text |
+
+### Model identifier terminology
+
+Use explicit names — never bare `id` or ambiguous `modelId`:
+
+| Term | Type | Meaning | Example |
+|------|------|---------|---------|
+| **openRouterModelId** | `string` | Full OpenRouter model ID (`author/slug`) | `"anthropic/claude-opus-4.8"` |
+| **author** | `string` | OpenRouter provider (replaces legacy "vendor") | `"anthropic"` |
+| **slug** | `string` | Model name part of the OpenRouter ID | `"claude-opus-4.8"` |
+| **dbModelId** | `number` | Integer primary key in the `models` table | `42` |
+
+```typescript
+// Good: unambiguous
+const openRouterModelId = 'openai/gpt-4o'
+const { author, slug } = parseOpenRouterModelId(openRouterModelId)!
+const dbModelId = getDbModelId(openRouterModelId)
+
+// Bad: ambiguous — is this the DB row or the OpenRouter string?
+const id = 'openai/gpt-4o'
+const modelId = 42
+```
 
 ### Examples
 

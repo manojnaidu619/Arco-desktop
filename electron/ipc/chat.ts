@@ -27,7 +27,7 @@ const activeRequests = new Map<string, AbortController>()
 
 export function registerChatHandlers(): void {
   ipcMain.on(CHANNELS.chat.start, async (event, req: ChatStartRequest) => {
-    const { requestId, model, messages } = req
+    const { requestId, openRouterModelId, messages } = req
     const sender = event.sender
 
     const apiKey = getKey()
@@ -45,7 +45,7 @@ export function registerChatHandlers(): void {
     try {
       const content = await streamChat(
         apiKey,
-        model,
+        openRouterModelId,
         messages,
         (delta) => {
           // Guard against sending to a window that's been closed mid-stream.

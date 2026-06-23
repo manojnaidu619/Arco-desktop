@@ -55,6 +55,21 @@ Use Arco vocabulary, not generic SQL/array jargon:
 - **slot** — pane index; **layout** — visible pane count (1|2|3|4|6)
 - **streaming / delta** — token-by-token OpenRouter response
 
+## Model identifier terminology
+
+Use these names consistently — never use bare `id` or `modelId` when the meaning is ambiguous:
+
+| Name | Type | Meaning | Example |
+|------|------|---------|---------|
+| `openRouterModelId` | `string` | Full OpenRouter model ID | `"anthropic/claude-opus-4.8"` |
+| `author` | `string` | OpenRouter provider (first path segment) | `"anthropic"` |
+| `slug` | `string` | Model name (second path segment) | `"claude-opus-4.8"` |
+| `dbModelId` | `number` | `models` table row ID (FK from threads) | `42` |
+
+Helpers in `shared/models.ts`: `parseOpenRouterModelId()`, `formatOpenRouterModelId()`, `getModelDef()`.
+
+JSDoc for these identifiers should include an example, e.g. `@param openRouterModelId — OpenRouter model ID, e.g. "openai/gpt-4o"`.
+
 ## Avoid documenting
 
 - Line-by-line narration, obvious imports, unstable file paths

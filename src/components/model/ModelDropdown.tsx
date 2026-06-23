@@ -11,14 +11,14 @@ import { useEffect, useRef, useState } from 'react'
 import { getModelDef, resolveModelColor } from '@shared/models'
 import { useSavedModels } from '@/hooks/useSavedModels'
 import { ModelColorDot } from '@/components/model/ModelColorDot'
-import { ModelList, savedModelIds } from '@/components/model/ModelList'
+import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
 import { ModelManagerModal } from '@/components/model/ModelManagerModal'
 import { ChevronDown, Plus } from 'lucide-react'
 
 interface Props {
-  /** Currently selected model id, or null for an empty pane. */
+  /** Currently selected OpenRouter model ID, e.g. "openai/gpt-4o", or null for an empty pane. */
   value: string | null
-  onSelect: (modelId: string) => void
+  onSelect: (openRouterModelId: string) => void
 }
 
 export function ModelDropdown({ value, onSelect }: Props) {
@@ -50,8 +50,8 @@ export function ModelDropdown({ value, onSelect }: Props) {
     }
   }, [open])
 
-  const choose = (modelId: string) => {
-    onSelect(modelId)
+  const choose = (openRouterModelId: string) => {
+    onSelect(openRouterModelId)
     setOpen(false)
   }
 
@@ -93,10 +93,10 @@ export function ModelDropdown({ value, onSelect }: Props) {
             {/* ~4 model rows + section heading before scrolling */}
             <div className="max-h-52 overflow-y-auto py-1">
               <ModelList
-                models={savedModelIds(savedModels)}
+                openRouterModelIds={savedOpenRouterModelIds(savedModels)}
                 savedModels={savedModels}
                 heading="Your models"
-                activeModelId={value}
+                activeOpenRouterModelId={value}
                 onSelect={choose}
               />
             </div>

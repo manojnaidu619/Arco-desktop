@@ -92,7 +92,7 @@ const activeRequests = new Map<string, AbortController>()
 export function registerSummaryHandlers(): void {
   // ── Start a summary stream ────────────────────────────────────────────────
   ipcMain.on(CHANNELS.summary.start, async (event, req: SummaryStartRequest) => {
-    const { requestId, model, userMessage, responses } = req
+    const { requestId, openRouterModelId, userMessage, responses } = req
     const sender = event.sender
 
     // Retrieve API key from secure storage (Keychain on macOS)
@@ -117,7 +117,7 @@ export function registerSummaryHandlers(): void {
     try {
       const content = await streamChat(
         apiKey,
-        model,
+        openRouterModelId,
         messages,
         (delta) => {
           // Guard: window may close mid-stream

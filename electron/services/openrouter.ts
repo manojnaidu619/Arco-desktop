@@ -83,7 +83,7 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
  * full assembled content when the stream ends. Pass an AbortSignal to cancel.
  *
  * @param apiKey   The user's OpenRouter key (already decrypted).
- * @param model    OpenRouter model id.
+ * @param openRouterModelId OpenRouter model ID, e.g. "openai/gpt-4o".
  * @param messages Conversation so far.
  * @param onDelta  Called with each new piece of text.
  * @param signal   AbortSignal to cancel the request mid-stream.
@@ -91,7 +91,7 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
  */
 export async function streamChat(
   apiKey: string,
-  model: string,
+  openRouterModelId: string,
   messages: Message[],
   onDelta: (delta: string) => void,
   signal: AbortSignal
@@ -99,7 +99,7 @@ export async function streamChat(
   const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: 'POST',
     headers: headers(apiKey),
-    body: JSON.stringify({ model, messages, stream: true }),
+    body: JSON.stringify({ model: openRouterModelId, messages, stream: true }),
     signal
   })
 
@@ -167,10 +167,10 @@ export interface ModelValidationResult {
  * Uses OpenRouter's single-model lookup endpoint (`GET /model/{author}/{slug}`).
  *
  * @param apiKey  The user's stored OpenRouter key.
- * @param modelId OpenRouter model id, e.g. "openai/gpt-4o".
+ * @param openRouterModelId OpenRouter model ID, e.g. "openai/gpt-4o".
  */
-export async function validateModel(apiKey: string, modelId: string): Promise<ModelValidationResult> {
-  const trimmed = modelId.trim()
+export async function validateModel(apiKey: string, openRouterModelId: string): Promise<ModelValidationResult> {
+  const trimmed = openRouterModelId.trim()
   if (!trimmed) return { ok: false, error: 'Please enter a model id.' }
 
   const slash = trimmed.indexOf('/')

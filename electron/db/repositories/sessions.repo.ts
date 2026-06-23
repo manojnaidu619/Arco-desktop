@@ -11,7 +11,7 @@
  */
 import type { SessionCreateResult } from '@shared/api-contract'
 import { FREE_TIER_SESSION_LIMIT } from '@shared/license'
-import { formatModelSlug } from '@shared/models'
+import { formatOpenRouterModelId } from '@shared/models'
 import type { Role, SessionData, SessionSummary, ThreadData } from '@shared/types'
 import { asc, count, desc, eq, inArray } from 'drizzle-orm'
 import * as licenseStore from '../../services/store/license-store'
@@ -63,7 +63,7 @@ function buildSessionData(sessionId: number): SessionData {
   const threadData: ThreadData[] = sessionThreads.map((t) => ({
     threadId: t.id,
     slot: t.slot,
-    modelId: formatModelSlug(t.author, t.slug),
+    openRouterModelId: formatOpenRouterModelId(t.author, t.slug),
     label: t.label,
     messages: allMessages
       .filter((m) => m.threadId === t.id)
@@ -120,7 +120,7 @@ export function listSessions(): SessionSummary[] {
       isActive: s.isActive,
       layout: s.layout ?? 4,
       models: sessionThreads.map((t) => ({
-        modelId: formatModelSlug(t.author, t.slug),
+        openRouterModelId: formatOpenRouterModelId(t.author, t.slug),
         label: t.label
       }))
     }
@@ -191,8 +191,8 @@ export function setSessionLayout(sessionId: number, layout: number): void {
 }
 
 /** Add a pane (thread) at a grid slot; returns the new thread id. */
-export function addThread(sessionId: number, slot: number, modelSlug: string, label: string): number {
-  const modelRow = modelsRepo.ensureModelRow(modelSlug, label)
+export function addThread(sessionId: number, slot: number, openRouterModelId: string, label: string): number {
+  const modelRow = modelsRepo.ensureModelRow(openRouterModelId, label)
   const created = getDb()
     .insert(threads)
     .values({ sessionId, slot, modelId: modelRow.id, createdAt: now() })
@@ -207,9 +207,9 @@ export function addThread(sessionId: number, slot: number, modelSlug: string, la
  * fresh conversation for that pane. The thread row (and its slot) is reused so
  * the pane keeps its grid position.
  */
-export function updateThreadModel(threadId: number, modelSlug: string, label: string): void {
+export function updateThreadModel(threadId: number, openRouterModelId: string, label: string): void {
   const db = getDb()
-  const modelRow = modelsRepo.ensureModelRow(modelSlug, label)
+  const modelRow = modelsRepo.ensureModelRow(openRouterModelId, label)
   db.update(threads).set({ modelId: modelRow.id }).where(eq(threads.id, threadId)).run()
   db.delete(messages).where(eq(messages.threadId, threadId)).run()
 }

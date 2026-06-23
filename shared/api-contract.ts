@@ -30,8 +30,8 @@ import type { Message, Role, SavedModel, SessionData, SessionSummary } from './t
 export interface ChatStartRequest {
   /** Unique id the UI generates to correlate the stream's events. */
   requestId: string
-  /** OpenRouter model id to query. */
-  model: string
+  /** OpenRouter model ID to query, e.g. "openai/gpt-4o" or "anthropic/claude-opus-4.8". */
+  openRouterModelId: string
   /** Full conversation so far (the last item is the new user turn). */
   messages: Message[]
 }
@@ -62,8 +62,8 @@ export interface ChatErrorEvent {
 export interface SummaryStartRequest {
   /** Unique id to correlate streaming events. */
   requestId: string
-  /** Model to use for summarization. */
-  model: string
+  /** OpenRouter model ID for summarization, e.g. "openai/gpt-4o". */
+  openRouterModelId: string
   /** The user's original question being summarized. */
   userMessage: string
   /** Responses from each model pane to compare. */
@@ -170,9 +170,9 @@ export interface ArcoApi {
     /** Set a session's grid layout (visible pane count: 1|2|3|4|6). */
     setLayout(sessionId: number, layout: number): Promise<void>
     /** Add a pane (thread) at a grid slot. Returns the new thread's id. */
-    addThread(sessionId: number, slot: number, modelId: string, label: string): Promise<number>
+    addThread(sessionId: number, slot: number, openRouterModelId: string, label: string): Promise<number>
     /** Change a pane's model and CLEAR its messages (fresh conversation). */
-    updateThreadModel(threadId: number, modelId: string, label: string): Promise<void>
+    updateThreadModel(threadId: number, openRouterModelId: string, label: string): Promise<void>
     /** Remove a model thread (messages cascade). */
     deleteThread(threadId: number): Promise<void>
     /** Re-slot threads to a new grid order (threadIds in the desired order). */
@@ -225,12 +225,12 @@ export interface ArcoApi {
     getSavedModels(): Promise<SavedModel[]>
     /** Replace the entire saved model library. Returns the persisted list. */
     setSavedModels(models: SavedModel[]): Promise<SavedModel[]>
-    /** Validate and add a model id; returns updated list on success. */
-    addSavedModel(modelId: string, color: string): Promise<AddSavedModelResult>
+    /** Validate and add an OpenRouter model ID; returns updated list on success. */
+    addSavedModel(openRouterModelId: string, color: string): Promise<AddSavedModelResult>
     /** Remove a model from the saved library. Returns the updated list. */
-    removeSavedModel(modelId: string): Promise<SavedModel[]>
-    /** Validate a model id without saving it (used during onboarding). */
-    validateModel(modelId: string): Promise<ModelValidationResult>
+    removeSavedModel(openRouterModelId: string): Promise<SavedModel[]>
+    /** Validate an OpenRouter model ID without saving it (used during onboarding). */
+    validateModel(openRouterModelId: string): Promise<ModelValidationResult>
     /** Whether the user finished the model-selection onboarding step. */
     isOnboardingCompleted(): Promise<boolean>
     /** Mark onboarding complete after the user selects starter models. */

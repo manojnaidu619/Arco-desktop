@@ -159,7 +159,7 @@ function SessionItem({
   const title = session.title ?? 'New conversation'
 
   const uniqueModels = session.models.filter(
-    (m, i, arr) => arr.findIndex((x) => x.modelId === m.modelId) === i
+    (m, i, arr) => arr.findIndex((x) => x.openRouterModelId === m.openRouterModelId) === i
   )
 
   function startEdit(e: React.MouseEvent) {
@@ -237,10 +237,10 @@ function SessionItem({
         {uniqueModels.length > 0 && (
           <div className={cn('flex flex-wrap gap-1 mt-1', hovered && 'pr-16')}>
             {uniqueModels.slice(0, 5).map((m) => {
-              const color = resolveModelColor(m.modelId, savedModels)
+              const color = resolveModelColor(m.openRouterModelId, savedModels)
               return (
                 <span
-                  key={m.modelId}
+                  key={m.openRouterModelId}
                   className={cn(
                     'inline-flex items-center justify-center rounded-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden',
                     badgesExpanded ? 'px-2 py-0.5 max-w-full' : 'w-2 h-2 max-w-[8px]'

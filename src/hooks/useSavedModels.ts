@@ -34,9 +34,9 @@ interface SavedModelsContextValue {
   /** Replace the entire library with a new set of models. */
   set: (models: SavedModel[]) => Promise<SavedModel[]>
   /** Validate and add a single model to the library. */
-  add: (modelId: string, color: string) => Promise<AddSavedModelResult>
+  add: (openRouterModelId: string, color: string) => Promise<AddSavedModelResult>
   /** Remove a model from the library. */
-  remove: (modelId: string) => Promise<SavedModel[]>
+  remove: (openRouterModelId: string) => Promise<SavedModel[]>
 }
 
 const SavedModelsContext = createContext<SavedModelsContextValue | null>(null)
@@ -87,12 +87,12 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
    * Validate a model id against OpenRouter and add it to the library.
    *
    * @used-by ModelManagerModal, ModelInput
-   * @param modelId — OpenRouter model id to validate and add
+   * @param openRouterModelId — OpenRouter model ID to validate and add, e.g. "openai/gpt-4o"
    * @param color — hex color for UI dots/badges
    * @returns result with success flag and updated models array
    */
-  const add = useCallback(async (modelId: string, color: string) => {
-    const result = await api.settings.addSavedModel(modelId, color)
+  const add = useCallback(async (openRouterModelId: string, color: string) => {
+    const result = await api.settings.addSavedModel(openRouterModelId, color)
     if (result.ok) setSavedModels(result.models)
     return result
   }, [])
@@ -101,11 +101,11 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
    * Remove a model from the user's saved library.
    *
    * @used-by ModelManagerModal, ModelDropdown
-   * @param modelId — OpenRouter model id to remove
+   * @param openRouterModelId — OpenRouter model ID to remove, e.g. "openai/gpt-4o"
    * @returns the updated array of saved models
    */
-  const remove = useCallback(async (modelId: string) => {
-    const next = await api.settings.removeSavedModel(modelId)
+  const remove = useCallback(async (openRouterModelId: string) => {
+    const next = await api.settings.removeSavedModel(openRouterModelId)
     setSavedModels(next)
     return next
   }, [])

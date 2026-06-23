@@ -5,7 +5,7 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { ModelList, savedModelIds } from '@/components/model/ModelList'
+import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef, resolveModelColor } from '@shared/models'
@@ -31,10 +31,10 @@ interface Props {
   /** User's saved model library. */
   models: SavedModel[]
   /** Visible panes whose latest replies will be compared. */
-  comparedPanes: Array<{ modelId: string; label: string }>
+  comparedPanes: Array<{ openRouterModelId: string; label: string }>
   disabled?: boolean
-  selectedModelId: string | null
-  onSelectModel: (modelId: string) => void
+  selectedOpenRouterModelId: string | null
+  onSelectModel: (openRouterModelId: string) => void
   content: string
   streaming: boolean
   onGenerate: () => void
@@ -94,7 +94,7 @@ export function SummaryOverlay({
   models,
   comparedPanes,
   disabled,
-  selectedModelId,
+  selectedOpenRouterModelId,
   onSelectModel,
   content,
   streaming,
@@ -105,9 +105,9 @@ export function SummaryOverlay({
   const [copied, setCopied] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
-  const modelIds = savedModelIds(models)
-  const current = selectedModelId ? getModelDef(selectedModelId) : null
-  const currentColor = selectedModelId ? resolveModelColor(selectedModelId, models) : undefined
+  const openRouterModelIds = savedOpenRouterModelIds(models)
+  const current = selectedOpenRouterModelId ? getModelDef(selectedOpenRouterModelId) : null
+  const currentColor = selectedOpenRouterModelId ? resolveModelColor(selectedOpenRouterModelId, models) : undefined
   const hasSummary = content.length > 0
 
   useEffect(() => {
@@ -150,8 +150,8 @@ export function SummaryOverlay({
     }
   }
 
-  const chooseModel = (modelId: string) => {
-    onSelectModel(modelId)
+  const chooseModel = (openRouterModelId: string) => {
+    onSelectModel(openRouterModelId)
     setModelPickerOpen(false)
   }
 
@@ -208,10 +208,10 @@ export function SummaryOverlay({
                 <span className="text-[11px] text-muted-foreground shrink-0">Comparing</span>
                 {comparedPanes.map((pane, i) => (
                     <span
-                      key={`${pane.modelId}-${i}`}
+                      key={`${pane.openRouterModelId}-${i}`}
                       className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground/90"
                     >
-                      <ModelColorDot color={resolveModelColor(pane.modelId, models)} size="xs" />
+                      <ModelColorDot color={resolveModelColor(pane.openRouterModelId, models)} size="xs" />
                       {pane.label}
                     </span>
                   ))}
@@ -245,10 +245,10 @@ export function SummaryOverlay({
                   <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-border bg-popover shadow-xl overflow-hidden">
                     <div className="max-h-48 overflow-y-auto py-1">
                       <ModelList
-                        models={modelIds}
+                        openRouterModelIds={openRouterModelIds}
                         savedModels={models}
                         heading="Your models"
-                        activeModelId={selectedModelId}
+                        activeOpenRouterModelId={selectedOpenRouterModelId}
                         onSelect={chooseModel}
                       />
                     </div>
@@ -271,7 +271,7 @@ export function SummaryOverlay({
                 <Button
                   size="sm"
                   className="gap-1.5 h-8"
-                  disabled={!selectedModelId || disabled}
+                  disabled={!selectedOpenRouterModelId || disabled}
                   onClick={onGenerate}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -285,7 +285,7 @@ export function SummaryOverlay({
 
       {/* Summary body */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-        {!selectedModelId && !content && !streaming && (
+        {!selectedOpenRouterModelId && !content && !streaming && (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
             <Sparkles className="h-8 w-8 text-amber-500/60" />
             <p className="text-sm font-medium text-foreground">Select a model and generate</p>
@@ -296,14 +296,14 @@ export function SummaryOverlay({
           </div>
         )}
 
-        {selectedModelId && !content && !streaming && (
+        {selectedOpenRouterModelId && !content && !streaming && (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
             <p className="text-sm font-medium text-foreground">Ready when you are</p>
             <p className="text-xs max-w-sm">Click Generate to build a structured comparison.</p>
           </div>
         )}
 
-        {(content || streaming) && selectedModelId && (
+        {(content || streaming) && selectedOpenRouterModelId && (
           <div className="max-w-3xl mx-auto">
             {content ? (
               <AnimatedMarkdown
