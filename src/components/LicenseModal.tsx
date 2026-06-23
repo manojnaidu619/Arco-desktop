@@ -2,10 +2,10 @@
  * Upgrade / license activation modal.
  *
  * Two paths for users:
- *   1. Purchase Pro via Creem checkout (opens in the system browser)
+ *   1. Purchase Pro via the Arco pricing page (opens in the system browser)
  *   2. Activate an existing license key against the Arco license server
  *
- * Pricing and plan details live on the checkout page so they can be updated
+ * Pricing and plan details live on the web pricing page so they can be updated
  * without shipping a new app build.
  *
  * Always displays the server's `message` after an activation attempt.
@@ -111,7 +111,7 @@ export function LicenseModal({ onClose, onActivated }: Props) {
               <h2 className="text-sm font-semibold">Upgrade to Pro</h2>
             </div>
 
-            {/* Purchase section: pricing details live on the checkout page */}
+            {/* Purchase section: pricing details live on the web pricing page */}
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Take Arco further with Pro. Full access, full control, with your data staying on
@@ -123,7 +123,7 @@ export function LicenseModal({ onClose, onActivated }: Props) {
                 disabled={!checkoutUrl}
               >
                 <ExternalLink className="h-4 w-4" />
-                {checkoutUrl ? 'Unlock Pro' : 'Checkout unavailable'}
+                {checkoutUrl ? 'Unlock Pro' : 'Pricing unavailable'}
               </Button>
             </div>
 

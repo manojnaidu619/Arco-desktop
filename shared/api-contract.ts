@@ -247,8 +247,8 @@ export interface ArcoApi {
     /** Stable hardware fingerprint for this machine (node-machine-id). */
     getDeviceId(): Promise<string>
     /**
-     * Checkout URL for purchasing Pro. `null` in production until configured.
-     * Dev: Creem test payment link.
+     * Pricing page URL for purchasing Pro ({base}/pricing).
+     * `null` only when the license API base is not configured.
      */
     getCheckoutUrl(): Promise<string | null>
   }

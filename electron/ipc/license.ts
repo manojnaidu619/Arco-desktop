@@ -5,7 +5,7 @@
  *   • getStatus   — read encrypted license.bin (local only, no server call)
  *   • activate    — POST { key, deviceId } to /api/licenses/activate
  *   • getDeviceId — node-machine-id hardware fingerprint
- *   • getCheckoutUrl — environment-specific Creem payment link
+ *   • getCheckoutUrl — environment-specific Arco /pricing page URL
  *
  * The renderer never calls the license server directly except via activate.
  */
