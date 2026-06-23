@@ -28,7 +28,7 @@ const COLS: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 2, 6: 3 }
 const STREAMING_NAV_DIALOG = {
   title: 'Generation in progress',
   message:
-    'Stop generating before switching sessions or starting a new conversation. Use the ■ stop button in the composer or a pane.'
+    'Stop generating before switching conversations or starting a new conversation. Use the ■ stop button in the composer or a pane.'
 } as const
 
 /** True when a pane has a completed latest turn (user asked + assistant replied). */
@@ -304,7 +304,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
     return (
       <div className="flex h-screen items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <span className="text-sm">Restoring session…</span>
+        <span className="text-sm">Restoring conversation…</span>
       </div>
     )
   }

@@ -61,7 +61,14 @@ export function Sidebar({
           <span className="text-sm font-semibold truncate leading-none">Arco</span>
           <LicenseBadge isActivated={isLicenseActivated} />
         </div>
-        <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={onNewSession} title="New session">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 shrink-0"
+          onClick={onNewSession}
+          title="New conversation"
+          aria-label="New conversation"
+        >
           <Plus className="h-4 w-4" />
         </Button>
       </div>

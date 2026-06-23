@@ -437,7 +437,7 @@ Every data surface must handle all three states before shipping.
 ```
 flex h-full items-center justify-center gap-2 text-muted-foreground
 ├── Loader2  h-4 w-4 animate-spin
-└── <span>  text-sm  "Restoring session…"  (or equivalent factual label)
+└── <span>  text-sm  "Restoring conversation…"  (or equivalent factual label)
 ```
 
 Only `Loader2 animate-spin` — no other spinner pattern.
@@ -489,7 +489,7 @@ The app uses `tw-animate-css` and Tailwind animate utilities.
 
 **Minimum touch targets:** Icon buttons use at least `size-7` (28 × 28 px). No interactive element should be smaller than 24 × 24 px.
 
-**Icon-only buttons:** Must have a `title` attribute that describes the action (e.g. `title="New session"`). For screen readers, add `aria-label` if the `title` is insufficient.
+**Icon-only buttons:** Must have a `title` attribute that describes the action (e.g. `title="New conversation"`). For screen readers, add `aria-label` if the `title` is insufficient.
 
 **Error states:** Use `aria-invalid` on form controls instead of visual-only indicators. Pair with `aria-describedby` pointing to the error message element.
 
@@ -545,8 +545,8 @@ The app voice is **direct, understated, and technically honest** — it states w
 
 | Do | Don't |
 |---|---|
-| "Restoring session…" | "Loading your amazing conversations!" |
-| "Stop generating before switching sessions." | "Oops! You need to stop the AI first." |
+| "Restoring conversation…" | "Loading your amazing conversations!" |
+| "Stop generating before switching conversations." | "Oops! You need to stop the AI first." |
 | "Could not validate that key." | "Hmm, something went wrong 🤔" |
 | "Get started" | "Let's go!" |
 | "Validating…" | "Hang tight…" |
