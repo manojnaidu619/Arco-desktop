@@ -51,9 +51,9 @@ This document tracks upcoming features, improvements, and technical enhancements
 **Priority:** High  
 **Description:** Replace `openRouterModelId` (e.g. `openai/gpt-4o`) as the primary key for model-related business logic across the app with the database `models.id` row ID (`dbModelId`). Threads already store `model_id` in SQLite; panes, IPC payloads, hooks, and UI state should reference that ID and load the full model record (label, color, author/slug) from our `models` table instead of passing OpenRouter strings everywhere. OpenRouter model ID remains a derived property on the model row for API calls only. This refactor is needed now that we persist the user's model library locally—we no longer need OpenRouter's identifier as the central identifier outside of outbound chat requests.
 
-### 🔴 [ ] License Key Server Validation
-**Priority:** Medium  
-**Description:** On app launch, re-validate the stored license with the Arco license server (send license key from `license.bin` and current `machineIdSync()` device ID). If validation fails, treat the user as Free tier and show a support modal — do not delete the local license file. Complements encrypted `license.bin` storage (which blocks casual file copy) by catching revoked keys and device mismatches when online. Activation via `/api/licenses/activate` remains unchanged.
+### 🔴 [ ] License Key Validation on App Startup
+**Priority:** High  
+**Description:** On every app launch, re-validate the stored license with the Arco license server (license key from `license.bin` + current `machineIdSync()` device ID). There is no startup validation today—local `license.bin` alone decides Pro status, so server-side changes (key revoked, blocked, device mismatch, plan change) are not reflected until the user re-activates manually. When validation fails or the server reports the key is no longer valid, downgrade the app to Free tier in the UI and show a support-oriented modal; do not delete the local license file. When online validation is unavailable, define a clear fallback (e.g. grace period vs. strict offline lock). Complements encrypted `license.bin` storage; activation via `/api/licenses/activate` stays unchanged.
 
 ---
 
