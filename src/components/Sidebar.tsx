@@ -8,10 +8,10 @@ import arcoLogo from '@/assets/arco-transparent.png'
 import { LicenseBadge } from '@/components/license/LicenseBadge'
 import { SettingsMenu } from '@/components/settings/SettingsMenu'
 import { Button } from '@/components/ui/button'
+import { useSavedModels } from '@/hooks/useSavedModels'
 import { cn } from '@/lib/utils'
 import { resolveModelColor } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
-import { useSavedModels } from '@/hooks/useSavedModels'
 import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -150,7 +150,6 @@ function SessionItem({
 }) {
   const { savedModels } = useSavedModels()
   const [hovered, setHovered] = useState(false)
-  const [badgesExpanded, setBadgesExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -171,15 +170,6 @@ function SessionItem({
   useEffect(() => {
     if (editing) inputRef.current?.focus()
   }, [editing])
-
-  useEffect(() => {
-    if (!hovered) {
-      setBadgesExpanded(false)
-      return
-    }
-    const timer = window.setTimeout(() => setBadgesExpanded(true), 1500)
-    return () => clearTimeout(timer)
-  }, [hovered])
 
   async function commitEdit() {
     const trimmed = editValue.trim()
@@ -235,30 +225,16 @@ function SessionItem({
         )}
 
         {uniqueModels.length > 0 && (
-          <div className={cn('flex flex-wrap gap-1 mt-1', hovered && 'pr-16')}>
-            {uniqueModels.slice(0, 5).map((m) => {
-              const color = resolveModelColor(m.openRouterModelId, savedModels)
-              return (
-                <span
-                  key={m.openRouterModelId}
-                  className={cn(
-                    'inline-flex items-center justify-center rounded-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden',
-                    badgesExpanded ? 'px-2 py-0.5 max-w-full' : 'w-2 h-2 max-w-[8px]'
-                  )}
-                  style={{ backgroundColor: color }}
-                  title={m.label}
-                >
-                  <span
-                    className={cn(
-                      'text-xs font-medium text-white whitespace-nowrap transition-opacity duration-300',
-                      badgesExpanded ? 'opacity-100' : 'opacity-0 w-0'
-                    )}
-                  >
-                    {badgesExpanded ? m.label : ''}
-                  </span>
-                </span>
-              )
-            })}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {uniqueModels.slice(0, 5).map((m) => (
+              <span
+                key={m.openRouterModelId}
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: resolveModelColor(m.openRouterModelId, savedModels) }}
+                title={m.label}
+                aria-label={m.label}
+              />
+            ))}
             {uniqueModels.length > 5 && (
               <span className="text-xs text-muted-foreground">+{uniqueModels.length - 5}</span>
             )}
