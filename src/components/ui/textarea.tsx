@@ -1,7 +1,19 @@
+/**
+ * Multi-line text input component for longer form content.
+ *
+ * Standard HTML textarea with consistent styling. Uses field-sizing-content
+ * for auto-expanding height based on content.
+ *
+ * @example
+ *   <Textarea placeholder="Enter your message..." />
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/** Multi-line text input with auto-expanding height. */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea

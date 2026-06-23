@@ -1,3 +1,4 @@
+// @see STANDARDS.md for coding standards and conventions of this codebase
 /// <reference types="vite/client" />
 
 // Tell TypeScript about the `window.api` object that the preload bridge

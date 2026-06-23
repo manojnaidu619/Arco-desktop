@@ -3,6 +3,8 @@
  *
  * The user's model library lives in SQLite (not settings.json). Threads reference
  * models by integer FK; this repo exposes OpenRouter slug strings at the boundary.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { formatModelSlug, getModelDef, parseModelSlug } from '@shared/models'

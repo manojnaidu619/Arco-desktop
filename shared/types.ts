@@ -4,6 +4,8 @@
  * "Shared" means: this file is imported by BOTH the backend (electron/) and
  * the UI (src/). Keep it free of any Node- or browser-specific code — just
  * plain data shapes.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
 /** Who authored a message in a conversation. */

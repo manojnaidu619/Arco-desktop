@@ -5,6 +5,8 @@
  *
  * Switching the model clears the pane — if it already has messages, we confirm
  * first.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

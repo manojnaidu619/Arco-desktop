@@ -10,6 +10,8 @@
  * Request/response calls use `ipcRenderer.invoke` (returns a Promise).
  * Streaming uses `ipcRenderer.send` (fire-and-forget) plus `.on` listeners
  * for the pushed delta/done/error events.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import {

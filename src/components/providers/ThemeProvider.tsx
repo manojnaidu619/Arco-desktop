@@ -2,6 +2,8 @@
  * Wraps the app in `next-themes`, which manages the light/dark/system theme by
  * toggling a `.dark` class on <html>. Despite the package name it's not tied
  * to Next.js — it works in any React app, including this Vite renderer.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import type { ReactNode } from 'react'

@@ -19,6 +19,8 @@ import tailwindcss from '@tailwindcss/vite'
  * dependencies into the main/preload output. That's essential for native
  * modules like `better-sqlite3`, which must be loaded from node_modules at
  * runtime (and unpacked from the asar archive — see electron-builder.yml).
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 export default defineConfig({
   main: {

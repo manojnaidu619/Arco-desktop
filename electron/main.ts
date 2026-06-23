@@ -11,6 +11,8 @@
  * The window's `webPreferences` are the security backbone: the UI is isolated
  * (`contextIsolation`) and has no Node access (`nodeIntegration: false`), so
  * it can only reach the backend through the preload bridge.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { PRODUCT_NAME } from '@shared/config'
 import { app, BrowserWindow, dialog, session, shell } from 'electron'

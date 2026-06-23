@@ -5,6 +5,8 @@
  *
  * While any pane is streaming, the send button becomes a STOP button. Stopping
  * keeps the user message and any partial assistant reply in the thread.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'

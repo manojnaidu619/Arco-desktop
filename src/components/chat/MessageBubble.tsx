@@ -10,6 +10,8 @@
  * toggled via the animation prop. Both expose a copy button BELOW the bubble
  * that reveals on hover (assistant left-aligned, user right-aligned). The copy
  * row reserves its height so content never shifts.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useState, type ReactNode } from 'react'
 import type { Message } from '@shared/types'

@@ -6,6 +6,8 @@
  * This is a straight, cleaned-up port of the original web app's `/api/session`
  * route handlers — same behavior, but as plain functions instead of HTTP
  * endpoints.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import type { SessionCreateResult } from '@shared/api-contract'
 import { FREE_TIER_SESSION_LIMIT } from '@shared/license'

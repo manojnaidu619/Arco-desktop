@@ -3,6 +3,8 @@
  *
  * Activation is the only server call for licensing; launch status is read from
  * encrypted local storage (license.bin). The renderer never calls the server directly.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { getApiBaseUrl } from '../../config/env'
 

@@ -10,6 +10,8 @@
  *
  * Always displays the server's `message` after an activation attempt.
  * Follows the same overlay pattern as SettingsDialog.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'

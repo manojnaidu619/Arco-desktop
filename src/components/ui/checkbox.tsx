@@ -1,8 +1,20 @@
+/**
+ * Checkbox component for boolean form inputs.
+ *
+ * Built on base-ui Checkbox primitive with consistent styling. Displays a
+ * checkmark icon when checked, supports disabled and invalid states.
+ *
+ * @example
+ *   <Checkbox checked={isEnabled} onCheckedChange={setIsEnabled} />
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
+ */
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 
 import { cn } from "@/lib/utils"
 import { CheckIcon } from "lucide-react"
 
+/** Checkbox input with check indicator. */
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
     <CheckboxPrimitive.Root

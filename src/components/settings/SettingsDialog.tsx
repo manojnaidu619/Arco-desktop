@@ -1,6 +1,8 @@
 /**
  * Usage modal. Lets the user review their OpenRouter credit balance and
  * remove the stored key (which returns the app to the onboarding gate).
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'

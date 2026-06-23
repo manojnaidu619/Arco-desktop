@@ -3,6 +3,8 @@
  *
  * Validates the id against OpenRouter (via the backend) before calling
  * `onAdd`. Used in onboarding and the model manager modal.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useState } from 'react'
 import { api } from '@/lib/api'

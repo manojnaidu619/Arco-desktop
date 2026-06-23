@@ -17,6 +17,8 @@
 //    *  2. …
 //    */
 //
+// @see STANDARDS.md for coding standards and conventions of this codebase
+//
 // Rules:
 //  • When you ADD a new function  → write its full JSDoc before committing.
 //  • When you CHANGE a function   → update its JSDoc to reflect the new behaviour.
@@ -64,6 +66,8 @@
  *
  * For a full step-by-step diagram of the streaming pipeline, see
  * docs/internals/streaming-pipeline.md
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useSavedModels } from '@/hooks/useSavedModels'
 import { api } from '@/lib/api'

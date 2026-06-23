@@ -1,6 +1,8 @@
 /**
  * The conversation-history sidebar (left rail). Lists past sessions under a
  * single "Recents" section, with inline rename and delete. Mirrors ChatGPT.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import arcoLogo from '@/assets/arco-transparent.png'
 import { LicenseBadge } from '@/components/license/LicenseBadge'

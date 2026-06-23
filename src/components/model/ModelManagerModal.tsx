@@ -3,6 +3,9 @@
  *
  * Opened from Settings or from a pane's model dropdown ("Add or remove models").
  * Composes ModelList (management mode) and ModelInput for a consistent UX.
+ *
+ * @used-by MainApp, SettingsMenu, ModelDropdown
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect } from 'react'
 import { useSavedModels } from '@/hooks/useSavedModels'
@@ -12,24 +15,35 @@ import { Button } from '@/components/ui/button'
 import { Loader2, X } from 'lucide-react'
 
 interface Props {
+  /** Whether the modal is currently visible. */
   open: boolean
+  /** Callback to close the modal (e.g., clicking backdrop or Done button). */
   onClose: () => void
 }
 
 export function ModelManagerModal({ open, onClose }: Props) {
   const { savedModels, loading, refresh, add, remove } = useSavedModels()
 
+  // Refresh the model list when the modal opens to ensure fresh data
   useEffect(() => {
     if (open) refresh().catch(console.error)
   }, [open, refresh])
 
   if (!open) return null
 
+  /**
+   * Remove a model from the user's library.
+   * Prevents removal if it would leave the library empty (must have at least one model).
+   */
   const handleRemove = async (modelId: string) => {
     if (savedModels.length <= 1) return
     await remove(modelId)
   }
 
+  /**
+   * Validate and add a new model to the library.
+   * Throws an error if validation fails (consumed by ModelInput for error display).
+   */
   const handleAdd = async (modelId: string) => {
     const result = await add(modelId)
     if (!result.ok) {

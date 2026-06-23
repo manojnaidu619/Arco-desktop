@@ -8,6 +8,8 @@
  *   • getCheckoutUrl — environment-specific Arco /pricing page URL
  *
  * The renderer never calls the license server directly except via activate.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import {
   CHANNELS,

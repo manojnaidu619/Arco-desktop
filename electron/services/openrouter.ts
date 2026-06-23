@@ -8,6 +8,8 @@
  * Two responsibilities:
  *   1. `validateKey` — check a key works and fetch its credit balance.
  *   2. `streamChat`  — stream a chat completion token-by-token.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { ARCO_WEBSITE_URL, PRODUCT_NAME } from '@shared/config'
 import type { BalanceInfo } from '@shared/api-contract'

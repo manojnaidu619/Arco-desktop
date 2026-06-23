@@ -2,6 +2,8 @@
  * Modal shown when a free-tier user tries to create more than the allowed
  * number of saved conversations. Offers a path to upgrade to Pro.
  * Follows the same overlay pattern as SettingsDialog.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'

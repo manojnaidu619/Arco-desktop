@@ -10,6 +10,8 @@
  *
  * Removing the key from Settings flips `hasKey` back to false, returning the
  * user to onboarding — all without a reload.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'

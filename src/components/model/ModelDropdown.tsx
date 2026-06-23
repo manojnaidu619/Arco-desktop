@@ -4,6 +4,8 @@
  * Lists the user's saved models and offers a link to open the model manager
  * modal for adding or removing models. The same model may be chosen in
  * multiple panes — there's no de-duplication.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useRef, useState } from 'react'
 import { getModelDef } from '@shared/models'

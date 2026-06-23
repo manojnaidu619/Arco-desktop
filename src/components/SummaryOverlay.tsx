@@ -2,6 +2,8 @@
  * Summary overlay — a tab on the composer opens a slide-up panel
  * that covers the model grid without changing its layout. User picks a model,
  * taps Generate / Regenerate, and sees a streaming structured comparison.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { ModelList } from '@/components/model/ModelList'
 import { Button } from '@/components/ui/button'

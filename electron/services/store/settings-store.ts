@@ -5,6 +5,8 @@
  * Holds onboarding state only. The saved model library lives in SQLite.
  *
  * (Secrets like the API key do NOT go here — see secure-store.ts.)
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { app } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'

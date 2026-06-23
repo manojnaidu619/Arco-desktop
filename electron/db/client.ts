@@ -17,6 +17,8 @@
  * SAFETY: before applying migrations we take a backup copy of the database, and
  * if a migration fails we restore it — so a bad update can never leave a user
  * with a corrupted, unrecoverable database.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'

@@ -4,6 +4,8 @@
  * Supports two modes:
  *   • Selection (onboarding) — checkboxes to toggle models in a set
  *   • Management (modal) — delete buttons to remove saved models
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { getModelDef } from '@shared/models'
 import { cn } from '@/lib/utils'

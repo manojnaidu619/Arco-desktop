@@ -4,6 +4,8 @@
  * Step 1: paste and validate an OpenRouter API key.
  * Step 2: choose at least four models from the suggested list or add custom ids.
  * The key is stored encrypted in the macOS Keychain — never in the renderer.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useMemo, useState } from 'react'
 import { api } from '@/lib/api'

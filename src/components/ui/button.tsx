@@ -1,8 +1,33 @@
+/**
+ * Button component for triggering actions and navigation.
+ *
+ * Built on base-ui Button primitive with class-variance-authority for variant styling.
+ * Supports multiple visual variants and sizes for different UI contexts.
+ *
+ * Variants:
+ *   - default: Primary action button (filled background)
+ *   - outline: Secondary action with border
+ *   - secondary: Less prominent filled button
+ *   - ghost: Minimal button for toolbars and menus
+ *   - destructive: Danger/delete actions
+ *   - link: Text-only button styled as a link
+ *
+ * Sizes:
+ *   - default, xs, sm, lg: Text buttons with varying heights
+ *   - icon, icon-xs, icon-sm, icon-lg: Square buttons for icons only
+ *
+ * @example
+ *   <Button variant="default">Save</Button>
+ *   <Button variant="ghost" size="icon"><X /></Button>
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
+ */
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/** Variant and size styles for the Button component. */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {

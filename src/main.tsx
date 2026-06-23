@@ -6,6 +6,8 @@
  * double-invokes effects, which would double-create sessions and double-fire
  * streams in this IPC-driven app. Skipping it keeps dev behavior identical to
  * production.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import ReactDOM from 'react-dom/client'
 import './index.css'

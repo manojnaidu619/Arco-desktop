@@ -4,6 +4,8 @@
  *
  * Conversation state lives in `useChat`; this component owns layout/UI state
  * (sidebar open, which pane is expanded) and arranges the grid.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { ChatBar } from '@/components/chat/ChatBar'
 import { GenerationInProgressDialog } from '@/components/GenerationInProgressDialog'

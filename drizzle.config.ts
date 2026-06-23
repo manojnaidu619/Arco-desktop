@@ -12,6 +12,8 @@ import { defineConfig } from 'drizzle-kit'
  *
  * NOTE: this config is only used at DEV time by the drizzle-kit CLI. It is not
  * bundled into or run by the shipped app.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 export default defineConfig({
   dialect: 'sqlite',

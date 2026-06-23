@@ -3,6 +3,15 @@
  *
  * Constructs a structured prompt from the user's question and model responses,
  * then streams a comparison via OpenRouter. Reuses streamChat for streaming.
+ *
+ * Streaming flow (same pattern as chat.ts):
+ *   1. UI calls summary:start with requestId, model, userMessage, and responses
+ *   2. Backend streams deltas via summary:delta events
+ *   3. On completion: summary:done with full content
+ *   4. On error: summary:error with message
+ *   5. UI can call summary:abort to cancel mid-stream
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { CHANNELS, type SummaryStartRequest } from '@shared/api-contract';
 import { ipcMain } from 'electron';
@@ -11,6 +20,10 @@ import { getKey } from '../services/store/secure-store';
 
 /**
  * Build the summarization prompt from collected responses.
+ *
+ * @param userMessage — the original question the user asked
+ * @param responses — array of model responses to compare
+ * @returns formatted prompt string for the summarization model
  */
 function buildSummaryPrompt(
   userMessage: string,
@@ -68,16 +81,24 @@ RULES:
 - Add no outside knowledge except in Gaps.`
 }
 
-/** Active summary requests for abort support. */
+/** Active summary requests mapped by requestId for abort support. */
 const activeRequests = new Map<string, AbortController>()
 
+/**
+ * Register IPC handlers for summary streaming.
+ *
+ * @used-by registerIpcHandlers in ipc/index.ts
+ */
 export function registerSummaryHandlers(): void {
+  // ── Start a summary stream ────────────────────────────────────────────────
   ipcMain.on(CHANNELS.summary.start, async (event, req: SummaryStartRequest) => {
     const { requestId, model, userMessage, responses } = req
     const sender = event.sender
 
+    // Retrieve API key from secure storage (Keychain on macOS)
     const apiKey = getKey()
     if (!apiKey) {
+      // Guard: sender may have been destroyed if window closed during async work
       if (!sender.isDestroyed()) {
         sender.send(CHANNELS.summary.error, {
           requestId,
@@ -87,6 +108,7 @@ export function registerSummaryHandlers(): void {
       return
     }
 
+    // Track this request for potential abort
     const controller = new AbortController()
     activeRequests.set(requestId, controller)
 
@@ -98,6 +120,7 @@ export function registerSummaryHandlers(): void {
         model,
         messages,
         (delta) => {
+          // Guard: window may close mid-stream
           if (!sender.isDestroyed()) {
             sender.send(CHANNELS.summary.delta, { requestId, delta })
           }
@@ -108,6 +131,7 @@ export function registerSummaryHandlers(): void {
         sender.send(CHANNELS.summary.done, { requestId, content })
       }
     } catch (err) {
+      // AbortError is expected when user cancels — don't treat as error
       if ((err as Error)?.name === 'AbortError') return
       if (!sender.isDestroyed()) {
         sender.send(CHANNELS.summary.error, {
@@ -120,6 +144,7 @@ export function registerSummaryHandlers(): void {
     }
   })
 
+  // ── Abort a summary stream ────────────────────────────────────────────────
   ipcMain.on(CHANNELS.summary.abort, (_event, requestId: string) => {
     activeRequests.get(requestId)?.abort()
     activeRequests.delete(requestId)

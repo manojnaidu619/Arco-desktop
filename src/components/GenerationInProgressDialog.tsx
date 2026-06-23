@@ -2,6 +2,8 @@
  * Modal shown when user attempts navigation while streaming is in progress.
  * Single OK button; dismiss on backdrop or Escape.
  * Follows the same overlay pattern as SettingsDialog.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'

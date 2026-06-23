@@ -6,6 +6,8 @@
  *
  * Uses the same lightweight popover pattern as ModelDropdown (a relative
  * container + outside-click/Escape listeners) instead of a menu library.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'

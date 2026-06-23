@@ -14,6 +14,8 @@
  * Each in-flight request has an AbortController stored by requestId so the UI
  * can cancel a specific stream (e.g. when switching sessions) without
  * touching the others.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { CHANNELS, type ChatStartRequest } from '@shared/api-contract'
 import { ipcMain } from 'electron'

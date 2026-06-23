@@ -9,6 +9,8 @@
  *
  * The decrypted key NEVER leaves the main process — the renderer can ask us
  * to save/clear/validate it, but can't read it back.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

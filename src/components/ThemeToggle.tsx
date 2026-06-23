@@ -1,6 +1,8 @@
 /**
  * A small segmented control for switching between Light / Dark / System
  * themes. Sits in the app header.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'

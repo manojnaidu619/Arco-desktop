@@ -7,6 +7,8 @@
  *
  * Usage:
  *   import { PRODUCT_NAME, ARCO_WEBSITE_URL } from '@shared/config'
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
 /** Product display name (menus, OpenRouter headers, app.setName). */

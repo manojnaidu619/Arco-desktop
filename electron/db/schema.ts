@@ -13,6 +13,8 @@
  * Deletes cascade downward: removing a session removes its threads, which
  * removes their messages (enforced by the foreign keys + `PRAGMA
  * foreign_keys = ON`, set when the connection opens — see client.ts).
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 

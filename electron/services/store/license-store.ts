@@ -5,6 +5,8 @@
  * secure-store.ts for the OpenRouter API key. The encrypted blob lives at
  * ~/Library/Application Support/Arco/license.bin — copying it to another
  * machine typically fails decryption, so Pro does not travel with the file.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

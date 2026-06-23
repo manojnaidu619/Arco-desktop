@@ -7,6 +7,8 @@
  * up the standard macOS keyboard shortcuts automatically:
  *   Cmd+C / Cmd+V / Cmd+A (copy/paste/select all), Cmd+Q (quit),
  *   Cmd+W (close), Cmd+M (minimize), Cmd+R (reload), etc.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { app, Menu, type MenuItemConstructorOptions } from 'electron'
 

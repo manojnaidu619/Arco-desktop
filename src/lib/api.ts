@@ -4,6 +4,8 @@
  * Instead of reaching for the global `window.api` everywhere, components and
  * hooks import this typed `api` object. It's the renderer's single doorway to
  * the main process — sessions, chat, and settings all flow through here.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import type { ArcoApi } from '@shared/api-contract'
 

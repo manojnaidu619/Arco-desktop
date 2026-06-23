@@ -7,6 +7,8 @@
  *   • getBalance  — re-checks the stored key (for the settings screen)
  * The decrypted key is read here and handed straight to the OpenRouter
  * client; it is never returned to the renderer.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import {
   CHANNELS,

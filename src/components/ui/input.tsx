@@ -1,8 +1,21 @@
+/**
+ * Text input component for form fields.
+ *
+ * Built on base-ui Input primitive with consistent styling. Supports all
+ * standard HTML input types, disabled state, and validation styling.
+ *
+ * @example
+ *   <Input type="text" placeholder="Enter model ID..." />
+ *   <Input type="password" disabled />
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
+ */
 import * as React from "react"
 import { Input as InputPrimitive } from "@base-ui/react/input"
 
 import { cn } from "@/lib/utils"
 
+/** Text input field with consistent styling. */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <InputPrimitive

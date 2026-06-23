@@ -6,6 +6,8 @@
  * When a preset would show FEWER panes than there are populated models, clicking
  * it opens a selection dropdown so the user picks exactly which models stay
  * visible (capped at the target count), instead of silently keeping the first N.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useRef, useState } from 'react'
 import { Columns2, Columns3, Grid2x2, Square } from 'lucide-react'

@@ -14,6 +14,8 @@
  *
  * NOTE: confirm these ids against the live OpenRouter catalog for your
  * launch date — model availability changes over time.
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
 /** Metadata describing a single selectable model. */

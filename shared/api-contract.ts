@@ -15,6 +15,8 @@
  *   • shared/api-contract.ts (this file) — the types + channel names
  *   • electron/preload.ts                — wires `window.api` to IPC
  *   • electron/ipc/*.ts                  — the backend handlers
+ *
+ * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
 import type { Message, Role, SessionData, SessionSummary } from './types'
