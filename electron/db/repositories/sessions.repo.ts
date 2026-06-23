@@ -7,14 +7,14 @@
  * route handlers — same behavior, but as plain functions instead of HTTP
  * endpoints.
  */
-import { formatModelSlug } from '@shared/models'
 import type { SessionCreateResult } from '@shared/api-contract'
 import { FREE_TIER_SESSION_LIMIT } from '@shared/license'
+import { formatModelSlug } from '@shared/models'
 import type { Role, SessionData, SessionSummary, ThreadData } from '@shared/types'
 import { asc, count, desc, eq, inArray } from 'drizzle-orm'
+import * as licenseStore from '../../services/store/license-store'
 import { getDb } from '../client'
 import { messages, models, sessions, threads } from '../schema'
-import * as licenseStore from '../../services/license-store'
 import * as modelsRepo from './models.repo'
 
 /** Current timestamp as an ISO string (how all dates are stored). */

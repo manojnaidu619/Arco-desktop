@@ -4,7 +4,7 @@
  * Activation is the only server call for licensing; launch status is read from
  * encrypted local storage (license.bin). The renderer never calls the server directly.
  */
-import { getLicenseApiBaseUrl } from './license-config'
+import { getLicenseApiBaseUrl } from './config'
 
 /** Response shape for POST /api/licenses/activate */
 export interface LicenseApiResponse {

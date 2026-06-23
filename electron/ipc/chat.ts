@@ -15,10 +15,10 @@
  * can cancel a specific stream (e.g. when switching sessions) without
  * touching the others.
  */
-import { ipcMain } from 'electron'
 import { CHANNELS, type ChatStartRequest } from '@shared/api-contract'
+import { ipcMain } from 'electron'
 import { streamChat } from '../services/openrouter'
-import { getKey } from '../services/secure-store'
+import { getKey } from '../services/store/secure-store'
 
 /** requestId → its AbortController, for cancellation. */
 const activeRequests = new Map<string, AbortController>()

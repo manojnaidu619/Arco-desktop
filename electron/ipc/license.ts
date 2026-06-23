@@ -9,16 +9,16 @@
  *
  * The renderer never calls the license server directly except via activate.
  */
-import { ipcMain } from 'electron'
-import { machineIdSync } from 'node-machine-id'
 import {
   CHANNELS,
   type LicenseActivationResult,
   type LicenseStatus
 } from '@shared/api-contract'
-import { activateLicenseOnServer, licenseApiMessage } from '../services/license-api'
-import { getCheckoutUrl, getLicenseApiBaseUrl } from '../services/license-config'
-import * as licenseStore from '../services/license-store'
+import { ipcMain } from 'electron'
+import { machineIdSync } from 'node-machine-id'
+import { activateLicenseOnServer, licenseApiMessage } from '../services/license/api'
+import { getCheckoutUrl, getLicenseApiBaseUrl } from '../services/license/config'
+import * as licenseStore from '../services/store/license-store'
 
 function getDeviceId(): string {
   return machineIdSync()

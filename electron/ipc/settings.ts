@@ -8,7 +8,6 @@
  * The decrypted key is read here and handed straight to the OpenRouter
  * client; it is never returned to the renderer.
  */
-import { ipcMain } from 'electron'
 import {
   CHANNELS,
   type AddSavedModelResult,
@@ -17,10 +16,11 @@ import {
   type ModelValidationResult
 } from '@shared/api-contract'
 import { getModelDef } from '@shared/models'
+import { ipcMain } from 'electron'
 import * as modelsRepo from '../db/repositories/models.repo'
 import { validateKey as validateAgainstOpenRouter, validateModel as validateModelOnOpenRouter } from '../services/openrouter'
-import * as secureStore from '../services/secure-store'
-import * as settingsStore from '../services/settings-store'
+import * as secureStore from '../services/store/secure-store'
+import * as settingsStore from '../services/store/settings-store'
 
 /** Validate a key and shape the result for the UI (never throws). */
 async function validate(key: string): Promise<KeyValidationResult> {

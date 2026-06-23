@@ -7,7 +7,7 @@
 import { CHANNELS, type SummaryStartRequest } from '@shared/api-contract';
 import { ipcMain } from 'electron';
 import { streamChat } from '../services/openrouter';
-import { getKey } from '../services/secure-store';
+import { getKey } from '../services/store/secure-store';
 
 /**
  * Build the summarization prompt from collected responses.
