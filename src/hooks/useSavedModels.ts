@@ -19,23 +19,24 @@ import {
 } from 'react'
 import { api } from '@/lib/api'
 import type { AddSavedModelResult } from '@shared/api-contract'
+import type { SavedModel } from '@shared/types'
 
 /**
  * Shape of the saved models context value exposed to consumers.
  */
 interface SavedModelsContextValue {
-  /** Array of OpenRouter model ids the user has saved. */
-  savedModels: string[]
+  /** User's saved model library with labels and colors. */
+  savedModels: SavedModel[]
   /** True until the initial fetch from the backend completes. */
   loading: boolean
   /** Re-fetch the saved models from the backend. */
-  refresh: () => Promise<string[]>
-  /** Replace the entire library with a new set of model ids. */
-  set: (modelIds: string[]) => Promise<string[]>
-  /** Validate and add a single model id to the library. */
-  add: (modelId: string) => Promise<AddSavedModelResult>
-  /** Remove a model id from the library. */
-  remove: (modelId: string) => Promise<string[]>
+  refresh: () => Promise<SavedModel[]>
+  /** Replace the entire library with a new set of models. */
+  set: (models: SavedModel[]) => Promise<SavedModel[]>
+  /** Validate and add a single model to the library. */
+  add: (modelId: string, color: string) => Promise<AddSavedModelResult>
+  /** Remove a model from the library. */
+  remove: (modelId: string) => Promise<SavedModel[]>
 }
 
 const SavedModelsContext = createContext<SavedModelsContextValue | null>(null)
@@ -47,14 +48,14 @@ const SavedModelsContext = createContext<SavedModelsContextValue | null>(null)
  * @param children — React children to render within the provider
  */
 export function SavedModelsProvider({ children }: { children: ReactNode }) {
-  const [savedModels, setSavedModels] = useState<string[]>([])
+  const [savedModels, setSavedModels] = useState<SavedModel[]>([])
   const [loading, setLoading] = useState(true)
 
   /**
    * Fetch the current saved models list from the backend.
    *
    * @used-by initial mount, ModelManagerModal on open
-   * @returns the refreshed array of model ids
+   * @returns the refreshed array of saved models
    */
   const refresh = useCallback(async () => {
     const models = await api.settings.getSavedModels()
@@ -73,11 +74,11 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
    * Replace the entire saved model library.
    *
    * @used-by Onboarding when the user confirms their model selection
-   * @param modelIds — complete set of model ids to save
-   * @returns the persisted model ids (may differ if backend normalizes)
+   * @param models — complete set of models to save
+   * @returns the persisted models (may differ if backend normalizes)
    */
-  const set = useCallback(async (modelIds: string[]) => {
-    const next = await api.settings.setSavedModels(modelIds)
+  const set = useCallback(async (models: SavedModel[]) => {
+    const next = await api.settings.setSavedModels(models)
     setSavedModels(next)
     return next
   }, [])
@@ -87,10 +88,11 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
    *
    * @used-by ModelManagerModal, ModelInput
    * @param modelId — OpenRouter model id to validate and add
+   * @param color — hex color for UI dots/badges
    * @returns result with success flag and updated models array
    */
-  const add = useCallback(async (modelId: string) => {
-    const result = await api.settings.addSavedModel(modelId)
+  const add = useCallback(async (modelId: string, color: string) => {
+    const result = await api.settings.addSavedModel(modelId, color)
     if (result.ok) setSavedModels(result.models)
     return result
   }, [])
@@ -100,7 +102,7 @@ export function SavedModelsProvider({ children }: { children: ReactNode }) {
    *
    * @used-by ModelManagerModal, ModelDropdown
    * @param modelId — OpenRouter model id to remove
-   * @returns the updated array of saved model ids
+   * @returns the updated array of saved models
    */
   const remove = useCallback(async (modelId: string) => {
     const next = await api.settings.removeSavedModel(modelId)

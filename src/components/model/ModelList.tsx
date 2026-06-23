@@ -7,13 +7,19 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { getModelDef } from '@shared/models'
+import { getModelDef, resolveModelColor } from '@shared/models'
+import type { SavedModel } from '@shared/types'
+import { ModelColorDot } from '@/components/model/ModelColorDot'
 import { cn } from '@/lib/utils'
 import { Check, X } from 'lucide-react'
 
 interface Props {
   /** OpenRouter model ids to render. */
   models: string[]
+  /** Optional saved library for persisted colors. */
+  savedModels?: SavedModel[]
+  /** Optional per-id color overrides (e.g. onboarding custom models). */
+  colorOverrides?: Record<string, string>
   /** Optional section heading above the list. */
   heading?: string
   /** When true, rows show checkboxes and call onToggle. */
@@ -34,6 +40,8 @@ interface Props {
 
 export function ModelList({
   models,
+  savedModels,
+  colorOverrides,
   heading,
   selectable = false,
   selected,
@@ -50,6 +58,8 @@ export function ModelList({
       </p>
     )
   }
+
+  const colorFor = (id: string) => colorOverrides?.[id] ?? resolveModelColor(id, savedModels)
 
   return (
     <div className="py-1">
@@ -88,7 +98,7 @@ export function ModelList({
                   {isSelected && <Check className="h-3 w-3" />}
                 </span>
               )}
-              <span className={cn('w-2 h-2 rounded-full shrink-0 mt-1.5', def.color)} />
+              <ModelColorDot color={colorFor(id)} className="mt-1.5" />
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm truncate leading-tight">{def.label}</span>
                 <span className="text-xs text-muted-foreground truncate leading-snug mt-0.5">{def.vendor}</span>
@@ -111,4 +121,9 @@ export function ModelList({
       })}
     </div>
   )
+}
+
+/** Map saved models to id strings for list rendering. */
+export function savedModelIds(models: SavedModel[]): string[] {
+  return models.map((m) => m.id)
 }

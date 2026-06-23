@@ -7,7 +7,13 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
-import { formatModelSlug, getModelDef, parseModelSlug } from '@shared/models'
+import {
+  formatModelSlug,
+  getCuratedColorByModelId,
+  getModelDef,
+  parseModelSlug
+} from '@shared/models'
+import type { SavedModel } from '@shared/types'
 import { getDb } from '../client'
 import { models } from '../schema'
 
@@ -18,6 +24,7 @@ export interface ModelRow {
   author: string
   slug: string
   label: string
+  color: string
   createdAt: string
   deletedAt: string | null
 }
@@ -32,13 +39,22 @@ function mapRow(row: typeof models.$inferSelect): ModelRow {
     author: row.author,
     slug: row.slug,
     label: row.label,
+    color: row.color,
     createdAt: row.createdAt,
     deletedAt: row.deletedAt
   }
 }
 
-/** Active library slugs, newest first. */
-export function listActiveSlugs(): string[] {
+function toSavedModel(row: ModelRow): SavedModel {
+  return {
+    id: toSlug(row),
+    label: row.label,
+    color: row.color
+  }
+}
+
+/** Active library models, newest first. */
+export function listActive(): SavedModel[] {
   const db = getDb()
   const rows = db
     .select()
@@ -47,7 +63,7 @@ export function listActiveSlugs(): string[] {
     .orderBy(desc(models.createdAt))
     .all()
 
-  return rows.map((row) => toSlug(row))
+  return rows.map((row) => toSavedModel(mapRow(row)))
 }
 
 /** Find a model row by full OpenRouter id. */
@@ -81,8 +97,9 @@ export function requireModelId(fullId: string): number {
  * Insert or restore a model in the library.
  * @param fullId OpenRouter model id
  * @param label Display name (from OpenRouter or fallback)
+ * @param color Hex color for UI dots/badges
  */
-export function upsertActive(fullId: string, label: string): ModelRow {
+export function upsertActive(fullId: string, label: string, color: string): ModelRow {
   const parsed = parseModelSlug(fullId.trim())
   if (!parsed) throw new Error(`Invalid model id: ${fullId}`)
 
@@ -96,10 +113,10 @@ export function upsertActive(fullId: string, label: string): ModelRow {
 
   if (existing) {
     db.update(models)
-      .set({ label, deletedAt: null })
+      .set({ label, color, deletedAt: null })
       .where(eq(models.id, existing.id))
       .run()
-    return mapRow({ ...existing, label, deletedAt: null })
+    return mapRow({ ...existing, label, color, deletedAt: null })
   }
 
   const created = db
@@ -108,6 +125,7 @@ export function upsertActive(fullId: string, label: string): ModelRow {
       author: parsed.author,
       slug: parsed.slug,
       label,
+      color,
       createdAt: ts,
       deletedAt: null
     })
@@ -133,6 +151,7 @@ export function ensureModelRow(fullId: string, label?: string): ModelRow {
       author: parsed.author,
       slug: parsed.slug,
       label: label ?? getModelDef(fullId).label,
+      color: getCuratedColorByModelId(fullId),
       createdAt: ts,
       deletedAt: ts
     })
@@ -142,10 +161,10 @@ export function ensureModelRow(fullId: string, label?: string): ModelRow {
   return mapRow(created)
 }
 
-/** Soft-delete a model from the library. Returns updated active slug list. */
-export function softDelete(fullId: string): string[] {
+/** Soft-delete a model from the library. Returns updated active list. */
+export function softDelete(fullId: string): SavedModel[] {
   const parsed = parseModelSlug(fullId.trim())
-  if (!parsed) return listActiveSlugs()
+  if (!parsed) return listActive()
 
   getDb()
     .update(models)
@@ -153,7 +172,7 @@ export function softDelete(fullId: string): string[] {
     .where(and(eq(models.author, parsed.author), eq(models.slug, parsed.slug)))
     .run()
 
-  return listActiveSlugs()
+  return listActive()
 }
 
 /** Soft-delete every model in the library (e.g. when clearing the API key). */
@@ -161,18 +180,21 @@ export function softDeleteAll(): void {
   getDb().update(models).set({ deletedAt: now() }).where(isNull(models.deletedAt)).run()
 }
 
-/** Replace the entire active library with the given slug list. */
-export function replaceActive(fullIds: string[]): string[] {
+/** Replace the entire active library with the given models. */
+export function replaceActive(entries: SavedModel[]): SavedModel[] {
   const db = getDb()
   const ts = now()
-  const uniqueIds = [...new Set(fullIds.map((id) => id.trim()).filter(Boolean))]
+  const uniqueEntries = [...new Map(entries.map((m) => [m.id.trim(), m])).values()].filter((m) => m.id)
 
   db.transaction((tx) => {
     tx.update(models).set({ deletedAt: ts }).where(isNull(models.deletedAt)).run()
 
-    uniqueIds.forEach((fullId, index) => {
-      const parsed = parseModelSlug(fullId)
+    uniqueEntries.forEach((entry, index) => {
+      const parsed = parseModelSlug(entry.id)
       if (!parsed) return
+
+      const label = entry.label || getModelDef(entry.id).label
+      const color = entry.color || getCuratedColorByModelId(entry.id)
 
       const existing = tx
         .select()
@@ -185,7 +207,8 @@ export function replaceActive(fullIds: string[]): string[] {
       if (existing) {
         tx.update(models)
           .set({
-            label: getModelDef(fullId).label,
+            label,
+            color,
             deletedAt: null,
             createdAt
           })
@@ -196,7 +219,8 @@ export function replaceActive(fullIds: string[]): string[] {
           .values({
             author: parsed.author,
             slug: parsed.slug,
-            label: getModelDef(fullId).label,
+            label,
+            color,
             createdAt,
             deletedAt: null
           })
@@ -205,7 +229,7 @@ export function replaceActive(fullIds: string[]): string[] {
     })
   })
 
-  return listActiveSlugs()
+  return listActive()
 }
 
 /** Join helper: load model metadata for a thread's model_id FK. */

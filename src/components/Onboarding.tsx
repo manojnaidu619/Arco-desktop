@@ -7,17 +7,20 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { useMemo, useState } from 'react'
+import { ModelInput } from '@/components/model/ModelInput'
+import { ModelList } from '@/components/model/ModelList'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import {
+  getCuratedColorByModelId,
+  getModelDef,
   ONBOARDING_MIN_MODELS,
   ONBOARDING_SUGGESTED_MODELS
 } from '@shared/models'
-import { ModelList } from '@/components/model/ModelList'
-import { ModelInput } from '@/components/model/ModelInput'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import type { SavedModel } from '@shared/types'
 import { AlertCircle, ArrowRight, ExternalLink, KeyRound, LayoutGrid, Loader2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 interface Props {
   /** Called once the user finishes model selection and clicks Get started. */
@@ -44,6 +47,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
   // ── Model selection step state ──
   const [selected, setSelected] = useState<Set<string>>(defaultSelected)
   const [extraModels, setExtraModels] = useState<string[]>([])
+  const [customColors, setCustomColors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -77,10 +81,11 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     })
   }
 
-  const addModelToSelection = async (modelId: string) => {
+  const addModelToSelection = async (modelId: string, color: string) => {
     if (!displayModels.includes(modelId)) {
       setExtraModels((prev) => [...prev, modelId])
     }
+    setCustomColors((prev) => ({ ...prev, [modelId]: color }))
     setSelected((prev) => new Set(prev).add(modelId))
   }
 
@@ -90,7 +95,12 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     setSaveError(null)
 
     try {
-      await api.settings.setSavedModels([...selected])
+      const models: SavedModel[] = [...selected].map((id) => ({
+        id,
+        label: getModelDef(id).label,
+        color: customColors[id] ?? getCuratedColorByModelId(id)
+      }))
+      await api.settings.setSavedModels(models)
       await api.settings.completeOnboarding()
       onComplete()
     } catch {
@@ -122,6 +132,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
           <div className="rounded-xl border border-border overflow-hidden">
             <ModelList
               models={displayModels}
+              colorOverrides={customColors}
               heading="Suggested models"
               selectable
               selected={selected}
@@ -133,7 +144,12 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               Add custom model
             </p>
-            <ModelInput onAdd={addModelToSelection} disabled={saving} existingModels={displayModels} />
+            <ModelInput
+              onAdd={addModelToSelection}
+              disabled={saving}
+              existingModels={displayModels}
+              skipValidation
+            />
           </div>
 
           <p className="text-sm text-center text-muted-foreground">

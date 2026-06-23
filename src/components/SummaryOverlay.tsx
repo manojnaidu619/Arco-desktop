@@ -5,10 +5,12 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { ModelList } from '@/components/model/ModelList'
+import { ModelList, savedModelIds } from '@/components/model/ModelList'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { getModelDef } from '@shared/models'
+import { getModelDef, resolveModelColor } from '@shared/models'
+import type { SavedModel } from '@shared/types'
+import { ModelColorDot } from '@/components/model/ModelColorDot'
 import { AnimatedMarkdown } from 'flowtoken'
 import 'flowtoken/dist/styles.css'
 import {
@@ -26,8 +28,8 @@ import { useEffect, useRef, useState } from 'react'
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** OpenRouter model ids from the user's saved library. */
-  models: string[]
+  /** User's saved model library. */
+  models: SavedModel[]
   /** Visible panes whose latest replies will be compared. */
   comparedPanes: Array<{ modelId: string; label: string }>
   disabled?: boolean
@@ -103,8 +105,9 @@ export function SummaryOverlay({
   const [copied, setCopied] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
-  const modelIds = models
+  const modelIds = savedModelIds(models)
   const current = selectedModelId ? getModelDef(selectedModelId) : null
+  const currentColor = selectedModelId ? resolveModelColor(selectedModelId, models) : undefined
   const hasSummary = content.length > 0
 
   useEffect(() => {
@@ -203,18 +206,15 @@ export function SummaryOverlay({
             {comparedPanes.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] text-muted-foreground shrink-0">Comparing</span>
-                {comparedPanes.map((pane, i) => {
-                  const def = getModelDef(pane.modelId)
-                  return (
+                {comparedPanes.map((pane, i) => (
                     <span
                       key={`${pane.modelId}-${i}`}
                       className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground/90"
                     >
-                      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', def.color)} />
+                      <ModelColorDot color={resolveModelColor(pane.modelId, models)} size="xs" />
                       {pane.label}
                     </span>
-                  )
-                })}
+                  ))}
               </div>
             )}
 
@@ -230,9 +230,11 @@ export function SummaryOverlay({
                     (disabled || models.length === 0) && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  <span
-                    className={cn('w-2 h-2 rounded-full shrink-0', current?.color ?? 'bg-muted-foreground/40')}
-                  />
+                  {currentColor ? (
+                    <ModelColorDot color={currentColor} />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-muted-foreground/40" />
+                  )}
                   <span className="text-sm truncate flex-1">
                     {current?.label ?? 'Pick a model to summarize with'}
                   </span>
@@ -244,6 +246,7 @@ export function SummaryOverlay({
                     <div className="max-h-48 overflow-y-auto py-1">
                       <ModelList
                         models={modelIds}
+                        savedModels={models}
                         heading="Your models"
                         activeModelId={selectedModelId}
                         onSelect={chooseModel}

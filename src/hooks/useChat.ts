@@ -180,14 +180,13 @@ export function useChat() {
    * @returns  array of Pane objects for the requested range
    */
   const buildDefaultPanes = useCallback(async (targetSessionId: number, from: number, to: number) => {
-    const savedModelIds = await api.settings.getSavedModels()
+    const saved = await api.settings.getSavedModels()
     const result: Pane[] = []
     for (let slot = from; slot < to; slot++) {
-      const modelId = savedModelIds[slot]
-      if (modelId) {
-        const def = getModelDef(modelId)
-        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, def.id, def.label)
-        result.push({ slot, modelId: def.id, label: def.label, messages: [], status: 'idle', dbThreadId })
+      const model = saved[slot]
+      if (model) {
+        const dbThreadId = await api.sessions.addThread(targetSessionId, slot, model.id, model.label)
+        result.push({ slot, modelId: model.id, label: model.label, messages: [], status: 'idle', dbThreadId })
       } else {
         result.push(emptyPane(slot))
       }

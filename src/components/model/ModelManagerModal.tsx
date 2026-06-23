@@ -9,7 +9,7 @@
  */
 import { useEffect } from 'react'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList } from '@/components/model/ModelList'
+import { ModelList, savedModelIds } from '@/components/model/ModelList'
 import { ModelInput } from '@/components/model/ModelInput'
 import { Button } from '@/components/ui/button'
 import { Loader2, X } from 'lucide-react'
@@ -44,8 +44,8 @@ export function ModelManagerModal({ open, onClose }: Props) {
    * Validate and add a new model to the library.
    * Throws an error if validation fails (consumed by ModelInput for error display).
    */
-  const handleAdd = async (modelId: string) => {
-    const result = await add(modelId)
+  const handleAdd = async (modelId: string, color: string) => {
+    const result = await add(modelId, color)
     if (!result.ok) {
       throw new Error(result.error ?? 'Could not add model.')
     }
@@ -74,7 +74,8 @@ export function ModelManagerModal({ open, onClose }: Props) {
             ) : (
               <div className="rounded-lg border border-border max-h-60 overflow-y-auto">
                 <ModelList
-                  models={savedModels}
+                  models={savedModelIds(savedModels)}
+                  savedModels={savedModels}
                   onRemove={handleRemove}
                   removeDisabled={savedModels.length <= 1}
                 />
@@ -84,7 +85,11 @@ export function ModelManagerModal({ open, onClose }: Props) {
 
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Add new model</p>
-            <ModelInput onAdd={handleAdd} disabled={loading} existingModels={savedModels} />
+            <ModelInput
+              onAdd={handleAdd}
+              disabled={loading}
+              existingModels={savedModelIds(savedModels)}
+            />
           </div>
         </div>
 

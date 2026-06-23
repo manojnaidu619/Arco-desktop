@@ -28,6 +28,8 @@ export const models = sqliteTable(
     slug: text('slug').notNull(),
     /** Friendly display name captured when the model was added. */
     label: text('label').notNull(),
+    /** Hex color for UI dots/badges, e.g. "#f43f5e". */
+    color: text('color').notNull(),
     createdAt: text('created_at').notNull(),
     /** Soft-delete timestamp; null means the model is in the user's library. */
     deletedAt: text('deleted_at')

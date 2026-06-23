@@ -67,24 +67,29 @@ export function registerSettingsHandlers(): void {
     return validate(key)
   })
 
-  ipcMain.handle(CHANNELS.settings.getSavedModels, () => modelsRepo.listActiveSlugs())
-  ipcMain.handle(CHANNELS.settings.setSavedModels, (_e, modelIds: string[]) => modelsRepo.replaceActive(modelIds))
+  ipcMain.handle(CHANNELS.settings.getSavedModels, () => modelsRepo.listActive())
+  ipcMain.handle(CHANNELS.settings.setSavedModels, (_e, models: Parameters<typeof modelsRepo.replaceActive>[0]) =>
+    modelsRepo.replaceActive(models)
+  )
   ipcMain.handle(CHANNELS.settings.removeSavedModel, (_e, modelId: string) => modelsRepo.softDelete(modelId))
 
-  ipcMain.handle(CHANNELS.settings.addSavedModel, async (_e, modelId: string): Promise<AddSavedModelResult> => {
-    const id = modelId.trim()
-    const existing = modelsRepo.listActiveSlugs()
-    if (existing.includes(id)) {
-      return { ok: false, models: existing, error: 'This model is already in your library.' }
+  ipcMain.handle(
+    CHANNELS.settings.addSavedModel,
+    async (_e, modelId: string, color: string): Promise<AddSavedModelResult> => {
+      const id = modelId.trim()
+      const existing = modelsRepo.listActive()
+      if (existing.some((m) => m.id === id)) {
+        return { ok: false, models: existing, error: 'This model is already in your library.' }
+      }
+
+      const validation = await validateModel(id)
+      if (!validation.ok) return { ok: false, models: existing, error: validation.error }
+
+      const label = validation.modelName ?? getModelDef(id).label
+      modelsRepo.upsertActive(id, label, color)
+      return { ok: true, models: modelsRepo.listActive() }
     }
-
-    const validation = await validateModel(id)
-    if (!validation.ok) return { ok: false, models: existing, error: validation.error }
-
-    const label = validation.modelName ?? getModelDef(id).label
-    modelsRepo.upsertActive(id, label)
-    return { ok: true, models: modelsRepo.listActiveSlugs() }
-  })
+  )
 
   ipcMain.handle(CHANNELS.settings.validateModel, (_e, modelId: string) => validateModel(modelId))
 

@@ -9,8 +9,9 @@ import { LicenseBadge } from '@/components/license/LicenseBadge'
 import { SettingsMenu } from '@/components/settings/SettingsMenu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { getModelDef } from '@shared/models'
+import { resolveModelColor } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
+import { useSavedModels } from '@/hooks/useSavedModels'
 import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -147,6 +148,7 @@ function SessionItem({
   onRename: (title: string) => Promise<void>
   onDelete: () => Promise<void>
 }) {
+  const { savedModels } = useSavedModels()
   const [hovered, setHovered] = useState(false)
   const [badgesExpanded, setBadgesExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -235,15 +237,15 @@ function SessionItem({
         {uniqueModels.length > 0 && (
           <div className={cn('flex flex-wrap gap-1 mt-1', hovered && 'pr-16')}>
             {uniqueModels.slice(0, 5).map((m) => {
-              const def = getModelDef(m.modelId)
+              const color = resolveModelColor(m.modelId, savedModels)
               return (
                 <span
                   key={m.modelId}
                   className={cn(
                     'inline-flex items-center justify-center rounded-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden',
-                    def.color,
                     badgesExpanded ? 'px-2 py-0.5 max-w-full' : 'w-2 h-2 max-w-[8px]'
                   )}
+                  style={{ backgroundColor: color }}
                   title={m.label}
                 >
                   <span

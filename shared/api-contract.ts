@@ -19,7 +19,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
-import type { Message, Role, SessionData, SessionSummary } from './types'
+import type { Message, Role, SavedModel, SessionData, SessionSummary } from './types'
 
 /* ── Chat streaming payloads ──────────────────────────────────────────────
  * Chat is special: instead of one request → one response, the answer streams
@@ -110,7 +110,7 @@ export interface ModelValidationResult {
 /** Result of adding a model to the user's saved library. */
 export interface AddSavedModelResult {
   ok: boolean
-  models: string[]
+  models: SavedModel[]
   error?: string
 }
 
@@ -222,13 +222,13 @@ export interface ArcoApi {
     /** Re-fetch the current key's balance (for the settings screen). */
     getBalance(): Promise<KeyValidationResult>
     /** Get the user's saved model library (used in dropdowns and default panes). */
-    getSavedModels(): Promise<string[]>
+    getSavedModels(): Promise<SavedModel[]>
     /** Replace the entire saved model library. Returns the persisted list. */
-    setSavedModels(modelIds: string[]): Promise<string[]>
+    setSavedModels(models: SavedModel[]): Promise<SavedModel[]>
     /** Validate and add a model id; returns updated list on success. */
-    addSavedModel(modelId: string): Promise<AddSavedModelResult>
+    addSavedModel(modelId: string, color: string): Promise<AddSavedModelResult>
     /** Remove a model from the saved library. Returns the updated list. */
-    removeSavedModel(modelId: string): Promise<string[]>
+    removeSavedModel(modelId: string): Promise<SavedModel[]>
     /** Validate a model id without saving it (used during onboarding). */
     validateModel(modelId: string): Promise<ModelValidationResult>
     /** Whether the user finished the model-selection onboarding step. */

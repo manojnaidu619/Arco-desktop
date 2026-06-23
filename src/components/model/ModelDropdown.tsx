@@ -8,11 +8,11 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useEffect, useRef, useState } from 'react'
-import { getModelDef } from '@shared/models'
+import { getModelDef, resolveModelColor } from '@shared/models'
 import { useSavedModels } from '@/hooks/useSavedModels'
-import { ModelList } from '@/components/model/ModelList'
+import { ModelColorDot } from '@/components/model/ModelColorDot'
+import { ModelList, savedModelIds } from '@/components/model/ModelList'
 import { ModelManagerModal } from '@/components/model/ModelManagerModal'
-import { cn } from '@/lib/utils'
 import { ChevronDown, Plus } from 'lucide-react'
 
 interface Props {
@@ -66,6 +66,7 @@ export function ModelDropdown({ value, onSelect }: Props) {
   }
 
   const current = value ? getModelDef(value) : null
+  const currentColor = value ? resolveModelColor(value, savedModels) : undefined
 
   return (
     <>
@@ -75,7 +76,11 @@ export function ModelDropdown({ value, onSelect }: Props) {
           className="flex items-center gap-1.5 min-w-0 max-w-full rounded-md px-1.5 py-1 hover:bg-muted/70 transition-colors text-left"
           title={value ?? 'Select a model'}
         >
-          <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', current?.color ?? 'bg-muted-foreground/40')} />
+          {currentColor ? (
+            <ModelColorDot color={currentColor} size="md" />
+          ) : (
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-muted-foreground/40" />
+          )}
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-medium truncate leading-tight">{current?.label ?? 'Select a model'}</span>
             {value && <span className="text-xs text-muted-foreground truncate leading-snug mt-0.5">{value}</span>}
@@ -88,7 +93,8 @@ export function ModelDropdown({ value, onSelect }: Props) {
             {/* ~4 model rows + section heading before scrolling */}
             <div className="max-h-52 overflow-y-auto py-1">
               <ModelList
-                models={savedModels}
+                models={savedModelIds(savedModels)}
+                savedModels={savedModels}
                 heading="Your models"
                 activeModelId={value}
                 onSelect={choose}

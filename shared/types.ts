@@ -67,3 +67,12 @@ export interface SessionSummary {
   /** Distinct models used in this session — drives the colored dots. */
   models: { modelId: string; label: string }[]
 }
+
+/** A user-saved OpenRouter model in the library. */
+export interface SavedModel {
+  /** OpenRouter model id, e.g. "openai/gpt-4o". */
+  id: string
+  label: string
+  /** Hex color for UI dots/badges, e.g. "#f43f5e". */
+  color: string
+}

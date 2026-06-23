@@ -1,0 +1,1 @@
+ALTER TABLE `models` ADD COLUMN `color` text NOT NULL DEFAULT '#64748b';

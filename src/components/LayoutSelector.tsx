@@ -12,7 +12,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Columns2, Columns3, Grid2x2, Square } from 'lucide-react'
 import { LAYOUTS } from '@/hooks/useChat'
-import { getModelDef } from '@shared/models'
+import { useSavedModels } from '@/hooks/useSavedModels'
+import { resolveModelColor } from '@shared/models'
+import { ModelColorDot } from '@/components/model/ModelColorDot'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -57,6 +59,7 @@ interface Props {
 }
 
 export function LayoutSelector({ value, onChange, panes, onApplySelection }: Props) {
+  const { savedModels } = useSavedModels()
   // Which preset's selection dropdown is open (the target pane count), or null.
   const [pickerFor, setPickerFor] = useState<number | null>(null)
   const [selected, setSelected] = useState<number[]>([])
@@ -164,7 +167,7 @@ export function LayoutSelector({ value, onChange, panes, onApplySelection }: Pro
                       </svg>
                     )}
                   </span>
-                  <span className={cn('w-2 h-2 rounded-full shrink-0', getModelDef(p.modelId).color)} />
+                  <ModelColorDot color={resolveModelColor(p.modelId, savedModels)} />
                   <span className="truncate">{p.label}</span>
                 </button>
               )

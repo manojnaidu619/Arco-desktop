@@ -8,13 +8,14 @@
  */
 import { useState } from 'react'
 import { api } from '@/lib/api'
+import { randomHexColor } from '@shared/models'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Loader2, Plus } from 'lucide-react'
 
 interface Props {
-  /** Called with a validated model id after OpenRouter confirms it exists. */
-  onAdd: (modelId: string) => void | Promise<void>
+  /** Called with a validated model id and chosen color after OpenRouter confirms it exists. */
+  onAdd: (modelId: string, color: string) => void | Promise<void>
   /** Disable the input (e.g. while parent is saving). */
   disabled?: boolean
   placeholder?: string
@@ -32,6 +33,7 @@ export function ModelInput({
   existingModels = []
 }: Props) {
   const [value, setValue] = useState('')
+  const [color, setColor] = useState(randomHexColor)
   const [validating, setValidating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,8 +58,9 @@ export function ModelInput({
         }
       }
 
-      await onAdd(id)
+      await onAdd(id, color)
       setValue('')
+      setColor(randomHexColor())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not add model.')
     } finally {
@@ -76,9 +79,26 @@ export function ModelInput({
             if (error) setError(null)
           }}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="h-8 text-xs"
+          className="h-8 text-xs flex-1 min-w-0"
           disabled={disabled || validating}
         />
+        <label
+          className="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border"
+          title="Pick a color for this model"
+        >
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            disabled={disabled || validating}
+            className="absolute inset-0 h-full w-full cursor-pointer border-0 p-0 opacity-0"
+          />
+          <span
+            className="absolute inset-0 rounded-md"
+            style={{ backgroundColor: color }}
+            aria-hidden
+          />
+        </label>
         <Button
           size="sm"
           variant="outline"
