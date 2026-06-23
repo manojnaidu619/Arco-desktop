@@ -47,6 +47,10 @@ This document tracks upcoming features, improvements, and technical enhancements
 
 ## Performance & Technical
 
+### 🔴 [ ] Migrate Primary Model Identifier from OpenRouter ID to Database Model ID
+**Priority:** High  
+**Description:** Replace `openRouterModelId` (e.g. `openai/gpt-4o`) as the primary key for model-related business logic across the app with the database `models.id` row ID (`dbModelId`). Threads already store `model_id` in SQLite; panes, IPC payloads, hooks, and UI state should reference that ID and load the full model record (label, color, author/slug) from our `models` table instead of passing OpenRouter strings everywhere. OpenRouter model ID remains a derived property on the model row for API calls only. This refactor is needed now that we persist the user's model library locally—we no longer need OpenRouter's identifier as the central identifier outside of outbound chat requests.
+
 ### 🔴 [ ] License Key Server Validation
 **Priority:** Medium  
 **Description:** On app launch, re-validate the stored license with the Arco license server (send license key from `license.bin` and current `machineIdSync()` device ID). If validation fails, treat the user as Free tier and show a support modal — do not delete the local license file. Complements encrypted `license.bin` storage (which blocks casual file copy) by catching revoked keys and device mismatches when online. Activation via `/api/licenses/activate` remains unchanged.
