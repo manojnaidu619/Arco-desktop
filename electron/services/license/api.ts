@@ -4,7 +4,7 @@
  * Activation is the only server call for licensing; launch status is read from
  * encrypted local storage (license.bin). The renderer never calls the server directly.
  */
-import { getLicenseApiBaseUrl } from './config'
+import { getApiBaseUrl } from '../../config/env'
 
 /** Response shape for POST /api/licenses/activate */
 export interface LicenseApiResponse {
@@ -31,7 +31,7 @@ async function parseLicenseResponse(response: Response): Promise<LicenseApiRespo
 
 /** Activate a license key for this device. */
 export async function activateLicenseOnServer(key: string, deviceId: string): Promise<LicensePostResult> {
-  const baseUrl = getLicenseApiBaseUrl()
+  const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
     throw new Error('License API is not configured for this build.')
   }

@@ -12,25 +12,24 @@
  * (`contextIsolation`) and has no Node access (`nodeIntegration: false`), so
  * it can only reach the backend through the preload bridge.
  */
+import { PRODUCT_NAME } from '@shared/config'
 import { app, BrowserWindow, dialog, session, shell } from 'electron'
 import { join } from 'node:path'
+import { isDev } from './config/env'
 import { registerIpcHandlers } from './ipc'
 import { getDb } from './db/client'
 import { buildAppMenu } from './window-menu'
 
 // Set the product name early so app.getPath('userData') resolves to a stable,
 // branded folder in both dev and production.
-app.setName('Arco')
+app.setName(PRODUCT_NAME)
 
 /** In dev, electron-vite serves the renderer over http and sets this env var. */
 const RENDERER_DEV_URL = process.env.ELECTRON_RENDERER_URL
 
-/** True for `npm run dev` / `npm run preview`; false for packaged builds. */
-const isDev = !app.isPackaged
-
 /** Wire up DevTools toggles — only available outside packaged production builds. */
 function configureDevTools(win: BrowserWindow): void {
-  if (!isDev) return
+  if (!isDev()) return
 
   // Chrome-style shortcuts (Electron's View menu uses Option+Cmd+I by default).
   win.webContents.on('before-input-event', (_event, input) => {
@@ -62,7 +61,7 @@ function createWindow(): void {
       contextIsolation: true, // UI and preload run in separate JS contexts
       nodeIntegration: false, // UI cannot use Node APIs directly
       sandbox: false, // preload bundles the bridge; safe with the two flags above
-      devTools: isDev
+      devTools: isDev()
     }
   })
 
@@ -125,7 +124,7 @@ app.whenReady().then(() => {
   }
 
   registerIpcHandlers()
-  buildAppMenu({ devTools: isDev })
+  buildAppMenu({ devTools: isDev() })
   applyContentSecurityPolicy()
   createWindow()
 

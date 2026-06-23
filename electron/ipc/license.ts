@@ -17,7 +17,7 @@ import {
 import { ipcMain } from 'electron'
 import { machineIdSync } from 'node-machine-id'
 import { activateLicenseOnServer, licenseApiMessage } from '../services/license/api'
-import { getCheckoutUrl, getLicenseApiBaseUrl } from '../services/license/config'
+import { getApiBaseUrl, getCheckoutUrl } from '../config/env'
 import * as licenseStore from '../services/store/license-store'
 
 function getDeviceId(): string {
@@ -46,7 +46,7 @@ export function registerLicenseHandlers(): void {
         }
       }
 
-      if (!getLicenseApiBaseUrl()) {
+      if (!getApiBaseUrl()) {
         return {
           ok: false,
           message: 'License activation is not configured for this build yet.'

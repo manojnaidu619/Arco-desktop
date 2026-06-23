@@ -9,6 +9,7 @@
  *   1. `validateKey` — check a key works and fetch its credit balance.
  *   2. `streamChat`  — stream a chat completion token-by-token.
  */
+import { ARCO_WEBSITE_URL, PRODUCT_NAME } from '@shared/config'
 import type { BalanceInfo } from '@shared/api-contract'
 import type { Message } from '@shared/types'
 
@@ -19,8 +20,8 @@ function headers(apiKey: string) {
   return {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
-    'HTTP-Referer': 'https://arco.chat',
-    'X-Title': 'Arco'
+    'HTTP-Referer': ARCO_WEBSITE_URL,
+    'X-Title': PRODUCT_NAME
   }
 }
 

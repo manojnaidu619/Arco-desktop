@@ -24,6 +24,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { app } from 'electron'
 import { copyFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { isDev } from '../config/env'
 import * as schema from './schema'
 
 /** Lazily-created singleton so every caller shares one connection. */
@@ -33,7 +34,7 @@ let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null
 function migrationsFolder(): string {
   // Packaged: copied into the app's Resources via electron-builder
   // `extraResources`. Dev: it's just the project's drizzle/ folder.
-  return app.isPackaged ? join(process.resourcesPath, 'drizzle') : join(app.getAppPath(), 'drizzle')
+  return isDev() ? join(app.getAppPath(), 'drizzle') : join(process.resourcesPath, 'drizzle')
 }
 
 /**
