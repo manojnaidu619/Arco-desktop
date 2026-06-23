@@ -130,8 +130,8 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
         <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 text-xs shrink-0">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
-            This model was removed from your library. Re-add it in the settings to continue
-            the conversation.
+            This model was removed from your library. Change the model to continue the
+            conversation, or re-add it in settings.
           </span>
         </div>
       )}
