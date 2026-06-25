@@ -36,12 +36,11 @@ export interface ModelDef {
 }
 
 export const CURATED_MODELS: ModelDef[] = [
+  { openRouterModelId: 'anthropic/claude-opus-4.8', label: 'Claude Opus 4.8', author: 'Anthropic', color: '#f59e0b' },
   { openRouterModelId: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash', author: 'DeepSeek', color: '#06b6d4' },
-  { openRouterModelId: 'moonshotai/kimi-k2-thinking', label: 'Kimi K2 Thinking', author: 'Moonshot AI', color: '#8b5cf6' },
-  { openRouterModelId: 'z-ai/glm-4.7-flash', label: 'GLM-4.7 Flash', author: 'Zhipu AI', color: '#3b82f6' },
+  { openRouterModelId: 'google/gemini-3.5-flash', label: 'Gemini 3.5 Flash', author: 'Google', color: '#8b5cf6' },
+  { openRouterModelId: 'openai/gpt-5.5', label: 'GPT-5.5', author: 'OpenAI', color: '#3b82f6' },
   { openRouterModelId: 'minimax/minimax-m2.7', label: 'MiniMax M2.7', author: 'MiniMax', color: '#f43f5e' },
-  { openRouterModelId: 'qwen/qwen3.6-flash', label: 'Qwen 3.6 Flash', author: 'Alibaba', color: '#f97316' },
-  { openRouterModelId: 'anthropic/claude-opus-4.8', label: 'Claude Opus 4.8', author: 'Anthropic', color: '#f59e0b' }
 ]
 
 /** Minimum models required during onboarding before the user can continue. */

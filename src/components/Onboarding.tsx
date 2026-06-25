@@ -8,6 +8,7 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
+import arcoLogo from '@/assets/arco.png'
 import { ModelManagerPanel } from '@/components/model/ModelManagerPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +16,7 @@ import { useSavedModels } from '@/hooks/useSavedModels'
 import { api } from '@/lib/api'
 import { ONBOARDING_MIN_MODELS, ONBOARDING_SUGGESTED_MODELS } from '@shared/models'
 import type { SavedModel } from '@shared/types'
-import { AlertCircle, ArrowRight, ExternalLink, KeyRound, LayoutGrid, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, ExternalLink, LayoutGrid, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 interface Props {
@@ -55,12 +56,12 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
     if (step !== 'model-selection') return
 
     let cancelled = false
-    ;(async () => {
-      const models = await refresh()
-      if (cancelled || seededRef.current || models.length > 0) return
-      seededRef.current = true
-      await set(defaultOnboardingModels())
-    })().catch(console.error)
+      ; (async () => {
+        const models = await refresh()
+        if (cancelled || seededRef.current || models.length > 0) return
+        seededRef.current = true
+        await set(defaultOnboardingModels())
+      })().catch(console.error)
 
     return () => {
       cancelled = true
@@ -151,24 +152,24 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
 
   return (
     <div className="flex h-screen items-center justify-center bg-background text-foreground p-6">
-      <div className="w-full max-w-md flex flex-col items-center text-center gap-6">
-        <div className="flex flex-col items-center gap-3">
+      <div className="w-full max-w-md flex flex-col items-center text-center gap-10">
+        <div className="flex flex-col items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <KeyRound className="h-7 w-7 text-primary" />
+            <img src={arcoLogo} alt="Arco" className="h-8 w-8 rounded-md" />
           </div>
           <div>
             <h1 className="text-xl font-semibold">Welcome to Arco</h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Compare answers from multiple AI models side by side. Everything stays on your Mac — connect your own
-              OpenRouter API key to begin.
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+              Choose from 400+ AI models and compare them side by side in one window with your own OpenRouter API
+              key, while keeping all data on your Mac.
             </p>
           </div>
         </div>
 
-        <div className="w-full flex flex-col gap-3">
+        <div className="w-full flex flex-col gap-4">
           <Input
             type="password"
-            placeholder="sk-or-v1-…"
+            placeholder="Paste your OpenRouter API key (sk-or-v1-…)"
             value={key}
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitKey()}
@@ -190,7 +191,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
                 Validating…
               </>
             ) : (
-              'Validate & continue'
+              'Save and continue'
             )}
           </Button>
 
@@ -198,7 +199,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
             href="https://openrouter.ai/keys"
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1 mt-1"
           >
             Get an OpenRouter API key
             <ExternalLink className="h-3 w-3" />
