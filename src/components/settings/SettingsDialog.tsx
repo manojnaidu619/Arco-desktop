@@ -66,15 +66,9 @@ export function SettingsDialog({ onKeyCleared, onClose }: Props) {
               ) : error ? (
                 <span className="text-destructive text-xs">{error}</span>
               ) : balance ? (
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Remaining</span>
-                    <span className="font-medium">{formatCredits(balance.remaining)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Used</span>
-                    <span className="font-medium">{formatCredits(balance.totalUsage)}</span>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Remaining</span>
+                  <span className="font-medium">{formatCredits(balance.remaining)}</span>
                 </div>
               ) : (
                 <span className="text-muted-foreground">A key is stored.</span>
