@@ -25,6 +25,12 @@ how Electron does things.
    decisions: brand, color tokens, typography, spacing, components, tone of voice, and marketing
    guidelines. Reference this for any surface where Arco appears.
 
+## Operations
+
+- **[releasing.md](./releasing.md)** — How to cut a new macOS release:
+  code signing, Apple notarization, and publishing to Cloudflare R2 for
+  auto-updates. Reference runbook with rules, gotchas, and rotation steps.
+
 ## The one-sentence summary
 
 > The app is a **React UI** (the part you see) talking to a **Node.js backend**

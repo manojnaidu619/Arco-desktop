@@ -19,6 +19,7 @@ import { Onboarding } from '@/components/Onboarding'
 import { MainApp } from '@/components/MainApp'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { LicenseModal } from '@/components/license/LicenseModal'
+import { UpdateDialog } from '@/components/UpdateDialog'
 import { SavedModelsProvider } from '@/hooks/useSavedModels'
 import { Loader2 } from 'lucide-react'
 
@@ -59,6 +60,7 @@ export function App() {
   // SavedModelsProvider wraps onboarding too so model selection uses the same library as Settings.
   return (
     <SavedModelsProvider>
+      <UpdateDialog />
       {!hasKey ? (
         <Onboarding
           onComplete={() => {

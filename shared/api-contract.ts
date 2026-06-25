@@ -143,6 +143,28 @@ export interface SessionCreateResult {
   code?: 'session_limit'
 }
 
+/* ── Auto-update payloads ────────────────────────────────────────────────── */
+
+/** Metadata about an available or downloaded update. */
+export interface UpdateInfoPayload {
+  version: string
+  releaseDate?: string
+  releaseNotes?: string
+}
+
+/** Per-chunk progress while downloading the update zip. */
+export interface UpdateProgressPayload {
+  percent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+}
+
+/** Emitted when the updater hits an error. */
+export interface UpdateErrorPayload {
+  message: string
+}
+
 /**
  * The complete `window.api` surface available to the UI.
  *
@@ -237,6 +259,27 @@ export interface ArcoApi {
     completeOnboarding(): Promise<void>
   }
 
+  /**
+   * Auto-update lifecycle. The main process drives downloads; the UI just
+   * subscribes to events and triggers user-confirmed actions.
+   */
+  updater: {
+    /** Manually trigger an update check (the app also checks on launch + every 4h). */
+    check(): Promise<void>
+    /** Start downloading the available update. Progress arrives via onProgress. */
+    download(): Promise<void>
+    /** Quit the app and install the downloaded update. */
+    install(): Promise<void>
+    /** A new version is available on the server. */
+    onAvailable(cb: (info: UpdateInfoPayload) => void): () => void
+    /** Download progress for the update zip. */
+    onProgress(cb: (progress: UpdateProgressPayload) => void): () => void
+    /** Update zip finished downloading; ready to install on next quit. */
+    onDownloaded(cb: (info: UpdateInfoPayload) => void): () => void
+    /** Updater hit an error (network, signature mismatch, etc.). */
+    onError(cb: (err: UpdateErrorPayload) => void): () => void
+  }
+
   /** Pro plan license activation (annual license, device-bound). */
   license: {
     /** Whether a valid license is stored locally for this device. */
@@ -310,5 +353,14 @@ export const CHANNELS = {
     activate: 'license:activate',
     getDeviceId: 'license:getDeviceId',
     getCheckoutUrl: 'license:getCheckoutUrl'
+  },
+  updater: {
+    check: 'updater:check',
+    download: 'updater:download',
+    install: 'updater:install',
+    available: 'updater:available',
+    progress: 'updater:progress',
+    downloaded: 'updater:downloaded',
+    error: 'updater:error'
   }
 } as const

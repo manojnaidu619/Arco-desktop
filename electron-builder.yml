@@ -1,6 +1,7 @@
 # ── Packaging configuration (electron-builder) ──
 # Turns the built code into a double-clickable macOS app inside a .dmg
-# installer. Run with `npm run dist:mac`.
+# installer. Run with `npm run dist:mac` (unsigned) or `npm run release:mac`
+# (signed + notarized + zip for auto-updates).
 appId: com.arco.desktop
 productName: Arco
 
@@ -27,20 +28,30 @@ extraResources:
 asarUnpack:
     - '**/*.node'
     - node_modules/better-sqlite3/**
+
 # Packaging configuration for macOS
 # supports only Silicon Macs
 mac:
     category: public.app-category.productivity
     target:
+        # `dmg` is the user-facing installer. `zip` is what electron-updater
+        # downloads for auto-updates on macOS — both are required for releases.
         - target: dmg
           arch: arm64
         - target: zip
           arch: arm64
-    # IMPORTANT: unsigned for now (no Apple Developer account yet).
-    # `identity: null` disables code-signing so local builds succeed.
-    # When you get a Developer ID, set this to your identity and add
-    # notarization here — that's the only change needed for clean downloads.
-    identity: null
+    # Hardened runtime is required for notarization. The entitlements file
+    # below grants Electron + better-sqlite3 the exemptions they need to run
+    # under it (JIT, unsigned executable memory, dyld env vars).
+    hardenedRuntime: true
+    gatekeeperAssess: false
+    entitlements: build/entitlements.mac.plist
+    entitlementsInherit: build/entitlements.mac.plist
+    # Notarization via @electron/notarize, using an App Store Connect API key.
+    # In electron-builder v26 `notarize` is a boolean — Team ID and key info
+    # are read from env vars at build time (see .env.release.example):
+    #   APPLE_API_KEY, APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_TEAM_ID
+    notarize: true
 
 # Packaging configuration for macOS DMG
 # supports only Silicon Macs
@@ -54,3 +65,12 @@ dmg:
           y: 220
           type: link
           path: /Applications
+
+# Auto-update publish target. `provider: generic` means electron-updater fetches
+# `latest-mac.yml` (and the matching .zip) from this URL at runtime. The URL
+# points at the public Cloudflare R2 bucket; uploads happen via the
+# scripts/upload-release.sh helper.
+publish:
+    provider: generic
+    url: https://updates.arco.chat
+    channel: latest

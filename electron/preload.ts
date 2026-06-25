@@ -20,7 +20,10 @@ import {
   type ChatDoneEvent,
   type ChatErrorEvent,
   type ArcoApi,
-  type SummaryStartRequest
+  type SummaryStartRequest,
+  type UpdateInfoPayload,
+  type UpdateProgressPayload,
+  type UpdateErrorPayload
 } from '@shared/api-contract'
 
 /**
@@ -93,6 +96,16 @@ const api: ArcoApi = {
     activate: (key) => ipcRenderer.invoke(CHANNELS.license.activate, key),
     getDeviceId: () => ipcRenderer.invoke(CHANNELS.license.getDeviceId),
     getCheckoutUrl: () => ipcRenderer.invoke(CHANNELS.license.getCheckoutUrl)
+  },
+
+  updater: {
+    check: () => ipcRenderer.invoke(CHANNELS.updater.check),
+    download: () => ipcRenderer.invoke(CHANNELS.updater.download),
+    install: () => ipcRenderer.invoke(CHANNELS.updater.install),
+    onAvailable: (cb) => subscribe<UpdateInfoPayload>(CHANNELS.updater.available, cb),
+    onProgress: (cb) => subscribe<UpdateProgressPayload>(CHANNELS.updater.progress, cb),
+    onDownloaded: (cb) => subscribe<UpdateInfoPayload>(CHANNELS.updater.downloaded, cb),
+    onError: (cb) => subscribe<UpdateErrorPayload>(CHANNELS.updater.error, cb)
   }
 }
 

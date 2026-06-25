@@ -21,6 +21,7 @@ import { isDev } from './config/env'
 import { registerIpcHandlers } from './ipc'
 import { getDb } from './db/client'
 import { buildAppMenu } from './window-menu'
+import { initAutoUpdater } from './updater'
 
 // Set the product name early so app.getPath('userData') resolves to a stable,
 // branded folder in both dev and production.
@@ -129,6 +130,7 @@ app.whenReady().then(() => {
   buildAppMenu({ devTools: isDev() })
   applyContentSecurityPolicy()
   createWindow()
+  initAutoUpdater()
 
   // macOS: re-create a window when the dock icon is clicked and none are open.
   app.on('activate', () => {
