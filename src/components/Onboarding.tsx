@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSavedModels } from '@/hooks/useSavedModels'
 import { api } from '@/lib/api'
+import { posthog } from '@/lib/analytics'
 import { ONBOARDING_MIN_MODELS, ONBOARDING_SUGGESTED_MODELS } from '@shared/models'
 import type { SavedModel } from '@shared/types'
 import { AlertCircle, ArrowRight, ExternalLink, LayoutGrid, Loader2 } from 'lucide-react'
@@ -75,6 +76,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
 
     const result = await api.settings.saveKey(key)
     if (result.ok) {
+      posthog.capture('onboarding_key_saved')
       setStep('model-selection')
       setApiKeyPhase('enter')
     } else {
@@ -90,6 +92,9 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
 
     try {
       await api.settings.completeOnboarding()
+      posthog.capture('onboarding_models_saved', {
+        models: savedModels.map((m) => m.openRouterModelId)
+      })
       onComplete()
     } catch {
       setSaveError('Could not finish onboarding. Please try again.')
@@ -118,7 +123,7 @@ export function Onboarding({ onComplete, initialStep = 'api-key' }: Props) {
           </div>
 
           <div className="rounded-xl border border-border p-4">
-            <ModelManagerPanel />
+            <ModelManagerPanel showExploreLink />
           </div>
 
           <p className="text-sm text-center text-muted-foreground">

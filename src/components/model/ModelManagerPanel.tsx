@@ -19,7 +19,7 @@ import { Loader2 } from 'lucide-react'
  *
  * @returns the model manager panel UI
  */
-export function ModelManagerPanel() {
+export function ModelManagerPanel({ showExploreLink = false }: { showExploreLink?: boolean }) {
   const { savedModels, loading, add, remove } = useSavedModels()
   const listScrollRef = useRef<HTMLDivElement>(null)
   const scrollToTopAfterAddRef = useRef(false)
@@ -78,6 +78,7 @@ export function ModelManagerPanel() {
           onAdd={handleAdd}
           disabled={loading}
           existingOpenRouterModelIds={savedOpenRouterModelIds(savedModels)}
+          showExploreLink={showExploreLink}
         />
       </div>
     </div>

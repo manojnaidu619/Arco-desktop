@@ -6,12 +6,12 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import { randomHexColor } from '@shared/models'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { AlertCircle, Loader2, Plus } from 'lucide-react'
+import { AlertCircle, ExternalLink, Loader2, Plus } from 'lucide-react'
+import { useState } from 'react'
 
 interface Props {
   /** Called with a validated OpenRouter model ID and chosen color after OpenRouter confirms it exists. */
@@ -21,13 +21,16 @@ interface Props {
   placeholder?: string
   /** OpenRouter model IDs already present — blocks duplicate adds with an inline message. */
   existingOpenRouterModelIds?: string[]
+  /** Show a link to browse models on openrouter.ai. */
+  showExploreLink?: boolean
 }
 
 export function ModelInput({
   onAdd,
   disabled = false,
   placeholder = 'openai/gpt-4o',
-  existingOpenRouterModelIds = []
+  existingOpenRouterModelIds = [],
+  showExploreLink = false
 }: Props) {
   const [value, setValue] = useState('')
   const [color, setColor] = useState(randomHexColor)
@@ -113,6 +116,20 @@ export function ModelInput({
       )}
       <p className="text-[11px] text-muted-foreground">
         Paste any OpenRouter model ID (e.g. openai/gpt-4o or anthropic/claude-opus-4.8)
+        {showExploreLink && (
+          <>
+            {' · '}
+            <a
+              href="https://openrouter.ai/models"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-foreground inline-flex items-center gap-0.5"
+            >
+              Explore models
+              <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          </>
+        )}
       </p>
     </div>
   )

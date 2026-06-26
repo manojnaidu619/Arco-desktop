@@ -10,9 +10,13 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import ReactDOM from 'react-dom/client'
-import './index.css'
 import { App } from './App'
 import { ThemeProvider } from './components/providers/ThemeProvider'
+import './index.css'
+import { initAnalytics } from './lib/analytics'
+
+// Initialize posthog analytics
+initAnalytics()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <ThemeProvider>

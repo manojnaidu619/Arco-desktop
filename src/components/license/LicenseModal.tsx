@@ -14,6 +14,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { Button } from '@/components/ui/button'
+import { posthog } from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { Check, ExternalLink, Loader2, Sparkles, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -45,6 +46,7 @@ export function LicenseModal({ onClose, onActivated }: Props) {
 
   function openCheckout() {
     if (!checkoutUrl) return
+    posthog.capture('upgrade_clicked')
     window.open(checkoutUrl, '_blank', 'noopener,noreferrer')
   }
 
@@ -59,12 +61,14 @@ export function LicenseModal({ onClose, onActivated }: Props) {
       const result = await api.license.activate(trimmed)
       setResultMessage(result.message)
       setResultOk(result.ok)
+      posthog.capture('license_activated', { status: result.ok ? 'success' : 'failure', key: trimmed })
       if (result.ok) {
         onActivated()
       }
     } catch {
       setResultMessage('Something went wrong. Please try again.')
       setResultOk(false)
+      posthog.capture('license_activated', { status: 'failure', key: trimmed })
     } finally {
       setActivating(false)
     }

@@ -70,6 +70,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useSavedModels } from '@/hooks/useSavedModels'
+import { posthog } from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { getModelDef, isModelInLibrary } from '@shared/models'
 import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
@@ -583,6 +584,10 @@ export function useChat() {
       if (!titleSet.current && sid !== null) {
         titleSet.current = true
         api.sessions.setTitle(sid, content).then(refreshSessions)
+        posthog.capture('new_conversation_started', {
+          id: sid,
+          models: visible.map((p) => p.openRouterModelId)
+        })
       }
 
       for (const pane of visible) {
@@ -713,6 +718,7 @@ export function useChat() {
       if (isAnyStreaming()) return
       const wasActive = targetId === sessionIdRef.current
       await api.sessions.delete(targetId)
+      posthog.capture('conversation_deleted', { id: targetId })
       if (wasActive) {
         cancelStreams()
         titleSet.current = false

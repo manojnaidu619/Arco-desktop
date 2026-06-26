@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { posthog } from '@/lib/analytics'
 import type { BalanceInfo } from '@shared/api-contract'
 import { Button } from '@/components/ui/button'
 import { Loader2, LogOut, X } from 'lucide-react'
@@ -38,6 +39,7 @@ export function SettingsDialog({ onKeyCleared, onClose }: Props) {
 
   const removeKey = async () => {
     await api.settings.clearKey()
+    posthog.capture('api_key_removed')
     onKeyCleared()
   }
 
