@@ -3,6 +3,13 @@
  * that covers the model grid without changing its layout. User picks a model,
  * taps Generate / Regenerate, and sees a streaming structured comparison.
  *
+ * {@link SummaryTab} sits on the divider above the main composer. It stays
+ * icon-only by default, expands on hover/focus, and briefly auto-expands with
+ * a glow + border pulse when MainApp signals a freshly completed multi-model
+ * exchange (see `summarizeTabHighlight` in MainApp).
+ *
+ * Attention animation styles live in `src/index.css` (`.summary-tab-attention-*`).
+ *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
@@ -62,29 +69,149 @@ const markdownStyles = {
 /** Slide animation duration — keep MainApp unmount delay in sync. */
 export const SUMMARY_OVERLAY_ANIM_MS = 300
 
-/** Tab handle anchored to the top edge of the composer section. */
-export function SummaryTab({ open, onClick }: { open: boolean; onClick: () => void }) {
+/** How long the tab stays auto-expanded and animates after MainApp sets `highlight`. */
+const SUMMARY_TAB_HIGHLIGHT_MS = 2200
+
+/** Delay before collapsing hover-expanded label — avoids flicker when moving to click. */
+const HOVER_COLLAPSE_DELAY_MS = 200
+
+interface SummaryTabProps {
+  /** True while the summary slide-up panel is open. Keeps the tab fully expanded. */
+  open: boolean
+  onClick: () => void
+  /**
+   * One-shot attention cue from MainApp after a live multi-model generation
+   * finishes. Drives icon wiggle, soft border pulse, and auto-expand of the
+   * "Summarize" label for {@link SUMMARY_TAB_HIGHLIGHT_MS}. Not set on app
+   * load or when restoring an existing session.
+   */
+  highlight?: boolean
+  /** Called when the highlight sequence ends so MainApp can clear its flag. */
+  onHighlightComplete?: () => void
+}
+
+/**
+ * Tab handle anchored to the top edge of the composer section.
+ *
+ * Collapsed: sparkles icon only (compact, low visual weight in multi-pane grids).
+ * Expanded: icon + "Summarize" + chevron — on hover, keyboard focus, while the
+ * overlay is open, or during the post-generation highlight sequence.
+ */
+export function SummaryTab({
+  open,
+  onClick,
+  highlight = false,
+  onHighlightComplete
+}: SummaryTabProps) {
+  /** User-initiated expand via hover or focus. */
+  const [hoverExpanded, setHoverExpanded] = useState(false)
+  /** Auto-expand during the post-generation highlight; cleared after {@link SUMMARY_TAB_HIGHLIGHT_MS}. */
+  const [attentionExpanded, setAttentionExpanded] = useState(false)
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const isExpanded = open || hoverExpanded || attentionExpanded
+
+  // Hover collapse is deferred (see scheduleCollapse). If the pointer re-enters
+  // the tab before the delay fires, we cancel the pending collapse so the label
+  // doesn't flicker shut while the user is moving toward the button.
+  const clearCollapseTimer = () => {
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current)
+      collapseTimerRef.current = null
+    }
+  }
+
+  // Reveal "Summarize" on hover/focus and cancel any scheduled collapse.
+  const expand = () => {
+    clearCollapseTimer()
+    setHoverExpanded(true)
+  }
+
+  const scheduleCollapse = () => {
+    // Don't collapse mid-highlight — label should stay visible for the full cue.
+    if (open || attentionExpanded) return
+    clearCollapseTimer()
+    collapseTimerRef.current = setTimeout(() => setHoverExpanded(false), HOVER_COLLAPSE_DELAY_MS)
+  }
+
+  useEffect(() => {
+    return () => clearCollapseTimer()
+  }, [])
+
+  // Post-generation attention sequence — driven by MainApp's `summarizeTabHighlight`.
+  //
+  // When `highlight` flips true (multi-model generation just finished):
+  //   1. Auto-expand the tab label alongside the icon/border CSS animations.
+  //   2. Hold expanded for SUMMARY_TAB_HIGHLIGHT_MS (~2.2s).
+  //   3. Collapse back to icon-only and call onHighlightComplete so MainApp
+  //      clears its flag — prevents the cue from replaying on re-render.
+  //
+  // When `highlight` is cleared early (e.g. user sends another message):
+  //   reset attentionExpanded immediately so the tab doesn't stay open.
+  //
+  // Cleanup cancels the timer if highlight toggles off before the sequence ends.
+  useEffect(() => {
+    if (!highlight) {
+      setAttentionExpanded(false)
+      return
+    }
+
+    setAttentionExpanded(true)
+    const timer = setTimeout(() => {
+      setAttentionExpanded(false)
+      onHighlightComplete?.()
+    }, SUMMARY_TAB_HIGHLIGHT_MS)
+
+    return () => clearTimeout(timer)
+  }, [highlight, onHighlightComplete])
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={open ? 'Close summary' : 'Summarize the latest responses'}
-      className={cn(
-        'absolute left-1/2 -translate-x-1/2 -top-3 z-20',
-        'flex items-center gap-1.5 px-4 py-1 rounded-t-lg',
-        'border border-b-0 border-border shadow-sm text-sm font-medium',
-        'transition-colors',
-        open ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/80'
-      )}
-    >
-      <Sparkles className={cn('h-3.5 w-3.5', !open && 'text-amber-500')} />
-      Summarize
-      {open ? (
-        <ChevronDown className="h-3.5 w-3.5" />
-      ) : (
-        <ChevronUp className="h-3.5 w-3.5" />
-      )}
-    </button>
+    <div className="absolute left-1/2 -translate-x-1/2 -top-3 z-20">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={open ? 'Close summary' : 'Summarize the latest responses'}
+        title={open ? 'Close summary' : 'Summarize the latest responses'}
+        onMouseEnter={expand}
+        onMouseLeave={scheduleCollapse}
+        onFocus={expand}
+        onBlur={scheduleCollapse}
+        className={cn(
+          'relative flex items-center rounded-t-lg',
+          // Let icon wiggle and border ring extend outside the tab during highlight.
+          highlight && !open ? 'overflow-visible' : 'overflow-hidden',
+          'border border-b-0 border-border shadow-sm text-sm font-medium',
+          'transition-[padding,gap,background-color] duration-200 ease-out',
+          isExpanded ? 'gap-1.5 px-3 py-1' : 'px-3.5 py-1.5',
+          open ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/80',
+          highlight && !open && 'summary-tab-attention-border'
+        )}
+      >
+        <Sparkles
+          className={cn(
+            'h-3.5 w-3.5 shrink-0',
+            !open && 'text-amber-500',
+            highlight && !open && 'animate-summary-tab-attention'
+          )}
+        />
+        {/* Label width animates via max-width — icon-only when collapsed. */}
+        <span
+          className={cn(
+            'flex items-center gap-1.5 overflow-hidden whitespace-nowrap',
+            'transition-[max-width,opacity] duration-200 ease-out',
+            isExpanded ? 'max-w-32 opacity-100' : 'max-w-0 opacity-0'
+          )}
+          aria-hidden={!isExpanded}
+        >
+          Summarize
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+          )}
+        </span>
+      </button>
+    </div>
   )
 }
 

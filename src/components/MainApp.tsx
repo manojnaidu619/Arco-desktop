@@ -83,7 +83,10 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   const [summaryOpenRouterModelId, setSummaryOpenRouterModelId] = useState<string | null>(null)
   const [summaryContent, setSummaryContent] = useState('')
   const [summaryStreaming, setSummaryStreaming] = useState(false)
+  const [summarizeTabHighlight, setSummarizeTabHighlight] = useState(false)
   const summaryRequestIdRef = useRef<string | null>(null)
+  const prevIsAnyStreamingRef = useRef(false)
+  const skipSummarizeHighlightRef = useRef(true)
 
   const visiblePanes = useMemo(() => panes.slice(0, layout), [panes, layout])
   const activeCount = useMemo(() => visiblePanes.filter((p) => p.openRouterModelId).length, [visiblePanes])
@@ -122,6 +125,23 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   // but never while a pane is expanded (even mid-overlay teardown).
   const showSummarizeTabArea =
     expandedSlot === null && (showSummarizeTab || summaryOverlayMounted)
+
+  // Pulse the summarize tab only when a live generation finishes — not on app load
+  // or when restoring a session that already has comparable replies.
+  useEffect(() => {
+    const wasStreaming = prevIsAnyStreamingRef.current
+    prevIsAnyStreamingRef.current = isAnyStreaming
+
+    if (skipSummarizeHighlightRef.current) {
+      skipSummarizeHighlightRef.current = false
+      return
+    }
+
+    if (wasStreaming && !isAnyStreaming && showSummarizeTab) {
+      setSummarizeTabHighlight(true)
+    }
+    if (!showSummarizeTab) setSummarizeTabHighlight(false)
+  }, [showSummarizeTab, isAnyStreaming])
 
   const resetSummaryState = () => {
     setSummaryContent('')
@@ -420,7 +440,12 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
               }`}
           >
             {showSummarizeTabArea && (
-              <SummaryTab open={summaryOverlayOpen} onClick={toggleSummaryOverlay} />
+              <SummaryTab
+                open={summaryOverlayOpen}
+                onClick={toggleSummaryOverlay}
+                highlight={summarizeTabHighlight}
+                onHighlightComplete={() => setSummarizeTabHighlight(false)}
+              />
             )}
             <ChatBar
               value={composerValue}

@@ -188,3 +188,73 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: var(--muted-foreground);
 }
+
+/* SummaryTab attention cue — paired with SUMMARY_TAB_HIGHLIGHT_MS in SummaryOverlay.tsx */
+@keyframes summary-tab-attention {
+    0%,
+    100% {
+        transform: rotate(0deg) scale(1);
+        filter: drop-shadow(0 0 0 transparent);
+    }
+    25% {
+        transform: rotate(-10deg) scale(1.15);
+        filter: drop-shadow(0 0 6px rgb(245 158 11 / 0.8));
+    }
+    50% {
+        transform: rotate(10deg) scale(1.2);
+        filter: drop-shadow(0 0 8px rgb(245 158 11 / 0.9));
+    }
+    75% {
+        transform: rotate(-6deg) scale(1.1);
+        filter: drop-shadow(0 0 4px rgb(245 158 11 / 0.6));
+    }
+}
+
+.animate-summary-tab-attention {
+    animation: summary-tab-attention 2.2s ease-in-out 1;
+}
+
+/* Soft amber border + glow pulse on the tab while the icon animates. */
+@keyframes summary-tab-border {
+    0%,
+    100% {
+        border-color: var(--border);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+    }
+    50% {
+        border-color: rgb(245 158 11 / 0.42);
+        box-shadow:
+            0 0 0 1px rgb(245 158 11 / 0.1),
+            0 0 14px rgb(245 158 11 / 0.14);
+    }
+}
+
+.summary-tab-attention-border {
+    animation: summary-tab-border 2.2s ease-in-out 1;
+}
+
+.summary-tab-attention-border::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    bottom: 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: inherit;
+    pointer-events: none;
+    animation: summary-tab-border-ring 2.2s ease-in-out 1;
+}
+
+@keyframes summary-tab-border-ring {
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(1);
+        border-color: transparent;
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.04);
+        border-color: rgb(245 158 11 / 0.28);
+    }
+}
