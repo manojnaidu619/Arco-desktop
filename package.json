@@ -14,8 +14,7 @@
         "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
         "typecheck": "npm run typecheck:node && npm run typecheck:web",
         "db:generate": "drizzle-kit generate",
-        "dist:mac": "electron-vite build && electron-builder --mac",
-        "release:mac": ". ./.env.release && electron-vite build && electron-builder --mac --arm64 --publish never",
+        "release:mac": ". ./.env.release && rm -rf dist out && electron-vite build && electron-builder --mac --arm64 --publish never",
         "postrelease:mac": "bash scripts/verify-release.sh",
         "publish:mac": ". ./.env.release && node scripts/upload-release.mjs",
         "postinstall": "electron-builder install-app-deps"

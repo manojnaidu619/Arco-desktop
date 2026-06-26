@@ -10,7 +10,7 @@
  *
  * Uploads from ./dist in this order (deliberate — the manifest goes LAST so
  * clients never see a `latest-mac.yml` pointing at a zip that's still
- * uploading):
+ * uploading). Artifact names are derived from `package.json` → `version`:
  *   1. Arco-<version>-arm64-mac.zip       (auto-update payload)
  *   2. Arco-<version>-arm64.dmg           (new-user installer)
  *   3. Arco-<version>-arm64-mac.zip.blockmap (delta-update chunk map)
@@ -20,14 +20,45 @@
  * with progress reporting — handles large DMGs (~200MB) without buffering
  * the whole file in memory.
  */
-import { createReadStream, statSync, existsSync, readdirSync } from 'node:fs'
+import { createReadStream, statSync, existsSync, readFileSync } from 'node:fs'
 import { join, basename, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { S3Client } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DIST_DIR = join(__dirname, '..', 'dist')
+const ROOT_DIR = join(__dirname, '..')
+const DIST_DIR = join(ROOT_DIR, 'dist')
+
+/** Artifact names follow electron-builder's default: Arco-<version>-arm64-* */
+function readPackageVersion() {
+  const pkgPath = join(ROOT_DIR, 'package.json')
+  const { version } = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  if (!version) {
+    console.error(`error: no "version" field in ${pkgPath}`)
+    process.exit(1)
+  }
+  return version
+}
+
+function releaseArtifactPaths(version) {
+  const zip = join(DIST_DIR, `Arco-${version}-arm64-mac.zip`)
+  const dmg = join(DIST_DIR, `Arco-${version}-arm64.dmg`)
+  const blockmap = join(DIST_DIR, `Arco-${version}-arm64-mac.zip.blockmap`)
+  return { zip, dmg, blockmap }
+}
+
+function requireArtifact(path, label, version) {
+  if (!existsSync(path)) {
+    console.error(`error: ${label} not found at ${path}`)
+    console.error(`       Expected version ${version} from package.json.`)
+    console.error("       Run 'npm run release:mac' after bumping the version.")
+    process.exit(1)
+  }
+  return path
+}
+
+const UPDATE_MANIFEST_URL = 'https://updates.arco.chat/latest-mac.yml'
 
 function requireEnv(name) {
   const value = process.env[name]
@@ -54,15 +85,12 @@ if (!existsSync(MANIFEST)) {
   process.exit(1)
 }
 
-const files = readdirSync(DIST_DIR)
-const dmg = files.find((f) => f.endsWith('.dmg'))
-const zip = files.find((f) => f.endsWith('-mac.zip'))
-const blockmap = files.find((f) => f.endsWith('-mac.zip.blockmap'))
+const version = readPackageVersion()
+const { zip, dmg, blockmap } = releaseArtifactPaths(version)
 
-if (!dmg || !zip) {
-  console.error(`error: could not find .dmg or *-mac.zip in ${DIST_DIR}`)
-  process.exit(1)
-}
+requireArtifact(zip, 'Auto-update zip', version)
+requireArtifact(dmg, 'DMG installer', version)
+// blockmap is optional for delta updates — upload when present.
 
 const CONTENT_TYPES = {
   '.dmg': 'application/x-apple-diskimage',
@@ -125,22 +153,50 @@ async function uploadFile(localPath) {
   process.stdout.write(`  ✓ done\n`)
 }
 
+/** Fetch the public manifest and print it so we know the release is live. */
+async function verifyLiveManifest(expectedVersion) {
+  console.log('Verifying live manifest...')
+  console.log(`  GET ${UPDATE_MANIFEST_URL}`)
+  console.log()
+
+  const res = await fetch(UPDATE_MANIFEST_URL, { cache: 'no-store' })
+  if (!res.ok) {
+    throw new Error(`manifest request failed (${res.status} ${res.statusText})`)
+  }
+
+  const body = await res.text()
+  console.log(body.trimEnd())
+  console.log()
+
+  const match = body.match(/^version:\s*(\S+)/m)
+  const liveVersion = match?.[1]
+
+  if (liveVersion === expectedVersion) {
+    console.log(`✓ Live manifest reports version ${liveVersion}`)
+    return
+  }
+
+  console.warn(
+    `⚠ Expected version ${expectedVersion} but live manifest shows ${liveVersion ?? '(missing)'}`
+  )
+  console.warn('  CDN propagation can take a few seconds — re-run the GET above if this looks stale.')
+}
+
 async function main() {
-  console.log(`Uploading release artifacts to R2 bucket '${R2_BUCKET}'...`)
+  console.log(`Uploading v${version} release artifacts to R2 bucket '${R2_BUCKET}'...`)
   console.log()
 
   // Manifest goes LAST. Order of the rest is the natural read order for an
   // update client (zip first, then blockmap, then dmg for completeness).
-  await uploadFile(join(DIST_DIR, zip))
-  if (blockmap) {
-    await uploadFile(join(DIST_DIR, blockmap))
+  await uploadFile(zip)
+  if (existsSync(blockmap)) {
+    await uploadFile(blockmap)
   }
-  await uploadFile(join(DIST_DIR, dmg))
+  await uploadFile(dmg)
   await uploadFile(MANIFEST)
 
   console.log()
-  console.log('Done. Verify with:')
-  console.log('  curl https://updates.arco.chat/latest-mac.yml')
+  await verifyLiveManifest(version)
 }
 
 main().catch((err) => {
