@@ -26,7 +26,7 @@ by Apple, and auto-updated via Cloudflare R2.
   └───────────────┘
 ```
 
-- **Code signing** uses a *Developer ID Application* certificate from your
+- **Code signing** uses a _Developer ID Application_ certificate from your
   login Keychain (Team ID `Z6N26D2QCX`). Auto-discovered by electron-builder
   via `CSC_IDENTITY_AUTO_DISCOVERY=true`.
 - **Notarization** uses an App Store Connect API key (`.p8` file +
@@ -40,16 +40,16 @@ by Apple, and auto-updated via Cloudflare R2.
 
 ### Key files
 
-| File | Purpose |
-|---|---|
-| [electron-builder.yml](../electron-builder.yml) | Packaging, signing, notarize, publish target |
-| [build/entitlements.mac.plist](../build/entitlements.mac.plist) | Hardened-runtime entitlements (JIT, etc.) |
-| [electron/updater.ts](../electron/updater.ts) | Main-process auto-update wiring |
-| [src/components/UpdateDialog.tsx](../src/components/UpdateDialog.tsx) | Renderer update UI |
-| [scripts/upload-release.mjs](../scripts/upload-release.mjs) | Uploads dist/ artifacts to R2 (Node, via `@aws-sdk/client-s3`) |
-| [scripts/verify-release.sh](../scripts/verify-release.sh) | Auto-runs after `release:mac`; checks signature + notarization |
-| `.env.release` (gitignored) | Apple + R2 secrets, sourced by `release:mac` and `publish:mac` |
-| [.env.release.example](../.env.release.example) | Template for `.env.release` |
+| File                                                                  | Purpose                                                        |
+| --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [electron-builder.yml](../electron-builder.yml)                       | Packaging, signing, notarize, publish target                   |
+| [build/entitlements.mac.plist](../build/entitlements.mac.plist)       | Hardened-runtime entitlements (JIT, etc.)                      |
+| [electron/updater.ts](../electron/updater.ts)                         | Main-process auto-update wiring                                |
+| [src/components/UpdateDialog.tsx](../src/components/UpdateDialog.tsx) | Renderer update UI                                             |
+| [scripts/upload-release.mjs](../scripts/upload-release.mjs)           | Uploads dist/ artifacts to R2 (Node, via `@aws-sdk/client-s3`) |
+| [scripts/verify-release.sh](../scripts/verify-release.sh)             | Auto-runs after `release:mac`; checks signature + notarization |
+| `.env.release` (gitignored)                                           | Apple + R2 secrets, sourced by `release:mac` and `publish:mac` |
+| [.env.release.example](../.env.release.example)                       | Template for `.env.release`                                    |
 
 ---
 
@@ -62,14 +62,14 @@ credentials.
 
 1. **Developer ID Application certificate** created at
    https://developer.apple.com/account/resources/certificates/list →
-   *Developer ID Application* → *G2 Sub-CA*. Installed in login Keychain.
+   _Developer ID Application_ → _G2 Sub-CA_. Installed in login Keychain.
    Verify with `security find-identity -v -p codesigning`.
 2. **Apple Developer ID G2 intermediate certificate** installed from
    https://www.apple.com/certificateauthority/ (otherwise Keychain shows
    "not trusted").
 3. **App Store Connect API key** created at
    https://appstoreconnect.apple.com/access/integrations/api → Team Keys →
-   *Developer* access. `.p8` downloaded **once** (no second chance) and
+   _Developer_ access. `.p8` downloaded **once** (no second chance) and
    stored at `~/Documents/arco-certificates/AuthKey_<KeyID>.p8`.
 4. **Team ID** `Z6N26D2QCX` — hard-coded in [electron-builder.yml](../electron-builder.yml).
 
@@ -124,30 +124,30 @@ open dist/Arco-0.1.0-arm64.dmg
 
 1. **Bump `package.json` version** to the candidate, e.g. `0.1.0` → `0.1.1`.
 2. **Build the new version:**
-   ```bash
-   npm run release:mac
-   ```
-   This produces `dist/Arco-0.1.1-arm64-mac.zip`, the `.dmg`, the
-   `.blockmap`, and `latest-mac.yml`.
+    ```bash
+    npm run release:mac
+    ```
+    This produces `dist/Arco-0.1.1-arm64-mac.zip`, the `.dmg`, the
+    `.blockmap`, and `latest-mac.yml`.
 3. **Serve `dist/` over HTTP** in a separate terminal:
-   ```bash
-   cd dist && python3 -m http.server 8080
-   ```
-   Any static server works — `npx serve -p 8080`, `caddy file-server`, etc.
+    ```bash
+    cd dist && python3 -m http.server 8080
+    ```
+    Any static server works — `npx serve -p 8080`, `caddy file-server`, etc.
 4. **Quit any running copy of Arco** (Cmd+Q or `pkill -x Arco`). The
    override is read at process start; relaunching is mandatory.
 5. **Launch the installed v0.1.0 with the override:**
-   ```bash
-   ARCO_UPDATE_FEED_URL=http://localhost:8080 \
-     /Applications/Arco.app/Contents/MacOS/Arco
-   ```
-   > Launching the binary directly (not via `open`) keeps the env var in
-   > scope. `open -a Arco` would drop it.
+    ```bash
+    ARCO_UPDATE_FEED_URL=http://localhost:8080 \
+      /Applications/Arco.app/Contents/MacOS/Arco
+    ```
+    > Launching the binary directly (not via `open`) keeps the env var in
+    > scope. `open -a Arco` would drop it.
 6. **Watch the flow.** Within ~5 seconds:
-   - "Update available" dialog appears → click **Download**
-   - Progress bar advances as the zip streams from localhost
-   - "Restart and install" appears → click it
-   - App quits, swaps itself in place, relaunches as v0.1.1
+    - "Update available" dialog appears → click **Download**
+    - Progress bar advances as the zip streams from localhost
+    - "Restart and install" appears → click it
+    - App quits, swaps itself in place, relaunches as v0.1.1
 7. **Verify** the title bar / About dialog shows the new version.
 
 ### Verifying the test setup is working
@@ -210,7 +210,12 @@ You don't need `.env.release` or any Apple credentials for `npm run dev` or
 
 ### 1. Bump the version
 
-Edit `package.json` → `"version"`. Follow semver:
+```bash
+npm pkg set version=<NEW_VERSION>
+```
+
+e.g. `npm pkg set version=0.1.1`. This updates `package.json` → `"version"`
+in place (equivalent to editing it by hand). Follow semver:
 
 - Patch (`0.1.0` → `0.1.1`) — bug fixes only
 - Minor (`0.1.1` → `0.2.0`) — new features, backwards-compatible
@@ -222,7 +227,7 @@ Edit `package.json` → `"version"`. Follow semver:
 ### 2. Commit and tag
 
 ```bash
-git add package.json package-lock.json
+git add package.json
 git commit -m "Release v<NEW_VERSION>"
 git tag v<NEW_VERSION>
 git push && git push --tags
@@ -243,11 +248,13 @@ most of that is Apple's notarization service scanning the bundle on their
 servers.
 
 Watch the log for these stages:
+
 1. `signing` — your local cert signs every binary
 2. `notarizing` — bundle uploaded to Apple, status polled
 3. `stapling` — notary ticket attached to the .app so it works offline
 
 Produces in `dist/`:
+
 - `Arco-<version>-arm64.dmg` — new-user installer
 - `Arco-<version>-arm64-mac.zip` — what existing users download to update
 - `Arco-<version>-arm64-mac.zip.blockmap` — enables delta updates
@@ -261,12 +268,12 @@ Produces in `dist/`:
 build finishes. The script runs four checks against
 `dist/mac-arm64/Arco.app`:
 
-| # | Check | Tool | What it proves |
-|---|---|---|---|
-| 1 | Signature details | `codesign -dv --verbose=4` | Identity, Team ID, and runtime flags are what you expect (informational) |
-| 2 | Signature integrity | `codesign --verify --deep --strict` | Every binary (including nested frameworks and native modules) is signed by the same identity, no tampering |
-| 3 | Gatekeeper assessment | `spctl -a -vvv -t install` | macOS itself would accept this app — the closest proxy for "what a user's Mac will do" |
-| 4 | Notarization ticket | `stapler validate` | Apple's notary ticket is stapled into the bundle, so Gatekeeper can verify offline |
+| #   | Check                 | Tool                                | What it proves                                                                                             |
+| --- | --------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | Signature details     | `codesign -dv --verbose=4`          | Identity, Team ID, and runtime flags are what you expect (informational)                                   |
+| 2   | Signature integrity   | `codesign --verify --deep --strict` | Every binary (including nested frameworks and native modules) is signed by the same identity, no tampering |
+| 3   | Gatekeeper assessment | `spctl -a -vvv -t install`          | macOS itself would accept this app — the closest proxy for "what a user's Mac will do"                     |
+| 4   | Notarization ticket   | `stapler validate`                  | Apple's notary ticket is stapled into the bundle, so Gatekeeper can verify offline                         |
 
 If all four pass, you see:
 
