@@ -252,9 +252,9 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
     }
   }, [showSummarizeTab, summaryOverlayMounted])
 
-  // Reset an out-of-range expansion when the layout shrinks.
+  // Reset expansion when the layout shrinks or switches to single pane (no expand control).
   useEffect(() => {
-    if (expandedSlot !== null && expandedSlot >= layout) setExpandedSlot(null)
+    if (expandedSlot !== null && (layout === 1 || expandedSlot >= layout)) setExpandedSlot(null)
   }, [layout, expandedSlot])
 
   // Esc collapses an expanded pane.
@@ -385,7 +385,8 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
                       key={pane.slot}
                       pane={pane}
                       isExpanded={false}
-                      onToggleExpand={() => setExpandedSlot(pane.slot)}
+                      showFollowUp={layout > 1}
+                      onToggleExpand={layout > 1 ? () => setExpandedSlot(pane.slot) : undefined}
                       onSelectModel={setPaneModel}
                       onAskOne={askOne}
                       onAbortPane={abortPane}

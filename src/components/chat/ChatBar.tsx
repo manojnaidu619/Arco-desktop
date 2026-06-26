@@ -69,7 +69,9 @@ export function ChatBar({
                 ? 'Generating… press ■ to stop'
                 : activeCount === 0
                   ? 'Pick a model in a pane to begin…'
-                  : `Ask all ${activeCount} model${activeCount > 1 ? 's' : ''} at once…`
+                  : activeCount === 1
+                    ? 'Ask a question…'
+                    : `Ask all ${activeCount} models at once…`
           }
           disabled={activeCount === 0 || locked}
           rows={2}
@@ -102,9 +104,13 @@ export function ChatBar({
             ? 'Composer paused while summary is open · close summary to continue chatting'
             : streaming
               ? 'Generating across panes · click stop to end generation'
-              : skippedCount > 0
-                ? `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} · ${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
-                : `Sending to ${activeCount} model${activeCount > 1 ? 's' : ''} simultaneously · Enter to send · Shift+Enter for newline`}
+              : activeCount === 1
+                ? skippedCount > 0
+                  ? `${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
+                  : 'Enter to send · Shift+Enter for newline'
+                : skippedCount > 0
+                  ? `Sending to ${activeCount} models · ${skippedCount} pane${skippedCount > 1 ? 's' : ''} skipped (removed from library) · Enter to send · Shift+Enter for newline`
+                  : `Sending to ${activeCount} models simultaneously · Enter to send · Shift+Enter for newline`}
         </p>
       )}
     </div>

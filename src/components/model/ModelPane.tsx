@@ -8,6 +8,7 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
+import { MessageBubble } from '@/components/chat/MessageBubble'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Pane } from '@/hooks/useChat'
@@ -16,20 +17,29 @@ import { cn } from '@/lib/utils'
 import { getModelDef, isModelInLibrary } from '@shared/models'
 import { AlertCircle, ArrowUp, Loader2, Maximize2, MessageSquare, Minimize2, Square } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { MessageBubble } from '@/components/chat/MessageBubble'
 import { ModelDropdown } from './ModelDropdown'
 
 interface Props {
   pane: Pane
   isExpanded?: boolean
   onToggleExpand?: () => void
+  /** Per-pane follow-up input — hidden in single-pane layout (main composer is enough). */
+  showFollowUp?: boolean
   onSelectModel: (slot: number, openRouterModelId: string) => void
   onAskOne: (slot: number, content: string) => void
   /** Stop this pane's stream. */
   onAbortPane: (slot: number) => void
 }
 
-export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectModel, onAskOne, onAbortPane }: Props) {
+export function ModelPane({
+  pane,
+  isExpanded = false,
+  onToggleExpand,
+  showFollowUp = true,
+  onSelectModel,
+  onAskOne,
+  onAbortPane
+}: Props) {
   const { savedModels } = useSavedModels()
   const [input, setInput] = useState('')
   const [showInput, setShowInput] = useState(false)
@@ -41,6 +51,11 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
   useEffect(() => {
     if (isRemoved) setShowInput(false)
   }, [isRemoved])
+
+  // Hide the follow-up input when the follow-up is disabled.
+  useEffect(() => {
+    if (!showFollowUp) setShowInput(false)
+  }, [showFollowUp])
 
   // Keep each pane pinned to the bottom (newest message). We jump instantly
   // (behavior 'auto') inside a layout effect so it lands at the bottom BEFORE
@@ -98,22 +113,24 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
               <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
             </span>
           )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className={cn('h-6 w-6 shrink-0 text-muted-foreground', showInput && 'bg-muted text-foreground')}
-            onClick={() => setShowInput((s) => !s)}
-            disabled={isRemoved}
-            title={
-              isRemoved
-                ? 'Follow-up unavailable — model removed from library'
-                : showInput
-                  ? 'Hide follow-up input'
-                  : 'Show follow-up input'
-            }
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </Button>
+          {showFollowUp && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={cn('h-6 w-6 shrink-0 text-muted-foreground', showInput && 'bg-muted text-foreground')}
+              onClick={() => setShowInput((s) => !s)}
+              disabled={isRemoved}
+              title={
+                isRemoved
+                  ? 'Follow-up unavailable — model removed from library'
+                  : showInput
+                    ? 'Hide follow-up input'
+                    : 'Show follow-up input'
+              }
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {onToggleExpand && (
             <Button
               size="icon"
@@ -170,7 +187,7 @@ export function ModelPane({ pane, isExpanded = false, onToggleExpand, onSelectMo
       </div>
 
       {/* Per-pane follow-up input (hidden until toggled) */}
-      {showInput && pane.openRouterModelId && !isRemoved && (
+      {showFollowUp && showInput && pane.openRouterModelId && !isRemoved && (
         <div className="flex gap-2 px-3 py-2.5 shrink-0">
           <Input
             value={input}
