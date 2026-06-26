@@ -7,14 +7,17 @@
  *  - markdownStyleOverrides → all Tailwind classes and layout (our theme)
  *
  * The same renderer runs while streaming and after completion; animation is
- * toggled via the animation prop. Both expose a copy button BELOW the bubble
- * that reveals on hover (assistant left-aligned, user right-aligned). The copy
- * row reserves its height so content never shifts.
+ * toggled via the animation prop. A meta row below each bubble reveals copy +
+ * timestamp on hover (user right-aligned, assistant left-aligned). Copy and
+ * timestamp share visibility: both hidden while an assistant message is
+ * streaming; both shown on hover once complete. The meta row reserves height
+ * so content never shifts.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useState, type ReactNode } from 'react'
 import type { Message } from '@shared/types'
+import { formatMessageTimestamp } from '@/lib/formatMessageTimestamp'
 import { cn } from '@/lib/utils'
 import { Check, Copy } from 'lucide-react'
 import { AnimatedMarkdown } from 'flowtoken'
@@ -219,6 +222,39 @@ const markdownStyleOverrides = {
   },
 }
 
+/** Hover-revealed timestamp + copy below a message bubble. */
+function MessageMetaActions({
+  createdAt,
+  copyButton,
+  align,
+  hidden = false,
+}: {
+  createdAt?: string
+  copyButton: React.ReactNode
+  align: 'start' | 'end'
+  /** When true (assistant mid-stream), render nothing — no copy, no timestamp. */
+  hidden?: boolean
+}) {
+  if (hidden) return null
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5',
+        align === 'end' ? 'justify-end' : '',
+        'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity',
+      )}
+    >
+      {createdAt && (
+        <time dateTime={createdAt} className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatMessageTimestamp(createdAt)}
+        </time>
+      )}
+      {copyButton}
+    </div>
+  )
+}
+
 export function MessageBubble({ message, isStreaming = false }: Props) {
   const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
@@ -239,7 +275,7 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
       onClick={copyResponse}
       title={copied ? 'Copied' : 'Copy message'}
       aria-label={copied ? 'Copied' : 'Copy message'}
-      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted"
     >
       {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
     </button>
@@ -251,7 +287,13 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
         <div className="bg-primary text-primary-foreground rounded-lg px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap break-words">
           {message.content}
         </div>
-        <div className="h-5 mt-1 flex items-center pr-0.5">{copyButton}</div>
+        <div className="h-5 mt-1 flex items-center pr-0.5">
+          <MessageMetaActions
+            createdAt={message.createdAt}
+            copyButton={copyButton}
+            align="end"
+          />
+        </div>
       </div>
     )
   }
@@ -286,7 +328,12 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
         {message.stopped && (
           <span className="text-xs text-muted-foreground">Generation stopped</span>
         )}
-        {!isStreaming && copyButton}
+        <MessageMetaActions
+          createdAt={message.createdAt}
+          copyButton={copyButton}
+          align="start"
+          hidden={isStreaming}
+        />
       </div>
     </div>
   )

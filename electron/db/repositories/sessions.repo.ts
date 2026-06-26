@@ -67,7 +67,7 @@ function buildSessionData(sessionId: number): SessionData {
     label: t.label,
     messages: allMessages
       .filter((m) => m.threadId === t.id)
-      .map((m) => ({ role: m.role as Role, content: m.content }))
+      .map((m) => ({ role: m.role as Role, content: m.content, createdAt: m.createdAt }))
   }))
 
   return { sessionId, layout, threads: threadData }

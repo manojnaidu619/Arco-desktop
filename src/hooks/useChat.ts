@@ -102,6 +102,9 @@ export interface Pane {
 /** Each streaming request gets a unique UUID so delta events route to the correct pane. */
 const generateRequestId = () => crypto.randomUUID()
 
+/** Current UTC timestamp as an ISO string (matches DB storage format). */
+const utcNow = () => new Date().toISOString()
+
 /**
  * Snap any number to the nearest valid layout preset (default 4).
  *
@@ -250,11 +253,22 @@ export function useChat() {
   const finalizeSlot = useCallback(
     async (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
+      const ts = utcNow()
       if (pane?.dbThreadId && content) await api.sessions.addMessage(pane.dbThreadId, 'assistant', content)
-      patchPane(slot, { status: 'done' })
+      setPanes((prev) =>
+        prev.map((p) => {
+          if (p.slot !== slot) return p
+          const msgs = [...p.messages]
+          const last = msgs.at(-1)
+          if (last?.role === 'assistant') {
+            msgs[msgs.length - 1] = { ...last, createdAt: ts }
+          }
+          return { ...p, messages: msgs, status: 'done' }
+        })
+      )
       refreshSessions()
     },
-    [patchPane, refreshSessions]
+    [refreshSessions]
   )
 
   /**
@@ -280,7 +294,7 @@ export function useChat() {
           if (p.slot !== slot) return p
           const msgs = [...p.messages]
           const last = msgs[msgs.length - 1]
-          if (last?.role === 'assistant') msgs[msgs.length - 1] = { role: 'assistant', content: last.content + delta }
+          if (last?.role === 'assistant') msgs[msgs.length - 1] = { ...last, content: last.content + delta }
           return { ...p, messages: msgs }
         })
       )
@@ -376,6 +390,7 @@ export function useChat() {
       const pane = panesRef.current.find((p) => p.slot === slot)
       const lastMsg = pane?.messages.at(-1)
       const partial = lastMsg?.role === 'assistant' ? lastMsg.content : ''
+      const ts = utcNow()
 
       setPanes((prev) =>
         prev.map((p) => {
@@ -384,7 +399,7 @@ export function useChat() {
           const assistant = msgs.at(-1)
           if (assistant?.role === 'assistant') {
             if (partial) {
-              msgs[msgs.length - 1] = { role: 'assistant', content: partial, stopped: true }
+              msgs[msgs.length - 1] = { role: 'assistant', content: partial, stopped: true, createdAt: ts }
             } else {
               msgs = msgs.slice(0, -1)
             }
@@ -591,7 +606,8 @@ export function useChat() {
       }
 
       for (const pane of visible) {
-        const updated: Message[] = [...pane.messages, { role: 'user', content }]
+        const ts = utcNow()
+        const updated: Message[] = [...pane.messages, { role: 'user', content, createdAt: ts }]
         if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
         patchPane(pane.slot, { messages: updated })
         startStream(pane.slot, pane.openRouterModelId!, updated)
@@ -612,7 +628,8 @@ export function useChat() {
     (slot: number, content: string) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
       if (!pane?.openRouterModelId || !isModelInLibrary(pane.openRouterModelId, savedModels)) return
-      const updated: Message[] = [...pane.messages, { role: 'user', content }]
+      const ts = utcNow()
+      const updated: Message[] = [...pane.messages, { role: 'user', content, createdAt: ts }]
       if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
       patchPane(slot, { messages: updated })
       startStream(slot, pane.openRouterModelId, updated)

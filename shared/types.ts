@@ -15,6 +15,8 @@ export type Role = 'user' | 'assistant'
 export interface Message {
   role: Role
   content: string
+  /** ISO-8601 UTC timestamp when the message was sent or saved. */
+  createdAt?: string
   /** True when the user stopped generation mid-stream (in-memory only for v1). */
   stopped?: boolean
 }
