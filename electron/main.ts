@@ -91,8 +91,8 @@ function createWindow(): void {
 /**
  * Lock down what the renderer is allowed to load/connect to, in production.
  * (Skipped in dev because Vite's HMR needs inline scripts and a websocket.)
- * The UI itself makes no network calls — all OpenRouter traffic goes through
- * the main process — so a tight policy is safe.
+ * The UI itself makes no network calls except to PostHog (analytics) — all
+ * OpenRouter traffic goes through the main process — so a tight policy is safe.
  */
 function applyContentSecurityPolicy(): void {
   if (RENDERER_DEV_URL) return
@@ -101,7 +101,7 @@ function applyContentSecurityPolicy(): void {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+          "default-src 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://*.posthog.com"
         ]
       }
     })
