@@ -22,6 +22,8 @@ interface Props {
   onNewSession: () => void
   onRenameSession: (id: number, title: string) => Promise<void>
   onDeleteSession: (id: number) => Promise<void>
+  /** Invoked when a free user clicks the (disabled) delete button — opens the upgrade modal. */
+  onDeleteLocked: () => void
   /** Opens the global settings/usage modal (footer gear menu). */
   onOpenSettings: () => void
   /** Whether Pro license is active on this device. */
@@ -37,6 +39,7 @@ export function Sidebar({
   onNewSession,
   onRenameSession,
   onDeleteSession,
+  onDeleteLocked,
   onOpenSettings,
   isLicenseActivated,
   onOpenLicense
@@ -116,6 +119,8 @@ export function Sidebar({
                 onClick={() => onSelectSession(session.id)}
                 onRename={(title) => onRenameSession(session.id, title)}
                 onDelete={() => onDeleteSession(session.id)}
+                deleteLocked={!isLicenseActivated}
+                onDeleteLocked={onDeleteLocked}
               />
             ))}
           </div>
@@ -147,13 +152,18 @@ function SessionItem({
   isActive,
   onClick,
   onRename,
-  onDelete
+  onDelete,
+  deleteLocked,
+  onDeleteLocked
 }: {
   session: SessionSummary
   isActive: boolean
   onClick: () => void
   onRename: (title: string) => Promise<void>
   onDelete: () => Promise<void>
+  /** Free-tier users can't delete — clicking the trash opens the upgrade modal instead. */
+  deleteLocked: boolean
+  onDeleteLocked: () => void
 }) {
   const { savedModels } = useSavedModels()
   const [hovered, setHovered] = useState(false)
@@ -261,14 +271,28 @@ function SessionItem({
           >
             <Pencil className="h-3 w-3" />
           </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-background transition-colors"
-            title="Delete"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+          {deleteLocked ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteLocked()
+              }}
+              className="p-1 rounded text-muted-foreground/50 cursor-not-allowed transition-colors"
+              title="Upgrade to Pro to delete conversations"
+              aria-label="Delete (Pro only)"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          ) : (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-background transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          )}
         </div>
       )}
     </div>

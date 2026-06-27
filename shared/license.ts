@@ -8,4 +8,4 @@
  */
 
 /** Max saved conversations on the free plan. */
-export const FREE_TIER_SESSION_LIMIT = 2
+export const FREE_TIER_SESSION_LIMIT = 3

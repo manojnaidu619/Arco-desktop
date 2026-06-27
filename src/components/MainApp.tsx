@@ -75,7 +75,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null)
   const [composerValue, setComposerValue] = useState('')
   const [streamingNavBlocked, setStreamingNavBlocked] = useState(false)
-  const [sessionLimitOpen, setSessionLimitOpen] = useState(false)
+  const [sessionLimitVariant, setSessionLimitVariant] = useState<'create' | 'delete' | null>(null)
 
   // Summary overlay — streams a structured comparison via IPC
   const [summaryOverlayOpen, setSummaryOverlayOpen] = useState(false)
@@ -296,7 +296,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
     closeSummaryOverlayImmediate()
     const result = await newSession()
     if (!result.ok && result.code === 'session_limit') {
-      setSessionLimitOpen(true)
+      setSessionLimitVariant('create')
     }
     setExpandedSlot(null)
   }
@@ -318,6 +318,10 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
     closeSummaryOverlayImmediate()
     await deleteSession(id)
     setExpandedSlot(null)
+  }
+
+  const handleDeleteLocked = () => {
+    setSessionLimitVariant('delete')
   }
 
   if (loading) {
@@ -343,6 +347,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
             onNewSession={handleNewSession}
             onRenameSession={renameSession}
             onDeleteSession={handleDeleteSession}
+            onDeleteLocked={handleDeleteLocked}
             onOpenSettings={onOpenSettings}
             isLicenseActivated={isLicenseActivated}
             onOpenLicense={onOpenLicense}
@@ -471,11 +476,12 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
           onClose={() => setStreamingNavBlocked(false)}
         />
       )}
-      {sessionLimitOpen && (
+      {sessionLimitVariant && (
         <SessionLimitModal
-          onClose={() => setSessionLimitOpen(false)}
+          variant={sessionLimitVariant}
+          onClose={() => setSessionLimitVariant(null)}
           onUpgrade={() => {
-            setSessionLimitOpen(false)
+            setSessionLimitVariant(null)
             onOpenLicense()
           }}
         />
