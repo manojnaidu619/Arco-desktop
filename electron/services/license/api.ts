@@ -6,12 +6,21 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
+import type { LicenseType } from '@shared/api-contract'
 import { getApiBaseUrl } from '../../config/env'
 
-/** Response shape for POST /api/licenses/activate */
+/**
+ * Response shape for POST /api/licenses/activate.
+ *
+ * This mirrors the backend route's response shape by convention only — there
+ * is no shared type-checking between the two repos, so keep this in sync
+ * with arco-web's app/api/licenses/activate/route.ts if either side changes.
+ */
 export interface LicenseApiResponse {
   isActivated: boolean
   expiresAt: string | null
+  /** Present on success; null on failure (no license context). */
+  type: LicenseType | null
   message: string
 }
 

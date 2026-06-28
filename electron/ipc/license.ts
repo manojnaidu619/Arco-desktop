@@ -1,5 +1,5 @@
 /**
- * IPC handlers for Pro license activation and status.
+ * IPC handlers for license activation and status (Pro or Unlimited).
  *
  * Flow:
  *   • getStatus   — read encrypted license.bin (local only, no server call)
@@ -30,7 +30,7 @@ export function registerLicenseHandlers(): void {
   ipcMain.handle(CHANNELS.license.getStatus, (): LicenseStatus => {
     const stored = licenseStore.readLicense()
     if (!stored) return { isActivated: false }
-    return { isActivated: true, key: stored.key }
+    return { isActivated: true, key: stored.key, type: stored.type }
   })
 
   ipcMain.handle(CHANNELS.license.getDeviceId, (): string => getDeviceId())
@@ -76,12 +76,14 @@ export function registerLicenseHandlers(): void {
         }
 
         if (body.isActivated) {
+          const type = body.type ?? 'pro'
           licenseStore.writeLicense({
             key: trimmed,
             activatedAt: new Date().toISOString(),
-            deviceId
+            deviceId,
+            type
           })
-          return { ok: true, message }
+          return { ok: true, message, type }
         }
 
         return { ok: false, message }

@@ -26,5 +26,5 @@ export function registerIpcHandlers(): void {
   registerChatHandlers()     // Streaming chat with OpenRouter
   registerSummaryHandlers()  // Multi-model response summarization
   registerSettingsHandlers() // API key + model library management
-  registerLicenseHandlers()  // Pro plan license activation
+  registerLicenseHandlers()  // License activation (Pro or Unlimited)
 }

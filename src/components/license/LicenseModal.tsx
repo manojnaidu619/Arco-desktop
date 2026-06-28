@@ -2,7 +2,7 @@
  * Upgrade / license activation modal.
  *
  * Two paths for users:
- *   1. Purchase Pro via the Arco pricing page (opens in the system browser)
+ *   1. Purchase a license (Pro or Unlimited) via the Arco pricing page (opens in the system browser)
  *   2. Activate an existing license key against the Arco license server
  *
  * Pricing and plan details live on the web pricing page so they can be updated
@@ -16,13 +16,14 @@
 import { Button } from '@/components/ui/button'
 import { posthog } from '@/lib/analytics'
 import { api } from '@/lib/api'
+import type { LicenseType } from '@shared/api-contract'
 import { Check, ExternalLink, Loader2, Sparkles, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface Props {
   onClose: () => void
   /** Called after successful activation so the parent can update badge / hide upgrade button. */
-  onActivated: () => void
+  onActivated: (type?: LicenseType) => void
 }
 
 export function LicenseModal({ onClose, onActivated }: Props) {
@@ -63,7 +64,7 @@ export function LicenseModal({ onClose, onActivated }: Props) {
       setResultOk(result.ok)
       posthog.capture('license_activated', { status: result.ok ? 'success' : 'failure', key: trimmed })
       if (result.ok) {
-        onActivated()
+        onActivated(result.type)
       }
     } catch {
       setResultMessage('Something went wrong. Please try again.')
@@ -114,14 +115,14 @@ export function LicenseModal({ onClose, onActivated }: Props) {
           <>
             <div className="flex items-center gap-2 mb-4 pr-8">
               <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Upgrade to Pro</h2>
+              <h2 className="text-sm font-semibold">Upgrade Arco</h2>
             </div>
 
             {/* Purchase section: pricing details live on the web pricing page */}
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Take Arco further with Pro. Full access, full control, with your data staying on
-                your device.
+                Take Arco further with a paid license. Full access, full control, with your data
+                staying on your device.
               </p>
               <Button
                 className="w-full"
@@ -129,7 +130,7 @@ export function LicenseModal({ onClose, onActivated }: Props) {
                 disabled={!checkoutUrl}
               >
                 <ExternalLink className="h-4 w-4" />
-                {checkoutUrl ? 'Unlock Pro' : 'Pricing unavailable'}
+                {checkoutUrl ? 'View plans' : 'Pricing unavailable'}
               </Button>
             </div>
 

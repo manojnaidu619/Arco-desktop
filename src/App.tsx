@@ -21,6 +21,7 @@ import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { LicenseModal } from '@/components/license/LicenseModal'
 import { UpdateDialog } from '@/components/UpdateDialog'
 import { SavedModelsProvider } from '@/hooks/useSavedModels'
+import type { LicenseType } from '@shared/api-contract'
 import { Loader2 } from 'lucide-react'
 
 export function App() {
@@ -30,6 +31,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [licenseOpen, setLicenseOpen] = useState(false)
   const [isLicenseActivated, setIsLicenseActivated] = useState(false)
+  const [licenseType, setLicenseType] = useState<LicenseType | undefined>(undefined)
 
   useEffect(() => {
     Promise.all([
@@ -41,11 +43,13 @@ export function App() {
         setHasKey(keyStatus.hasKey)
         setOnboardingComplete(completed)
         setIsLicenseActivated(licenseStatus.isActivated)
+        setLicenseType(licenseStatus.type)
       })
       .catch(() => {
         setHasKey(false)
         setOnboardingComplete(false)
         setIsLicenseActivated(false)
+        setLicenseType(undefined)
       })
   }, [])
 
@@ -75,12 +79,16 @@ export function App() {
           <MainApp
             onOpenSettings={() => setSettingsOpen(true)}
             isLicenseActivated={isLicenseActivated}
+            licenseType={licenseType}
             onOpenLicense={() => setLicenseOpen(true)}
           />
           {licenseOpen && (
             <LicenseModal
               onClose={() => setLicenseOpen(false)}
-              onActivated={() => setIsLicenseActivated(true)}
+              onActivated={(type) => {
+                setIsLicenseActivated(true)
+                setLicenseType(type)
+              }}
             />
           )}
           {settingsOpen && (

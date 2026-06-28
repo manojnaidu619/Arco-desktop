@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { useChat, type Pane } from '@/hooks/useChat'
 import { useSavedModels } from '@/hooks/useSavedModels'
 import { api } from '@/lib/api'
+import type { LicenseType } from '@shared/api-contract'
 import { isModelInLibrary } from '@shared/models'
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -46,10 +47,11 @@ function paneHasLatestExchange(pane: Pane): boolean {
 interface Props {
   onOpenSettings: () => void
   isLicenseActivated: boolean
+  licenseType?: LicenseType
   onOpenLicense: () => void
 }
 
-export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: Props) {
+export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpenLicense }: Props) {
   const {
     panes,
     layout,
@@ -350,6 +352,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, onOpenLicense }: P
             onDeleteLocked={handleDeleteLocked}
             onOpenSettings={onOpenSettings}
             isLicenseActivated={isLicenseActivated}
+            licenseType={licenseType}
             onOpenLicense={onOpenLicense}
           />
         </div>

@@ -10,6 +10,7 @@ import { SettingsMenu } from '@/components/settings/SettingsMenu'
 import { Button } from '@/components/ui/button'
 import { useSavedModels } from '@/hooks/useSavedModels'
 import { cn } from '@/lib/utils'
+import type { LicenseType } from '@shared/api-contract'
 import { resolveModelColor } from '@shared/models'
 import type { SessionSummary } from '@shared/types'
 import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
@@ -26,8 +27,10 @@ interface Props {
   onDeleteLocked: () => void
   /** Opens the global settings/usage modal (footer gear menu). */
   onOpenSettings: () => void
-  /** Whether Pro license is active on this device. */
+  /** Whether a license (Pro or Unlimited) is active on this device. */
   isLicenseActivated: boolean
+  /** Tier of the active license; ignored when isLicenseActivated is false. */
+  licenseType?: LicenseType
   /** Opens the upgrade / license activation modal (free users only). */
   onOpenLicense: () => void
 }
@@ -42,6 +45,7 @@ export function Sidebar({
   onDeleteLocked,
   onOpenSettings,
   isLicenseActivated,
+  licenseType,
   onOpenLicense
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -62,7 +66,7 @@ export function Sidebar({
         <img src={arcoLogo} alt="Arco" className="h-6 w-6 rounded-md shrink-0" />
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <span className="text-sm font-semibold truncate leading-none">Arco</span>
-          <LicenseBadge isActivated={isLicenseActivated} />
+          <LicenseBadge isActivated={isLicenseActivated} licenseType={licenseType} />
         </div>
         <Button
           size="icon"
@@ -134,10 +138,10 @@ export function Sidebar({
             variant="ghost"
             className="h-8 w-full justify-start gap-2 px-2 text-sm text-muted-foreground hover:text-foreground"
             onClick={onOpenLicense}
-            title="Upgrade to Pro"
+            title="Upgrade"
           >
             <Sparkles className="h-4 w-4 shrink-0" />
-            <span>Upgrade to Pro</span>
+            <span>Upgrade</span>
           </Button>
         )}
         <SettingsMenu onOpenUsage={onOpenSettings} openUp labeled />
@@ -278,8 +282,8 @@ function SessionItem({
                 onDeleteLocked()
               }}
               className="p-1 rounded text-muted-foreground/50 cursor-not-allowed transition-colors"
-              title="Upgrade to Pro to delete conversations"
-              aria-label="Delete (Pro only)"
+              title="Upgrade to delete conversations"
+              aria-label="Delete (upgrade required)"
             >
               <Trash2 className="h-3 w-3" />
             </button>

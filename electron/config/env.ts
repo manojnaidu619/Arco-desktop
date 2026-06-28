@@ -38,7 +38,7 @@ export function getApiBaseUrl(): string | null {
 }
 
 /**
- * Get the URL for the Pro plan checkout/pricing page.
+ * Get the URL for the Arco pricing page (Pro and Unlimited checkout).
  *
  * Constructs the full URL by combining the API base with the pricing path.
  * Returns null if the API base is not configured.

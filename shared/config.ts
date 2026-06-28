@@ -20,5 +20,5 @@ export const ARCO_WEBSITE_URL = 'https://arco.chat'
 /** Local Arco backend during development. */
 export const API_BASE_URL_DEV = 'http://localhost:3000'
 
-/** Website path for desktop Pro upgrade. */
+/** Website path for desktop license upgrade (Pro or Unlimited). */
 export const PRICING_PATH = '/pricing'

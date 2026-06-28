@@ -1,6 +1,6 @@
 /**
  * Modal shown when a free-tier user tries to create more than the allowed
- * number of saved conversations. Offers a path to upgrade to Pro.
+ * number of saved conversations. Offers a path to upgrade.
  * Follows the same overlay pattern as SettingsDialog.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
@@ -26,7 +26,7 @@ export function SessionLimitModal({ onClose, onUpgrade, variant = 'create' }: Pr
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  const title = variant === 'delete' ? 'Deleting is a Pro feature' : 'Conversation limit reached'
+  const title = variant === 'delete' ? 'Deleting requires a paid license' : 'Conversation limit reached'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={onClose}>
@@ -47,14 +47,14 @@ export function SessionLimitModal({ onClose, onUpgrade, variant = 'create' }: Pr
           {variant === 'delete' ? (
             <>
               The free plan caps you at {FREE_TIER_SESSION_LIMIT} saved conversations and doesn't
-              support deleting them. Upgrade to Pro for{' '}
+              support deleting them. Upgrade for{' '}
               <span className="font-semibold text-foreground">unlimited conversations</span> and
               full control to manage and delete.
             </>
           ) : (
             <>
               The free plan includes up to {FREE_TIER_SESSION_LIMIT} saved conversations. Upgrade
-              to Pro for{' '}
+              for{' '}
               <span className="font-semibold text-foreground">unlimited conversations</span>.
             </>
           )}
@@ -62,7 +62,7 @@ export function SessionLimitModal({ onClose, onUpgrade, variant = 'create' }: Pr
         <div className="flex flex-col gap-2 mt-4">
           <Button className="w-full" onClick={onUpgrade}>
             <Sparkles className="h-4 w-4" />
-            Upgrade to Pro
+            Upgrade
           </Button>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Cancel

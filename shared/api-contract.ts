@@ -114,13 +114,18 @@ export interface AddSavedModelResult {
   error?: string
 }
 
-/* ── License / Pro plan payloads ─────────────────────────────────────────── */
+/* ── License payloads (Pro or Unlimited) ──────────────────────────────────── */
 
-/** Whether the Pro license is active on this device. */
+/** License tier. Both tiers grant identical app features — duration differs (see license-store.ts). */
+export type LicenseType = 'pro' | 'unlimited'
+
+/** Whether a license (Pro or Unlimited) is active on this device. */
 export interface LicenseStatus {
   isActivated: boolean
   /** Present when activated — the stored license key (masked is not required for phase 1). */
   key?: string
+  /** Present when activated. Absent license.bin from before this field shipped is normalized to 'pro' by license-store.ts. */
+  type?: LicenseType
 }
 
 /**
@@ -131,6 +136,8 @@ export interface LicenseStatus {
 export interface LicenseActivationResult {
   ok: boolean
   message: string
+  /** Present when ok is true — the tier just activated. */
+  type?: LicenseType
 }
 
 /** Result of creating a new session. */
@@ -280,7 +287,7 @@ export interface ArcoApi {
     onError(cb: (err: UpdateErrorPayload) => void): () => void
   }
 
-  /** Pro plan license activation (annual license, device-bound). */
+  /** License activation, device-bound. Covers both Pro (1-year) and Unlimited (lifetime). */
   license: {
     /** Whether a valid license is stored locally for this device. */
     getStatus(): Promise<LicenseStatus>
@@ -292,7 +299,7 @@ export interface ArcoApi {
     /** Stable hardware fingerprint for this machine (node-machine-id). */
     getDeviceId(): Promise<string>
     /**
-     * Pricing page URL for purchasing Pro ({base}/pricing).
+     * Pricing page URL for purchasing a license ({base}/pricing).
      * `null` only when the license API base is not configured.
      */
     getCheckoutUrl(): Promise<string | null>

@@ -1,16 +1,18 @@
 /**
- * Encrypted local storage for an activated Pro license.
+ * Encrypted local storage for an activated license (Pro or Unlimited).
  *
  * Uses Electron `safeStorage` (macOS Keychain-backed), same pattern as
  * secure-store.ts for the OpenRouter API key. The encrypted blob lives at
  * ~/Library/Application Support/Arco/license.bin — copying it to another
- * machine typically fails decryption, so Pro does not travel with the file.
+ * machine typically fails decryption, so the license does not travel with
+ * the file.
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { LicenseType } from '@shared/api-contract'
 
 export interface StoredLicense {
   /** License key string, e.g. 7J9OY-3XMF1-OF7LN-ATRCH-38U6S */
@@ -19,6 +21,13 @@ export interface StoredLicense {
   activatedAt: string
   /** node-machine-id fingerprint sent to the server at activation. */
   deviceId: string
+  /** License tier purchased. Defaults to 'pro' if absent (see parseLicense). */
+  type: LicenseType
+}
+
+/** Missing/invalid `type` (e.g. a license.bin written before this field existed) defaults to 'pro'. */
+function normalizeLicenseType(value: unknown): LicenseType {
+  return value === 'unlimited' ? 'unlimited' : 'pro'
 }
 
 function licensePath(): string {
@@ -36,7 +45,8 @@ function parseLicense(json: string): StoredLicense | null {
       return {
         key: parsed.key,
         activatedAt: parsed.activatedAt,
-        deviceId: parsed.deviceId
+        deviceId: parsed.deviceId,
+        type: normalizeLicenseType(parsed.type)
       }
     }
     return null
