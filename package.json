@@ -1,6 +1,6 @@
 {
     "name": "arco-desktop",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Arco — compare answers from multiple AI models side by side. Private, local-only macOS desktop app.",
     "author": "Arco",
     "license": "UNLICENSED",
