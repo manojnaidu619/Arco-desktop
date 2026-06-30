@@ -11,19 +11,24 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
-import { ARCO_WEBSITE_URL, PRODUCT_NAME } from '@shared/config'
+import {
+  OPENROUTER_APP_CATEGORIES,
+  OPENROUTER_APP_REFERER,
+  OPENROUTER_APP_TITLE
+} from '@shared/config'
 import type { BalanceInfo } from '@shared/api-contract'
 import type { Message } from '@shared/types'
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
 
-/** Standard headers OpenRouter recommends for app identification. */
-function headers(apiKey: string) {
+/** OpenRouter app attribution headers — https://openrouter.ai/docs/app-attribution */
+function openRouterHeaders(apiKey: string) {
   return {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
-    'HTTP-Referer': ARCO_WEBSITE_URL,
-    'X-Title': PRODUCT_NAME
+    'HTTP-Referer': OPENROUTER_APP_REFERER,
+    'X-OpenRouter-Title': OPENROUTER_APP_TITLE,
+    'X-OpenRouter-Categories': OPENROUTER_APP_CATEGORIES
   }
 }
 
@@ -38,7 +43,7 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
   if (!trimmed) throw new Error('Please enter an API key.')
 
   // `/key` is the canonical "is this key valid?" endpoint. A 200 means valid.
-  const keyRes = await fetch(`${OPENROUTER_BASE}/key`, { headers: headers(trimmed) }).catch(() => {
+  const keyRes = await fetch(`${OPENROUTER_BASE}/key`, { headers: openRouterHeaders(trimmed) }).catch(() => {
     throw new Error('Could not reach OpenRouter. Check your internet connection.')
   })
 
@@ -53,7 +58,7 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
   let totalCredits: number | null = keyJson.data?.limit ?? null
   let totalUsage = keyJson.data?.usage ?? 0
   try {
-    const creditsRes = await fetch(`${OPENROUTER_BASE}/credits`, { headers: headers(trimmed) })
+    const creditsRes = await fetch(`${OPENROUTER_BASE}/credits`, { headers: openRouterHeaders(trimmed) })
     if (creditsRes.ok) {
       const creditsJson = (await creditsRes.json()) as {
         data?: { total_credits?: number; total_usage?: number }
@@ -98,7 +103,7 @@ export async function streamChat(
 ): Promise<string> {
   const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: 'POST',
-    headers: headers(apiKey),
+    headers: openRouterHeaders(apiKey),
     body: JSON.stringify({ model: openRouterModelId, messages, stream: true }),
     signal
   })
@@ -182,7 +187,7 @@ export async function validateModel(apiKey: string, openRouterModelId: string): 
   const slug = trimmed.slice(slash + 1)
   const url = `${OPENROUTER_BASE}/model/${author}/${slug}`
 
-  const res = await fetch(url, { headers: headers(apiKey) }).catch(() => null)
+  const res = await fetch(url, { headers: openRouterHeaders(apiKey) }).catch(() => null)
   if (!res) {
     return { ok: false, error: 'Could not reach OpenRouter. Check your internet connection.' }
   }

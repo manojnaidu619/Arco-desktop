@@ -17,6 +17,11 @@ export const PRODUCT_NAME = 'Arco'
 /** Public marketing / API site (no trailing slash). */
 export const ARCO_WEBSITE_URL = 'https://arco.chat'
 
+/** OpenRouter app attribution — https://openrouter.ai/docs/app-attribution */
+export const OPENROUTER_APP_REFERER = ARCO_WEBSITE_URL
+export const OPENROUTER_APP_TITLE = PRODUCT_NAME
+export const OPENROUTER_APP_CATEGORIES = 'general-chat,writing-assistant'
+
 /** Local Arco backend during development. */
 export const API_BASE_URL_DEV = 'http://localhost:3000'
 
