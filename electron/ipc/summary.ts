@@ -115,7 +115,7 @@ export function registerSummaryHandlers(): void {
     const messages = [{ role: 'user' as const, content: buildSummaryPrompt(userMessage, responses) }]
 
     try {
-      const content = await streamChat(
+      const { content } = await streamChat(
         apiKey,
         openRouterModelId,
         messages,

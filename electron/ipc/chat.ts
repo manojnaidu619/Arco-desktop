@@ -27,7 +27,7 @@ const activeRequests = new Map<string, AbortController>()
 
 export function registerChatHandlers(): void {
   ipcMain.on(CHANNELS.chat.start, async (event, req: ChatStartRequest) => {
-    const { requestId, openRouterModelId, messages } = req
+    const { requestId, openRouterModelId, messages, webSearch } = req
     const sender = event.sender
 
     const apiKey = getKey()
@@ -43,7 +43,7 @@ export function registerChatHandlers(): void {
     activeRequests.set(requestId, controller)
 
     try {
-      const content = await streamChat(
+      const { content, annotations } = await streamChat(
         apiKey,
         openRouterModelId,
         messages,
@@ -51,9 +51,16 @@ export function registerChatHandlers(): void {
           // Guard against sending to a window that's been closed mid-stream.
           if (!sender.isDestroyed()) sender.send(CHANNELS.chat.delta, { requestId, delta })
         },
-        controller.signal
+        controller.signal,
+        webSearch
       )
-      if (!sender.isDestroyed()) sender.send(CHANNELS.chat.done, { requestId, content })
+      if (!sender.isDestroyed()) {
+        sender.send(CHANNELS.chat.done, {
+          requestId,
+          content,
+          ...(annotations.length > 0 ? { annotations } : {})
+        })
+      }
     } catch (err) {
       // A user-initiated abort is expected, not an error — stay silent.
       if ((err as Error)?.name === 'AbortError') return

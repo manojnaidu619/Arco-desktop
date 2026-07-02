@@ -11,6 +11,15 @@
 /** Who authored a message in a conversation. */
 export type Role = 'user' | 'assistant'
 
+/** A web search source citation returned by OpenRouter (in-memory only). */
+export interface UrlCitation {
+  url: string
+  title: string
+  content?: string
+  start_index?: number
+  end_index?: number
+}
+
 /** A single chat message in one model's thread. */
 export interface Message {
   role: Role
@@ -19,6 +28,8 @@ export interface Message {
   createdAt?: string
   /** True when the user stopped generation mid-stream (in-memory only for v1). */
   stopped?: boolean
+  /** Web search sources for assistant replies (in-memory only; not persisted). */
+  annotations?: UrlCitation[]
 }
 
 /** Lifecycle status of one model's thread in the UI. */

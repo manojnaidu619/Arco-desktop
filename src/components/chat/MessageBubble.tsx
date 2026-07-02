@@ -16,7 +16,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import { useState, type ReactNode } from 'react'
-import type { Message } from '@shared/types'
+import type { Message, UrlCitation } from '@shared/types'
 import { formatMessageTimestamp } from '@/lib/formatMessageTimestamp'
 import { cn } from '@/lib/utils'
 import { Check, Copy } from 'lucide-react'
@@ -222,6 +222,44 @@ const markdownStyleOverrides = {
   },
 }
 
+/** Extract a readable domain label from a citation URL. */
+function citationDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+/** Web search source links shown below assistant replies once streaming completes. */
+function MessageSources({
+  annotations,
+  hidden = false,
+}: {
+  annotations: UrlCitation[]
+  hidden?: boolean
+}) {
+  if (hidden || annotations.length === 0) return null
+
+  return (
+    <div className="mt-2 max-w-[95%] min-w-0 text-xs text-muted-foreground flex flex-wrap items-baseline gap-x-1">
+      <span className="font-medium shrink-0">Sources:</span>
+      {annotations.map((citation) => (
+        <a
+          key={citation.url}
+          href={citation.url}
+          target="_blank"
+          rel="noreferrer"
+          title={citation.title}
+          className="text-foreground underline"
+        >
+          {citationDomain(citation.url)}
+        </a>
+      ))}
+    </div>
+  )
+}
+
 /** Hover-revealed timestamp + copy below a message bubble. */
 function MessageMetaActions({
   createdAt,
@@ -324,6 +362,9 @@ export function MessageBubble({ message, isStreaming = false }: Props) {
           customComponents={markdownStyleOverrides}
         />
       </div>
+      {message.annotations && message.annotations.length > 0 && (
+        <MessageSources annotations={message.annotations} hidden={isStreaming} />
+      )}
       <div className="h-5 mt-1 flex items-center gap-2 pl-0.5">
         {message.stopped && (
           <span className="text-xs text-muted-foreground">Generation stopped</span>

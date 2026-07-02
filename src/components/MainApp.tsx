@@ -68,7 +68,9 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
     newSession,
     loadSession,
     renameSession,
-    deleteSession
+    deleteSession,
+    webSearchEnabled,
+    toggleWebSearch
   } = useChat()
 
   const { savedModels } = useSavedModels()
@@ -462,6 +464,8 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
               skippedCount={skippedCount}
               streaming={isAnyStreaming}
               locked={summaryOverlayMounted}
+              webSearchEnabled={webSearchEnabled}
+              onToggleWebSearch={toggleWebSearch}
               onSend={(text) => {
                 askAll(text)
                 setComposerValue('')

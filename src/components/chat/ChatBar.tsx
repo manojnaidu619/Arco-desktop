@@ -11,7 +11,8 @@
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowUp, Square } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { ArrowUp, Globe, Square } from 'lucide-react'
 
 interface Props {
   value: string
@@ -24,6 +25,9 @@ interface Props {
   streaming?: boolean
   /** When true, the composer is read-only (e.g. summary overlay is open). */
   locked?: boolean
+  /** Whether web search is enabled for the next broadcast send. */
+  webSearchEnabled?: boolean
+  onToggleWebSearch?: () => void
   onSend: (content: string) => void
   onAbort: () => void
 }
@@ -35,6 +39,8 @@ export function ChatBar({
   skippedCount = 0,
   streaming,
   locked,
+  webSearchEnabled = false,
+  onToggleWebSearch,
   onSend,
   onAbort
 }: Props) {
@@ -56,7 +62,7 @@ export function ChatBar({
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <div className="flex items-end gap-2">
+      <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
         <Textarea
           ref={textareaRef}
           value={value}
@@ -75,28 +81,54 @@ export function ChatBar({
           }
           disabled={activeCount === 0 || locked}
           rows={2}
-          className="resize-none text-sm leading-relaxed flex-1 min-h-[56px] max-h-[200px] overflow-y-auto"
+          className="resize-none border-0 shadow-none focus-visible:ring-0 text-sm leading-relaxed min-h-[56px] max-h-[200px] overflow-y-auto rounded-none"
         />
-        {streaming ? (
-          <Button
-            size="icon"
-            variant="destructive"
-            className="h-[56px] w-[56px] shrink-0"
-            onClick={onAbort}
-            title="Stop generating"
-          >
-            <Square className="h-4 w-4" fill="currentColor" />
-          </Button>
-        ) : (
-          <Button
-            size="icon"
-            className="h-[56px] w-[56px] shrink-0 rounded-full"
-            onClick={send}
-            disabled={!value.trim() || activeCount === 0 || locked}
-          >
-            <ArrowUp className="h-5 w-5" />
-          </Button>
-        )}
+        <div className="flex items-center justify-between gap-2 px-2 pb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onToggleWebSearch}
+              disabled={locked || !onToggleWebSearch}
+              title={
+                webSearchEnabled
+                  ? 'Web search on — model may search the web when needed (extra cost)'
+                  : 'Web search off — enable to let the model search the web when needed'
+              }
+              aria-pressed={webSearchEnabled}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors shrink-0',
+                webSearchEnabled
+                  ? 'bg-primary/10 text-primary hover:bg-primary/15'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                (locked || !onToggleWebSearch) && 'opacity-50 pointer-events-none'
+              )}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              Web search
+            </button>
+          </div>
+          {streaming ? (
+            <Button
+              size="icon"
+              variant="destructive"
+              className="h-9 w-9 shrink-0 rounded-full"
+              onClick={onAbort}
+              title="Stop generating"
+            >
+              <Square className="h-4 w-4" fill="currentColor" />
+            </Button>
+          ) : (
+            <Button
+              size="icon"
+              className="h-9 w-9 shrink-0 rounded-full"
+              onClick={send}
+              disabled={!value.trim() || activeCount === 0 || locked}
+              title="Send message"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
       {activeCount > 0 && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">

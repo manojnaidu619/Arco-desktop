@@ -73,7 +73,7 @@ import { useSavedModels } from '@/hooks/useSavedModels'
 import { posthog } from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { getModelDef, isModelInLibrary } from '@shared/models'
-import type { Message, SessionData, SessionSummary, ThreadStatus } from '@shared/types'
+import type { Message, SessionData, SessionSummary, ThreadStatus, UrlCitation } from '@shared/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /** Re-exported so consumers can import session types from this hook alone. */
@@ -135,6 +135,7 @@ export function useChat() {
   const [layout, setLayoutState] = useState<number>(4) // How many panes are visible right now (must be one of LAYOUTS)
   const [sessions, setSessions] = useState<SessionSummary[]>([]) // Sidebar session list
   const [loading, setLoading] = useState(true) // True until the first session load completes; hides the UI
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false) // Global web search toggle for broadcast sends
 
   // ── Always-fresh ref mirrors (for callbacks & async closures) ────────────
   // State captured in a closure becomes stale after re-renders.
@@ -251,7 +252,7 @@ export function useChat() {
    *  3. Patch status to 'done' and refresh the sidebar list.
    */
   const finalizeSlot = useCallback(
-    async (slot: number, content: string) => {
+    async (slot: number, content: string, annotations?: UrlCitation[]) => {
       const pane = panesRef.current.find((p) => p.slot === slot)
       const ts = utcNow()
       if (pane?.dbThreadId && content) await api.sessions.addMessage(pane.dbThreadId, 'assistant', content)
@@ -261,7 +262,11 @@ export function useChat() {
           const msgs = [...p.messages]
           const last = msgs.at(-1)
           if (last?.role === 'assistant') {
-            msgs[msgs.length - 1] = { ...last, createdAt: ts }
+            msgs[msgs.length - 1] = {
+              ...last,
+              createdAt: ts,
+              ...(annotations && annotations.length > 0 ? { annotations } : {})
+            }
           }
           return { ...p, messages: msgs, status: 'done' }
         })
@@ -300,12 +305,12 @@ export function useChat() {
       )
     })
 
-    const offDone = api.chat.onDone(async ({ requestId, content }) => {
+    const offDone = api.chat.onDone(async ({ requestId, content, annotations }) => {
       const slot = reqToSlot.current[requestId]
       if (slot === undefined) return
       delete reqToSlot.current[requestId]
       if (activeReqBySlot.current[slot] === requestId) delete activeReqBySlot.current[slot]
-      await finalizeSlot(slot, content)
+      await finalizeSlot(slot, content, annotations)
     })
 
     const offError = api.chat.onError(({ requestId, message }) => {
@@ -473,7 +478,21 @@ export function useChat() {
       )
     )
 
-    api.chat.start({ requestId, openRouterModelId, messages: requestMessages })
+    api.chat.start({
+      requestId,
+      openRouterModelId,
+      messages: requestMessages,
+      webSearch: webSearchEnabled
+    })
+  }, [webSearchEnabled])
+
+  /**
+   * Toggle the global web search option for broadcast sends.
+   *
+   * @used-by  MainApp → ChatBar
+   */
+  const toggleWebSearch = useCallback(() => {
+    setWebSearchEnabled((prev) => !prev)
   }, [])
 
   /**
@@ -771,6 +790,8 @@ export function useChat() {
     loadSession,
     renameSession,
     deleteSession,
-    refreshSessions
+    refreshSessions,
+    webSearchEnabled,
+    toggleWebSearch
   }
 }

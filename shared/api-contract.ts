@@ -19,7 +19,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 
-import type { Message, Role, SavedModel, SessionData, SessionSummary } from './types'
+import type { Message, Role, SavedModel, SessionData, SessionSummary, UrlCitation } from './types'
 
 /* ── Chat streaming payloads ──────────────────────────────────────────────
  * Chat is special: instead of one request → one response, the answer streams
@@ -34,6 +34,8 @@ export interface ChatStartRequest {
   openRouterModelId: string
   /** Full conversation so far (the last item is the new user turn). */
   messages: Message[]
+  /** When true, enable OpenRouter's openrouter:web_search server tool. */
+  webSearch?: boolean
 }
 
 /** Emitted repeatedly as new text arrives from the model. */
@@ -47,6 +49,8 @@ export interface ChatDoneEvent {
   requestId: string
   /** The complete assembled response (handy for persisting). */
   content: string
+  /** Web search source citations, when the model used web search. */
+  annotations?: UrlCitation[]
 }
 
 /** Emitted once if a stream fails. */

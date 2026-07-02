@@ -17,7 +17,7 @@ import {
   OPENROUTER_APP_TITLE
 } from '@shared/config'
 import type { BalanceInfo } from '@shared/api-contract'
-import type { Message } from '@shared/types'
+import type { Message, UrlCitation } from '@shared/types'
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
 
@@ -81,6 +81,62 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
   }
 }
 
+/** Result of a streamed chat completion. */
+export interface StreamChatResult {
+  content: string
+  annotations: UrlCitation[]
+}
+
+/** OpenRouter assistant message annotation types — https://openrouter.ai/docs/guides/features/server-tools/web-search */
+const OpenRouterAnnotationType = {
+  UrlCitation: 'url_citation',
+  File: 'file'
+} as const
+
+type OpenRouterAnnotationType =
+  (typeof OpenRouterAnnotationType)[keyof typeof OpenRouterAnnotationType]
+
+type OpenRouterAnnotation = {
+  type?: OpenRouterAnnotationType
+  url_citation?: {
+    url?: string
+    title?: string
+    content?: string
+    start_index?: number
+    end_index?: number
+  }
+}
+
+/** Normalize OpenRouter annotation objects into UrlCitation entries. */
+function parseUrlCitations(raw: unknown): UrlCitation[] {
+  if (!Array.isArray(raw)) return []
+
+  const citations: UrlCitation[] = []
+  for (const item of raw as OpenRouterAnnotation[]) {
+    if (item?.type !== OpenRouterAnnotationType.UrlCitation || !item.url_citation?.url) continue
+    citations.push({
+      url: item.url_citation.url,
+      title: item.url_citation.title ?? item.url_citation.url,
+      content: item.url_citation.content,
+      start_index: item.url_citation.start_index,
+      end_index: item.url_citation.end_index
+    })
+  }
+  return citations
+}
+
+/** Merge citations by URL, keeping the first occurrence of each. */
+function mergeCitations(existing: UrlCitation[], incoming: UrlCitation[]): UrlCitation[] {
+  const seen = new Set(existing.map((c) => c.url))
+  const merged = [...existing]
+  for (const citation of incoming) {
+    if (seen.has(citation.url)) continue
+    seen.add(citation.url)
+    merged.push(citation)
+  }
+  return merged
+}
+
 /**
  * Stream a chat completion from OpenRouter.
  *
@@ -92,19 +148,26 @@ export async function validateKey(apiKey: string): Promise<BalanceInfo> {
  * @param messages Conversation so far.
  * @param onDelta  Called with each new piece of text.
  * @param signal   AbortSignal to cancel the request mid-stream.
- * @returns        The complete response text.
+ * @param webSearch When true, enable OpenRouter's openrouter:web_search server tool.
+ * @returns        The complete response text and any web search citations.
  */
 export async function streamChat(
   apiKey: string,
   openRouterModelId: string,
   messages: Message[],
   onDelta: (delta: string) => void,
-  signal: AbortSignal
-): Promise<string> {
+  signal: AbortSignal,
+  webSearch = false
+): Promise<StreamChatResult> {
   const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: 'POST',
     headers: openRouterHeaders(apiKey),
-    body: JSON.stringify({ model: openRouterModelId, messages, stream: true }),
+    body: JSON.stringify({
+      model: openRouterModelId,
+      messages,
+      stream: true,
+      ...(webSearch && { tools: [{ type: 'openrouter:web_search' }] })
+    }),
     signal
   })
 
@@ -128,6 +191,7 @@ export async function streamChat(
   const decoder = new TextDecoder()
   let buffer = ''
   let fullContent = ''
+  let annotations: UrlCitation[] = []
 
   while (true) {
     const { done, value } = await reader.read()
@@ -148,13 +212,22 @@ export async function streamChat(
           fullContent += delta
           onDelta(delta)
         }
+
+        const deltaAnnotations = parseUrlCitations(parsed.choices?.[0]?.delta?.annotations)
+        const messageAnnotations = parseUrlCitations(parsed.choices?.[0]?.message?.annotations)
+        if (deltaAnnotations.length > 0) {
+          annotations = mergeCitations(annotations, deltaAnnotations)
+        }
+        if (messageAnnotations.length > 0) {
+          annotations = mergeCitations(annotations, messageAnnotations)
+        }
       } catch {
         // Ignore malformed/keep-alive lines.
       }
     }
   }
 
-  return fullContent
+  return { content: fullContent, annotations }
 }
 
 /** Result of checking whether an OpenRouter model id exists in the catalog. */
