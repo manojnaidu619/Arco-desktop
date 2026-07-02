@@ -34,7 +34,7 @@ export interface ChatStartRequest {
   openRouterModelId: string
   /** Full conversation so far (the last item is the new user turn). */
   messages: Message[]
-  /** When true, enable OpenRouter's openrouter:web_search server tool. */
+  /** When true, also enable OpenRouter's openrouter:web_search server tool. */
   webSearch?: boolean
 }
 

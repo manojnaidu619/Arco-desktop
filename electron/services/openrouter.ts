@@ -11,12 +11,12 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
+import type { BalanceInfo } from '@shared/api-contract'
 import {
   OPENROUTER_APP_CATEGORIES,
   OPENROUTER_APP_REFERER,
   OPENROUTER_APP_TITLE
 } from '@shared/config'
-import type { BalanceInfo } from '@shared/api-contract'
 import type { Message, UrlCitation } from '@shared/types'
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
@@ -137,6 +137,14 @@ function mergeCitations(existing: UrlCitation[], incoming: UrlCitation[]): UrlCi
   return merged
 }
 
+/** Server tools included on every chat completion request. */
+function chatServerTools(webSearch: boolean) {
+  return [
+    { type: 'openrouter:datetime' },
+    ...(webSearch ? [{ type: 'openrouter:web_search' }] : [])
+  ]
+}
+
 /**
  * Stream a chat completion from OpenRouter.
  *
@@ -148,7 +156,7 @@ function mergeCitations(existing: UrlCitation[], incoming: UrlCitation[]): UrlCi
  * @param messages Conversation so far.
  * @param onDelta  Called with each new piece of text.
  * @param signal   AbortSignal to cancel the request mid-stream.
- * @param webSearch When true, enable OpenRouter's openrouter:web_search server tool.
+ * @param webSearch When true, also enable OpenRouter's openrouter:web_search server tool.
  * @returns        The complete response text and any web search citations.
  */
 export async function streamChat(
@@ -166,7 +174,7 @@ export async function streamChat(
       model: openRouterModelId,
       messages,
       stream: true,
-      ...(webSearch && { tools: [{ type: 'openrouter:web_search' }] })
+      tools: chatServerTools(webSearch)
     }),
     signal
   })
