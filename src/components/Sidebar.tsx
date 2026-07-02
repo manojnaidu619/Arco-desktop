@@ -51,14 +51,14 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState('')
 
   // Show sessions with a title, conversed models, or the currently active session.
-  const meaningful = sessions.filter((s) => s.title || s.models.length > 0 || s.isActive)
+  const sidebarSessions = sessions.filter((s) => s.title || s.models.length > 0 || s.isActive)
 
   // Filter by search query if provided
   const filtered = searchQuery
-    ? meaningful.filter((s) =>
+    ? sidebarSessions.filter((s) =>
       (s.title ?? 'New conversation').toLowerCase().includes(searchQuery.toLowerCase())
     )
-    : meaningful
+    : sidebarSessions
 
   return (
     <div className="flex flex-col h-full w-full bg-muted/30 border-r border-border">
@@ -81,7 +81,7 @@ export function Sidebar({
       </div>
 
       {/* Search bar - only show if there are conversations */}
-      {meaningful.length > 0 && (
+      {sidebarSessions.length > 0 && (
         <div className="px-3 py-2 border-b border-border shrink-0">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -108,7 +108,7 @@ export function Sidebar({
       )}
 
       <div className="flex-1 overflow-y-auto py-2">
-        {meaningful.length === 0 ? (
+        {sidebarSessions.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center mt-8 px-3">Your conversations will appear here</p>
         ) : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center mt-8 px-3">No conversations found</p>
