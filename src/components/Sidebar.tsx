@@ -50,8 +50,8 @@ export function Sidebar({
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Only show sessions that have actual content (a title or some models).
-  const meaningful = sessions.filter((s) => s.title || s.models.length > 0)
+  // Show sessions with a title, conversed models, or the currently active session.
+  const meaningful = sessions.filter((s) => s.title || s.models.length > 0 || s.isActive)
 
   // Filter by search query if provided
   const filtered = searchQuery

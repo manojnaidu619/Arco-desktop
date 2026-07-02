@@ -109,6 +109,7 @@ export function listSessions(): SessionSummary[] {
       })
       .from(threads)
       .innerJoin(models, eq(threads.modelId, models.id))
+      .innerJoin(messages, eq(messages.threadId, threads.id))
       .where(eq(threads.sessionId, s.id))
       .all()
 

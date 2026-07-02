@@ -79,7 +79,7 @@ export interface SessionSummary {
   isActive: boolean
   /** Number of visible panes for this session. */
   layout: number
-  /** Distinct models used in this session — drives the colored dots. */
+  /** Distinct models with at least one message in this session — drives the colored dots. */
   models: { openRouterModelId: string; label: string }[]
 }
 
