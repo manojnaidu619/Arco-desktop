@@ -151,7 +151,7 @@ export function useChat() {
   const activeReqBySlot = useRef<Record<number, string>>({}) // slot → requestId: lets stop/abort find and cancel a pane's active request
 
   // ── Session title flag ───────────────────────────────────────────────────
-  const titleSet = useRef(false) // Flips to true after the first message auto-sets the session title; prevents overwriting it on follow-ups
+  const titleSet = useRef(false) // Flips to true after the first message auto-sets the session title; prevents overwriting it on later sends
 
   /** True when any pane is actively streaming. */
   const isAnyStreaming = useCallback(() => panesRef.current.some((p) => p.status === 'streaming'), [])
@@ -375,7 +375,7 @@ export function useChat() {
   /**
    * Stop a pane's in-flight stream and keep partial assistant content.
    *
-   * @used-by  abort, abortPane
+   * @used-by  abort
    * @param    slot — grid slot to stop
    *
    * Internal steps:
@@ -424,7 +424,6 @@ export function useChat() {
    * Stop all streaming panes (bottom bar stop button).
    *
    * @used-by  MainApp → ChatBar onAbort
-   * @see      abortPane — per-pane counterpart
    */
   const abort = useCallback(() => {
     const streamingSlots = panesRef.current.filter((p) => p.status === 'streaming').map((p) => p.slot)
@@ -432,23 +431,9 @@ export function useChat() {
   }, [stopPane])
 
   /**
-   * Stop streaming for a single pane (pane stop button).
-   *
-   * @used-by  MainApp → ModelPane onAbortPane
-   * @param    slot — grid slot to stop
-   * @see      abort — global counterpart for all streaming panes
-   */
-  const abortPane = useCallback(
-    (slot: number) => {
-      stopPane(slot)
-    },
-    [stopPane]
-  )
-
-  /**
    * Begin streaming a model response into a slot.
    *
-   * @used-by  askAll, askOne
+   * @used-by  ask
    * @param    slot — target grid slot
    * @param    openRouterModelId — OpenRouter model ID to call, e.g. "openai/gpt-4o"
    * @param    requestMessages — full message history including the new user turn
@@ -601,13 +586,12 @@ export function useChat() {
    *
    * @used-by  MainApp → ChatBar onSend
    * @param    content — user message text
-   * @see      askOne — single-pane counterpart for per-pane follow-up inputs
    *
    * Internal steps:
    *  1. Auto-set session title on the first message of a new session.
    *  2. For each visible pane with a model: persist user message, patch UI, startStream.
    */
-  const askAll = useCallback(
+  const ask = useCallback(
     (content: string) => {
       const sid = sessionIdRef.current
       const visible = panesRef.current
@@ -633,27 +617,6 @@ export function useChat() {
       }
     },
     [layout, patchPane, startStream, refreshSessions, savedModels]
-  )
-
-  /**
-   * Send a follow-up message to a single pane.
-   *
-   * @used-by  MainApp → ModelPane onAskOne
-   * @param    slot — target grid slot
-   * @param    content — user message text
-   * @see      askAll — broadcast counterpart for the bottom composer
-   */
-  const askOne = useCallback(
-    (slot: number, content: string) => {
-      const pane = panesRef.current.find((p) => p.slot === slot)
-      if (!pane?.openRouterModelId || !isModelInLibrary(pane.openRouterModelId, savedModels)) return
-      const ts = utcNow()
-      const updated: Message[] = [...pane.messages, { role: 'user', content, createdAt: ts }]
-      if (pane.dbThreadId) api.sessions.addMessage(pane.dbThreadId, 'user', content)
-      patchPane(slot, { messages: updated })
-      startStream(slot, pane.openRouterModelId, updated)
-    },
-    [patchPane, startStream, savedModels]
   )
 
   /**
@@ -782,10 +745,8 @@ export function useChat() {
     setLayout,
     applyVisibleSelection,
     setPaneModel,
-    askAll,
-    askOne,
+    ask,
     abort,
-    abortPane,
     newSession,
     loadSession,
     renameSession,

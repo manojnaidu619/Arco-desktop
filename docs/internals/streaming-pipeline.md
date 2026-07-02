@@ -9,8 +9,8 @@ Presentation: [`src/components/MessageBubble.tsx`](../../src/components/MessageB
 
 ```mermaid
 flowchart TD
-  userInput[UserInput] --> askAllOrOne{askAll or askOne}
-  askAllOrOne --> persistUser[Persist user message to DB]
+  userInput[UserInput] --> ask[ask]
+  ask --> persistUser[Persist user message to DB]
   persistUser --> startStream[startStream]
   startStream --> mapIds[Map requestId to slot]
   startStream --> placeholder[Add empty assistant placeholder]
@@ -29,7 +29,7 @@ flowchart TD
 
 | Stage | Function / component | What happens |
 | --- | --- | --- |
-| 1. Send | `askAll` / `askOne` | User text is saved to the DB, appended to the pane, and passed to `startStream`. |
+| 1. Send | `ask` | User text is saved to the DB, appended to the pane, and passed to `startStream`. |
 | 2. Start | `startStream` | Prior request on the slot is aborted; a new `requestId` is mapped to the slot; an empty assistant message is added; `api.chat.start` fires. |
 | 3. Delta | `onDelta` | Each token is appended directly to the last assistant message in `pane.messages`. React 19 automatic batching keeps re-renders at ~60fps. |
 | 4. Animate | `AnimatedMarkdown` in `MessageBubble` | flowtoken handles per-word streaming reveal only (`fadeIn`). All visual styling is our `markdownStyleOverrides` passed as `customComponents`. Same renderer before and after the stream; `animation` is null once done. |
@@ -40,7 +40,7 @@ flowchart TD
 
 ### Stop mid-stream
 
-When the user clicks Stop, `stopPane` aborts the network request and **keeps** the user message plus any partial assistant text already rendered. Non-empty partials are persisted to the DB and marked with `stopped: true` in the UI (shows a "Generation stopped" label in `MessageBubble`). If stopped before the first token, the empty assistant placeholder is removed and only the user message remains. `abort` / `abortPane` call `stopPane` for all or one streaming pane.
+When the user clicks Stop, `stopPane` aborts the network request and **keeps** the user message plus any partial assistant text already rendered. Non-empty partials are persisted to the DB and marked with `stopped: true` in the UI (shows a "Generation stopped" label in `MessageBubble`). If stopped before the first token, the empty assistant placeholder is removed and only the user message remains. `abort` calls `stopPane` for every streaming pane.
 
 ### Session navigation while streaming
 
@@ -65,7 +65,7 @@ consumed by `MainApp.tsx` + `SummaryOverlay.tsx`. Key differences:
 
 | | Chat (`useChat`) | Summary (`MainApp`) |
 | --- | --- | --- |
-| Trigger | Send in composer / pane | Summarize tab → Generate |
+| Trigger | Send in composer | Summarize tab → Generate |
 | Scope | One stream per pane | One stream total |
 | Input | Full pane message history | Latest user question + latest assistant reply per visible pane |
 | Output | Persisted to SQLite | Ephemeral (discarded on overlay close) |

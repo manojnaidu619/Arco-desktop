@@ -148,13 +148,12 @@ function clampLayout(n: number): number {
  *
  * @used-by  MainApp → ChatBar onSend
  * @param    content — user message text
- * @see      askOne — single-pane counterpart for per-pane follow-up inputs
  *
  * Internal steps:
  *  1. Auto-set session title on the first message of a new session.
  *  2. For each visible pane with a model: persist user message, patch UI, startStream.
  */
-const askAll = useCallback((content: string) => {
+const ask = useCallback((content: string) => {
   // ...
 }, [])
 ```
@@ -431,7 +430,6 @@ Use consistent JSDoc tags that AI can parse:
  * @returns {Promise<void>}
  * @throws {Error} when session is not loaded
  * @used-by MainApp → ChatBar onSend
- * @see askOne — single-pane counterpart
  */
 ```
 

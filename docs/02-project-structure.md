@@ -106,10 +106,10 @@ src/
     ├── SettingsDialog.tsx    ← manage/remove key, view balance
     ├── Sidebar.tsx           ← session history list
     ├── LayoutSelector.tsx    ← the 1/2/3/4/6 grid-layout picker
-    ├── ModelPane.tsx         ← one grid pane (dropdown + messages + follow-up)
+    ├── ModelPane.tsx         ← one grid pane (dropdown + messages)
     ├── ModelDropdown.tsx     ← per-pane model picker popover (curated + saved)
     ├── SummaryOverlay.tsx    ← slide-up summarization panel + SummaryTab handle
-    ├── ChatBar.tsx           ← the shared "ask all" composer
+    ├── ChatBar.tsx           ← the shared broadcast composer
     ├── MessageBubble.tsx     ← renders one message (Markdown for assistant)
     ├── ThemeToggle.tsx       ← light/dark/system switch
     ├── theme-provider.tsx    ← wraps the app in next-themes

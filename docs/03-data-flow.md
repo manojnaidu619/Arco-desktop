@@ -78,7 +78,7 @@ The most important flow. This is where the streaming pattern earns its keep.
 ### Kickoff
 
 1. 🖥️ User types in `ChatBar.tsx` and hits Enter → `MainApp` calls
-   `askAll(content)` in `useChat.ts`.
+   `ask(content)` in `useChat.ts`.
 2. 🖥️ For each **visible pane that has a model** (`panes.slice(0, layout)`),
    `useChat`:
    - appends the user message to that pane's state,
@@ -124,7 +124,7 @@ The most important flow. This is where the streaming pattern earns its keep.
   (A user-initiated abort is treated as expected — no error event is sent.)
 
 ```
-🖥️ askAll ─▶ chat.start{requestId} ─▶ ⚙️ streamChat ─▶ OpenRouter
+🖥️ ask ─▶ chat.start{requestId} ─▶ ⚙️ streamChat ─▶ OpenRouter
    ▲                                        │
    │  onDelta {requestId, delta}  (xN) ◀────┘  push as text arrives
    │  onDone  {requestId, content}        ◀──  push once at the end

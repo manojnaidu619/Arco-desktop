@@ -1,6 +1,6 @@
 /**
  * The main application screen: the history sidebar, a grid of model panes, and
- * the bottom bar (layout selector + full-width "ask all" composer).
+ * the bottom bar (layout selector + full-width composer).
  *
  * Conversation state lives in `useChat`; this component owns layout/UI state
  * (sidebar open, which pane is expanded) and arranges the grid.
@@ -61,10 +61,8 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
     setLayout,
     applyVisibleSelection,
     setPaneModel,
-    askAll,
-    askOne,
+    ask,
     abort,
-    abortPane,
     newSession,
     loadSession,
     renameSession,
@@ -399,8 +397,6 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
                     isExpanded
                     onToggleExpand={() => setExpandedSlot(null)}
                     onSelectModel={setPaneModel}
-                    onAskOne={askOne}
-                    onAbortPane={abortPane}
                   />
                 </div>
               ) : (
@@ -415,11 +411,8 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
                       key={pane.slot}
                       pane={pane}
                       isExpanded={false}
-                      showFollowUp={layout > 1}
                       onToggleExpand={layout > 1 ? () => setExpandedSlot(pane.slot) : undefined}
                       onSelectModel={setPaneModel}
-                      onAskOne={askOne}
-                      onAbortPane={abortPane}
                     />
                   ))}
                 </div>
@@ -467,7 +460,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
               webSearchEnabled={webSearchEnabled}
               onToggleWebSearch={toggleWebSearch}
               onSend={(text) => {
-                askAll(text)
+                ask(text)
                 setComposerValue('')
               }}
               onAbort={abort}

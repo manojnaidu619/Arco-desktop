@@ -1,7 +1,7 @@
 /**
- * The shared "ask all panes" composer at the bottom of the main area. Sits to
- * the right of the layout selector and stretches to fill the remaining width.
- * Enter sends; Shift+Enter inserts a newline.
+ * The shared composer at the bottom of the main area. Sits to the right of the
+ * layout selector, stretches to fill the remaining width, and broadcasts each
+ * send to every visible pane. Enter sends; Shift+Enter inserts a newline.
  *
  * While any pane is streaming, the send button becomes a STOP button. Stopping
  * keeps the user message and any partial assistant reply in the thread.
