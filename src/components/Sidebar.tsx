@@ -5,6 +5,7 @@
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
 import arcoLogo from '@/assets/arco-transparent.png'
+import { DeleteConversationDialog } from '@/components/DeleteConversationDialog'
 import { LicenseBadge } from '@/components/license/LicenseBadge'
 import { SettingsMenu } from '@/components/settings/SettingsMenu'
 import { Button } from '@/components/ui/button'
@@ -173,7 +174,8 @@ function SessionItem({
   const [hovered, setHovered] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
-  const [deleting, setDeleting] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isDeletingSession, setIsDeletingSession] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const title = session.title ?? 'New conversation'
@@ -202,11 +204,16 @@ function SessionItem({
     setEditing(false)
   }
 
-  async function handleDelete(e: React.MouseEvent) {
+  function openDeleteConfirmDialog(e: React.MouseEvent) {
     e.stopPropagation()
-    setDeleting(true)
+    setIsDeleteConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    setIsDeletingSession(true)
     await onDelete()
-    setDeleting(false)
+    setIsDeletingSession(false)
+    setIsDeleteConfirmOpen(false)
   }
 
   return (
@@ -289,8 +296,8 @@ function SessionItem({
             </button>
           ) : (
             <button
-              onClick={handleDelete}
-              disabled={deleting}
+              onClick={openDeleteConfirmDialog}
+              disabled={isDeletingSession}
               className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-background transition-colors"
               title="Delete"
             >
@@ -298,6 +305,15 @@ function SessionItem({
             </button>
           )}
         </div>
+      )}
+
+      {isDeleteConfirmOpen && (
+        <DeleteConversationDialog
+          title={title}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          deleting={isDeletingSession}
+        />
       )}
     </div>
   )
