@@ -140,7 +140,7 @@ function mergeCitations(existing: UrlCitation[], incoming: UrlCitation[]): UrlCi
 /** Server tools included on every chat completion request. */
 function chatServerTools(webSearch: boolean) {
   return [
-    { type: 'openrouter:datetime' },
+    // { type: 'openrouter:datetime' }, // Enabling makes responses slower, maybe inject this detail in the prompt instead
     ...(webSearch ? [{ type: 'openrouter:web_search' }] : [])
   ]
 }
