@@ -40,6 +40,10 @@ Every source file opens with a block comment: purpose, where it fits (renderer /
 
 ## Naming
 
+- **Prefer descriptive names over generic ones.** A name should tell a reader what the symbol operates on, not just the action. Length is not a cost — clarity is the point. A future reader (human or AI) skimming call sites should understand each identifier without opening its definition. Pair descriptive names with a JSDoc line whenever the responsibility isn't fully self-evident.
+  - Bad: `openEditor`, `applyDraft`, `resetToDefault`, `handleSave`
+  - Good: `openPromptEditor`, `applyPromptDraft`, `resetPromptToDefault`, `handleSaveApiKey`
+  - Rule of thumb: if the same name would make sense in five unrelated components, it's too generic — put the domain noun in.
 - Booleans: `is*`, `has*`, `should*`, `can*`
 - Handlers: `handle*` (internal), `on*` (props)
 - Async names: `loadSession`, `streamChat`, `fetchData`
