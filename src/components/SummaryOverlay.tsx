@@ -12,12 +12,12 @@
  *
  * @see STANDARDS.md for coding standards and conventions of this codebase
  */
+import { ModelColorDot } from '@/components/model/ModelColorDot'
 import { ModelList, savedOpenRouterModelIds } from '@/components/model/ModelList'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getModelDef, resolveModelColor } from '@shared/models'
 import type { SavedModel } from '@shared/types'
-import { ModelColorDot } from '@/components/model/ModelColorDot'
 import { AnimatedMarkdown } from 'flowtoken'
 import 'flowtoken/dist/styles.css'
 import {
@@ -26,6 +26,8 @@ import {
   ChevronUp,
   Copy,
   Loader2,
+  Pencil,
+  RotateCcw,
   Sparkles,
   Square,
   X
@@ -44,7 +46,12 @@ interface Props {
   onSelectModel: (openRouterModelId: string) => void
   content: string
   streaming: boolean
-  onGenerate: () => void
+  /**
+   * `customPrompt` is the user's in-session edit to the system prompt, or
+   * `null` when the built-in default should be used. Not persisted — resets
+   * when the overlay reopens.
+   */
+  onGenerate: (customPrompt: string | null) => void
   onAbort: () => void
 }
 
@@ -232,13 +239,41 @@ export function SummaryOverlay({
   const [copied, setCopied] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
+  // Prompt-editor state. `customPrompt === null` means "using the built-in
+  // default", which drives whether the "Custom" pill shows. Nothing here is
+  // persisted — closing and re-opening the overlay resets to the default.
+  const [promptEditorOpen, setPromptEditorOpen] = useState(false)
+  const [customPrompt, setCustomPrompt] = useState<string | null>(null)
+  const [defaultInstructions, setDefaultInstructions] = useState<string>('')
+  const [promptDraft, setPromptDraft] = useState<string>('')
+
   const openRouterModelIds = savedOpenRouterModelIds(models)
   const current = selectedOpenRouterModelId ? getModelDef(selectedOpenRouterModelId) : null
   const currentColor = selectedOpenRouterModelId ? resolveModelColor(selectedOpenRouterModelId, models) : undefined
   const hasSummary = content.length > 0
 
   useEffect(() => {
-    if (!open) setModelPickerOpen(false)
+    if (!open) {
+      setModelPickerOpen(false)
+      setPromptEditorOpen(false)
+      // Reset in-memory prompt state each time the overlay closes so the next
+      // open starts fresh from the built-in default.
+      setCustomPrompt(null)
+    }
+  }, [open])
+
+  // Fetch the built-in default when the overlay opens so the editor can prefill
+  // the textarea from a single source of truth.
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void window.api.settings.getDefaultSummaryPrompt().then((def) => {
+      if (cancelled) return
+      setDefaultInstructions(def)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [open])
 
   useEffect(() => {
@@ -282,6 +317,31 @@ export function SummaryOverlay({
     setModelPickerOpen(false)
   }
 
+  const openPromptEditor = () => {
+    setPromptDraft(customPrompt ?? defaultInstructions)
+    setPromptEditorOpen(true)
+  }
+
+  const closePromptEditor = () => {
+    setPromptEditorOpen(false)
+  }
+
+  const applyPromptDraft = () => {
+    // Treating the default text verbatim as "no custom" clears the pill and
+    // sends `null` on the next Generate.
+    const next = promptDraft.trim() === defaultInstructions.trim() ? null : promptDraft
+    setCustomPrompt(next)
+    setPromptEditorOpen(false)
+  }
+
+  const resetPromptToDefault = () => {
+    setCustomPrompt(null)
+    setPromptDraft(defaultInstructions)
+    // Stay in the editor so the user can review/edit the default before applying.
+  }
+
+  const handleGenerate = () => onGenerate(customPrompt)
+
   return (
     <div
       aria-hidden={!open}
@@ -306,7 +366,15 @@ export function SummaryOverlay({
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {hasSummary && !streaming && (
+                {customPrompt !== null && !promptEditorOpen && (
+                  <span
+                    className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400"
+                    title="A custom summary prompt is active for this session"
+                  >
+                    Custom
+                  </span>
+                )}
+                {hasSummary && !streaming && !promptEditorOpen && (
                   <Button
                     size="icon"
                     variant="ghost"
@@ -317,6 +385,17 @@ export function SummaryOverlay({
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn('h-8 w-8', promptEditorOpen && 'bg-muted text-foreground')}
+                  onClick={promptEditorOpen ? closePromptEditor : openPromptEditor}
+                  disabled={streaming}
+                  title={promptEditorOpen ? 'Close prompt editor' : 'Edit summary prompt'}
+                  aria-pressed={promptEditorOpen}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -334,14 +413,14 @@ export function SummaryOverlay({
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] text-muted-foreground shrink-0">Comparing</span>
                 {comparedPanes.map((pane, i) => (
-                    <span
-                      key={`${pane.openRouterModelId}-${i}`}
-                      className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground/90"
-                    >
-                      <ModelColorDot color={resolveModelColor(pane.openRouterModelId, models)} size="xs" />
-                      {pane.label}
-                    </span>
-                  ))}
+                  <span
+                    key={`${pane.openRouterModelId}-${i}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground/90"
+                  >
+                    <ModelColorDot color={resolveModelColor(pane.openRouterModelId, models)} size="xs" />
+                    {pane.label}
+                  </span>
+                ))}
               </div>
             )}
 
@@ -399,7 +478,7 @@ export function SummaryOverlay({
                   size="sm"
                   className="gap-1.5 h-8"
                   disabled={!selectedOpenRouterModelId || disabled}
-                  onClick={onGenerate}
+                  onClick={handleGenerate}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   {hasSummary ? 'Regenerate' : 'Generate'}
@@ -410,47 +489,101 @@ export function SummaryOverlay({
         </div>
       </div>
 
-      {/* Summary body */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-        {!selectedOpenRouterModelId && !content && !streaming && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
-            <Sparkles className="h-8 w-8 text-amber-500/60" />
-            <p className="text-sm font-medium text-foreground">Select a model and generate</p>
-            <p className="text-xs max-w-sm">
-              Your summary will compare the latest replies shown above. Close anytime via ✕ or the
-              Summarize tab below.
-            </p>
-          </div>
-        )}
+      {/* Prompt editor — replaces the summary body when open */}
+      {promptEditorOpen && (
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+          <div className="max-w-3xl mx-auto flex flex-col gap-3">
+            <div>
+              <h3 className="text-sm font-semibold">Edit summary prompt</h3>
+              <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+                <span aria-hidden className="mt-[1px]">ⓘ</span>
+                <span>
+                  Your text is sent as the system prompt. The user&apos;s question and each
+                  model&apos;s response are appended automatically at the end. Applies until
+                  you close the Summarize tab.
+                </span>
+              </p>
+            </div>
 
-        {selectedOpenRouterModelId && !content && !streaming && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
-            <p className="text-sm font-medium text-foreground">Ready when you are</p>
-            <p className="text-xs max-w-sm">Click Generate to build a structured comparison.</p>
-          </div>
-        )}
+            <textarea
+              value={promptDraft}
+              onChange={(e) => setPromptDraft(e.target.value)}
+              spellCheck={false}
+              className={cn(
+                'w-full min-h-[280px] resize-y rounded-md border border-border bg-background/70 px-3 py-2',
+                'font-mono text-xs leading-relaxed text-foreground',
+                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60'
+              )}
+              placeholder="Write instructions for how summaries should be produced…"
+            />
 
-        {(content || streaming) && selectedOpenRouterModelId && (
-          <div className="max-w-3xl mx-auto">
-            {content ? (
-              <AnimatedMarkdown
-                content={content}
-                sep="word"
-                animation={streaming ? 'fadeIn' : null}
-                animationDuration="0.25s"
-                animationTimingFunction="ease-out"
-                customComponents={markdownStyles}
-              />
-            ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 h-8"
+                onClick={resetPromptToDefault}
+                title="Restore the built-in default prompt"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset to default
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="h-8" onClick={closePromptEditor}>
+                  Cancel
+                </Button>
+                <Button size="sm" className="h-8" onClick={applyPromptDraft}>
+                  Save
+                </Button>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Summary body */}
+      {!promptEditorOpen && (
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+          {!selectedOpenRouterModelId && !content && !streaming && (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
+              <Sparkles className="h-8 w-8 text-amber-500/60" />
+              <p className="text-sm font-medium text-foreground">Select a model and generate</p>
+              <p className="text-xs max-w-sm">
+                Your summary will compare the latest replies shown above. Close anytime via ✕ or the
+                Summarize tab below.
+              </p>
+            </div>
+          )}
+
+          {selectedOpenRouterModelId && !content && !streaming && (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 py-12">
+              <p className="text-sm font-medium text-foreground">Ready when you are</p>
+              <p className="text-xs max-w-sm">Click Generate to build a structured comparison.</p>
+            </div>
+          )}
+
+          {(content || streaming) && selectedOpenRouterModelId && (
+            <div className="max-w-3xl mx-auto">
+              {content ? (
+                <AnimatedMarkdown
+                  content={content}
+                  sep="word"
+                  animation={streaming ? 'fadeIn' : null}
+                  animationDuration="0.25s"
+                  animationTimingFunction="ease-out"
+                  customComponents={markdownStyles}
+                />
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

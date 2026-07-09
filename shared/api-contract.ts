@@ -72,6 +72,12 @@ export interface SummaryStartRequest {
   userMessage: string
   /** Responses from each model pane to compare. */
   responses: Array<{ modelLabel: string; content: string }>
+  /**
+   * Optional user-authored replacement for the built-in system prompt.
+   * Only lives for the duration of the summary tab — not persisted. When
+   * absent, the backend uses `DEFAULT_SUMMARY_INSTRUCTIONS`.
+   */
+  customPrompt?: string | null
 }
 
 /* ── Settings / API-key payloads ─────────────────────────────────────────── */
@@ -268,6 +274,8 @@ export interface ArcoApi {
     isOnboardingCompleted(): Promise<boolean>
     /** Mark onboarding complete after the user selects starter models. */
     completeOnboarding(): Promise<void>
+    /** The built-in summary system prompt — used to prefill the in-overlay editor. */
+    getDefaultSummaryPrompt(): Promise<string>
   }
 
   /**
@@ -357,7 +365,8 @@ export const CHANNELS = {
     removeSavedModel: 'settings:removeSavedModel',
     validateModel: 'settings:validateModel',
     isOnboardingCompleted: 'settings:isOnboardingCompleted',
-    completeOnboarding: 'settings:completeOnboarding'
+    completeOnboarding: 'settings:completeOnboarding',
+    getDefaultSummaryPrompt: 'settings:getDefaultSummaryPrompt'
   },
   license: {
     getStatus: 'license:getStatus',

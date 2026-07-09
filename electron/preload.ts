@@ -88,7 +88,8 @@ const api: ArcoApi = {
       ipcRenderer.invoke(CHANNELS.settings.removeSavedModel, openRouterModelId),
     validateModel: (openRouterModelId) => ipcRenderer.invoke(CHANNELS.settings.validateModel, openRouterModelId),
     isOnboardingCompleted: () => ipcRenderer.invoke(CHANNELS.settings.isOnboardingCompleted),
-    completeOnboarding: () => ipcRenderer.invoke(CHANNELS.settings.completeOnboarding)
+    completeOnboarding: () => ipcRenderer.invoke(CHANNELS.settings.completeOnboarding),
+    getDefaultSummaryPrompt: () => ipcRenderer.invoke(CHANNELS.settings.getDefaultSummaryPrompt)
   },
 
   license: {

@@ -23,6 +23,7 @@ import * as modelsRepo from '../db/repositories/models.repo'
 import { validateKey as validateAgainstOpenRouter, validateModel as validateModelOnOpenRouter } from '../services/openrouter'
 import * as secureStore from '../services/store/secure-store'
 import * as settingsStore from '../services/store/settings-store'
+import { DEFAULT_SUMMARY_INSTRUCTIONS } from './summary'
 
 /** Validate a key and shape the result for the UI (never throws). */
 async function validate(key: string): Promise<KeyValidationResult> {
@@ -103,4 +104,6 @@ export function registerSettingsHandlers(): void {
 
   ipcMain.handle(CHANNELS.settings.isOnboardingCompleted, () => settingsStore.isOnboardingCompleted())
   ipcMain.handle(CHANNELS.settings.completeOnboarding, () => settingsStore.completeOnboarding())
+
+  ipcMain.handle(CHANNELS.settings.getDefaultSummaryPrompt, () => DEFAULT_SUMMARY_INSTRUCTIONS)
 }

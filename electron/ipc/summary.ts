@@ -19,29 +19,16 @@ import { streamChat } from '../services/openrouter';
 import { getKey } from '../services/store/secure-store';
 
 /**
- * Build the summarization prompt from collected responses.
+ * The built-in summary system prompt. Shown as the default text in the
+ * in-overlay editor and used verbatim when no custom prompt is saved.
  *
- * @param userMessage — the original question the user asked
- * @param responses — array of model responses to compare
- * @returns formatted prompt string for the summarization model
+ * The user's question and per-model responses are NOT embedded here —
+ * {@link buildAppendedContext} always appends them below whatever instruction
+ * body is active, so custom prompts can rely on the same convention.
  */
-function buildSummaryPrompt(
-  userMessage: string,
-  responses: Array<{ modelLabel: string; content: string }>
-): string {
-  const responseBlocks = responses
-    .map((r) => `[Model: ${r.modelLabel}]\n${r.content}`)
-    .join('\n\n')
-
-  return `You are a synthesis analyst. Multiple AI models answered the same question. Produce one comprehensive summary so the user never needs to read each response individually.
+export const DEFAULT_SUMMARY_INSTRUCTIONS = `You are a synthesis analyst. Multiple AI models answered the same question. Produce one comprehensive summary so the user never needs to read each response individually.
 
 Stay neutral — never pick a winner. Let the user decide.
-
-**User's Question:** ${userMessage}
-
-**Model Responses:** ${responseBlocks}
-
----
 
 BEFORE WRITING, silently:
 1. Classify the question (factual / advisory-decision / opinion / technical / creative / research) — this shapes your focus: accuracy for factual, trade-offs for decisions, correctness for technical, range of perspectives for opinion.
@@ -79,6 +66,48 @@ RULES:
 - Adjust language for model count (don't say "most models" for 2 models).
 - Note off-topic or weak responses diplomatically in the snapshot.
 - Add no outside knowledge except in Gaps.`
+
+/**
+ * Format the user's question and each model's response, appended below the
+ * (default or custom) instruction body.
+ */
+function buildAppendedContext(
+  userMessage: string,
+  responses: Array<{ modelLabel: string; content: string }>
+): string {
+  const responseBlocks = responses
+    .map((r) => `[Model: ${r.modelLabel}]\n${r.content}`)
+    .join('\n\n')
+
+  return `---
+
+**User's Question:** ${userMessage}
+
+**Model Responses:**
+${responseBlocks}`
+}
+
+/**
+ * Build the summarization prompt from collected responses.
+ *
+ * Uses the user-authored `customPrompt` when provided by the renderer,
+ * otherwise {@link DEFAULT_SUMMARY_INSTRUCTIONS}. The question + responses are
+ * always appended at the end so custom prompts don't need to worry about
+ * placement.
+ *
+ * @param userMessage — the original question the user asked
+ * @param responses — array of model responses to compare
+ * @param customPrompt — optional per-request instruction body (from the editor)
+ * @returns formatted prompt string for the summarization model
+ */
+function buildSummaryPrompt(
+  userMessage: string,
+  responses: Array<{ modelLabel: string; content: string }>,
+  customPrompt: string | null | undefined
+): string {
+  const trimmed = customPrompt?.trim()
+  const instructions = trimmed && trimmed.length > 0 ? trimmed : DEFAULT_SUMMARY_INSTRUCTIONS
+  return `${instructions}\n\n${buildAppendedContext(userMessage, responses)}`
 }
 
 /** Active summary requests mapped by requestId for abort support. */
@@ -92,7 +121,7 @@ const activeRequests = new Map<string, AbortController>()
 export function registerSummaryHandlers(): void {
   // ── Start a summary stream ────────────────────────────────────────────────
   ipcMain.on(CHANNELS.summary.start, async (event, req: SummaryStartRequest) => {
-    const { requestId, openRouterModelId, userMessage, responses } = req
+    const { requestId, openRouterModelId, userMessage, responses, customPrompt } = req
     const sender = event.sender
 
     // Retrieve API key from secure storage (Keychain on macOS)
@@ -112,7 +141,7 @@ export function registerSummaryHandlers(): void {
     const controller = new AbortController()
     activeRequests.set(requestId, controller)
 
-    const messages = [{ role: 'user' as const, content: buildSummaryPrompt(userMessage, responses) }]
+    const messages = [{ role: 'user' as const, content: buildSummaryPrompt(userMessage, responses, customPrompt) }]
 
     try {
       const { content } = await streamChat(

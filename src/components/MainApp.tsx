@@ -161,7 +161,7 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
     setSummaryStreaming(false)
   }
 
-  const generateSummary = () => {
+  const generateSummary = (customPrompt: string | null) => {
     if (!summaryOpenRouterModelId) return
 
     const panesWithExchange = panesWithLatestExchange
@@ -182,7 +182,8 @@ export function MainApp({ onOpenSettings, isLicenseActivated, licenseType, onOpe
       requestId,
       openRouterModelId: summaryOpenRouterModelId,
       userMessage: lastUserMessage,
-      responses
+      responses,
+      customPrompt
     })
   }
 
